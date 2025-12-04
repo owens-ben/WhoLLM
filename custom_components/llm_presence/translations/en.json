@@ -1,0 +1,68 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "LLM Provider Configuration",
+        "description": "Configure your LLM provider for room presence detection.",
+        "data": {
+          "provider": "Provider",
+          "url": "Provider URL",
+          "poll_interval": "Poll Interval"
+        }
+      },
+      "model": {
+        "title": "Model Selection",
+        "description": "Select the LLM model to use for presence detection.",
+        "data": {
+          "model": "Model"
+        }
+      },
+      "rooms": {
+        "title": "Room Configuration",
+        "description": "Select the rooms to track for presence detection.",
+        "data": {
+          "rooms": "Rooms"
+        }
+      },
+      "persons": {
+        "title": "Person & Pet Configuration",
+        "description": "Enter the names of persons and pets to track.\n\nPersons: Comma-separated names (e.g., Alice, Bob)\nPets: Comma-separated names (e.g., Max, Luna)",
+        "data": {
+          "persons": "Persons (comma-separated)",
+          "pets": "Pets (comma-separated)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the LLM provider. Please check the URL and try again.",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "An unknown error occurred"
+    },
+    "abort": {
+      "already_configured": "LLM Presence is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "LLM Presence Options",
+        "data": {
+          "poll_interval": "Poll Interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "room": {
+        "name": "{name} Room"
+      }
+    },
+    "binary_sensor": {
+      "presence": {
+        "name": "{name} in {room}"
+      }
+    }
+  }
+}
+
