@@ -123,3 +123,4 @@ class LLMPresenceRoomBinarySensor(
         """Handle updated data from the coordinator."""
         self.async_write_ha_state()
 
+

@@ -22,6 +22,7 @@ from .const import (
     DEFAULT_PROVIDER,
     DEFAULT_URL,
     DOMAIN,
+    VALID_ROOMS,
 )
 from .providers import get_provider
 
@@ -39,7 +40,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.model = entry.data.get(CONF_MODEL, DEFAULT_MODEL)
         self.persons = entry.data.get(CONF_PERSONS, [])
         self.pets = entry.data.get(CONF_PETS, [])
-        self.rooms = entry.data.get(CONF_ROOMS, [])
+        self.rooms = entry.data.get(CONF_ROOMS, VALID_ROOMS)
         
         poll_interval = entry.data.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
         
@@ -149,4 +150,5 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 }
         
         return context
+
 

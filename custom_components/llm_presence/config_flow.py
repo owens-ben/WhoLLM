@@ -118,9 +118,16 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle room configuration step."""
+        errors: dict[str, str] = {}
+        
         if user_input is not None:
-            self._data[CONF_ROOMS] = user_input.get(CONF_ROOMS, VALID_ROOMS)
-            return await self.async_step_persons()
+            rooms = user_input.get(CONF_ROOMS, VALID_ROOMS)
+            # Validate that at least one room is selected
+            if not rooms or len(rooms) == 0:
+                errors["base"] = "at_least_one_room"
+            else:
+                self._data[CONF_ROOMS] = rooms
+                return await self.async_step_persons()
 
         return self.async_show_form(
             step_id="rooms",
@@ -135,12 +142,15 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     ),
                 }
             ),
+            errors=errors,
         )
 
     async def async_step_persons(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle person/pet configuration step."""
+        errors: dict[str, str] = {}
+        
         if user_input is not None:
             # Parse persons and pets from input
             persons = []
@@ -160,14 +170,18 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     if name:
                         pets.append({"name": name})
             
-            self._data[CONF_PERSONS] = persons
-            self._data[CONF_PETS] = pets
-            
-            # Create the config entry
-            return self.async_create_entry(
-                title=f"LLM Presence ({self._data[CONF_PROVIDER]})",
-                data=self._data,
-            )
+            # Validate that at least one person or pet is configured
+            if not persons and not pets:
+                errors["base"] = "at_least_one_entity"
+            else:
+                self._data[CONF_PERSONS] = persons
+                self._data[CONF_PETS] = pets
+                
+                # Create the config entry
+                return self.async_create_entry(
+                    title=f"LLM Presence ({self._data[CONF_PROVIDER]})",
+                    data=self._data,
+                )
 
         return self.async_show_form(
             step_id="persons",
@@ -181,6 +195,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "persons_hint": "Comma-separated names (e.g., Alice, Bob)",
                 "pets_hint": "Comma-separated names (e.g., Max, Luna)",
             },
+            errors=errors,
         )
 
     @staticmethod
@@ -225,4 +240,5 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                 }
             ),
         )
+
 

@@ -39,3 +39,4 @@ ATTR_LAST_SEEN = "last_seen"
 ATTR_INDICATORS = "indicators"
 ATTR_RAW_RESPONSE = "raw_response"
 
+

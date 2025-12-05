@@ -36,7 +36,9 @@
     "error": {
       "cannot_connect": "Unable to connect to the LLM provider. Please check the URL and try again.",
       "invalid_auth": "Invalid authentication",
-      "unknown": "An unknown error occurred"
+      "unknown": "An unknown error occurred",
+      "at_least_one_entity": "Please configure at least one person or pet to track.",
+      "at_least_one_room": "Please select at least one room to track."
     },
     "abort": {
       "already_configured": "LLM Presence is already configured"
@@ -65,4 +67,5 @@
     }
   }
 }
+
 
