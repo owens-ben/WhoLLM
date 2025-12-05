@@ -1,0 +1,80 @@
+# Example Home Assistant automations using LLM Room Presence
+
+# Turn on lights when someone enters a room
+automation:
+  - alias: "Turn on office lights when Alice enters"
+    description: "Automatically turn on office lights when Alice enters the office"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.alice_in_office
+        to: "on"
+    condition:
+      - condition: state
+        entity_id: light.office_lights
+        state: "off"
+    action:
+      - service: light.turn_on
+        target:
+          entity_id: light.office_lights
+        data:
+          brightness: 255
+
+  - alias: "Turn off bedroom lights when Alice leaves"
+    description: "Turn off bedroom lights when Alice is no longer in the bedroom"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.alice_in_bedroom
+        to: "off"
+    condition:
+      - condition: state
+        entity_id: light.bedroom_lights
+        state: "on"
+    action:
+      - delay: "00:05:00"  # Wait 5 minutes in case they come back
+      - condition: state
+        entity_id: binary_sensor.alice_in_bedroom
+        state: "off"
+      - service: light.turn_off
+        target:
+          entity_id: light.bedroom_lights
+
+  - alias: "Notify when pet enters kitchen"
+    description: "Get notified when a pet enters the kitchen (maybe they're looking for food!)"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.max_in_kitchen
+        to: "on"
+    action:
+      - service: notify.mobile_app_phone
+        data:
+          message: "Max is in the kitchen!"
+          title: "Pet Alert"
+
+# Example: Use LLM presence in a Bayesian sensor for higher confidence
+binary_sensor:
+  - platform: bayesian
+    name: "Alice in Office (High Confidence)"
+    prior: 0.5
+    observations:
+      - entity_id: binary_sensor.alice_in_office
+        prob_given_true: 0.95
+        prob_given_false: 0.05
+      - entity_id: light.office_lights
+        prob_given_true: 0.8
+        prob_given_false: 0.2
+        platform: "state"
+        to_state: "on"
+
+# Example: Template sensor to get confidence level
+template:
+  - sensor:
+      - name: "Alice Office Presence Confidence"
+        state: >
+          {% if is_state('binary_sensor.alice_in_office', 'on') %}
+            {{ state_attr('sensor.alice_room', 'confidence') | float * 100 }}
+          {% else %}
+            0
+          {% endif %}
+        unit_of_measurement: "%"
+        icon: "mdi:percent"
+
