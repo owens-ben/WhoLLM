@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_MODEL,
@@ -25,6 +26,8 @@ from .const import (
     VALID_ROOMS,
 )
 from .providers import get_provider
+from .event_logger import get_event_logger
+from .habits import get_habit_predictor, get_confidence_combiner
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,6 +54,14 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             model=self.model,
         )
         
+        # Initialize event logger and habit predictor
+        self.event_logger = get_event_logger()
+        self.habit_predictor = get_habit_predictor()
+        self.confidence_combiner = get_confidence_combiner()
+        
+        # Track previous rooms for transition detection
+        self._previous_rooms: dict[str, str] = {}
+        
         super().__init__(
             hass,
             _LOGGER,
@@ -59,7 +70,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         
         _LOGGER.info(
-            "LLM Presence coordinator initialized: provider=%s, url=%s, model=%s",
+            "LLM Presence coordinator initialized: provider=%s, url=%s, model=%s, event_logging=enabled",
             self.provider_type,
             self.provider_url,
             self.model,
@@ -80,24 +91,86 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             
             for person in self.persons:
                 person_name = person.get("name", "unknown")
+                
+                # Get habit hint for this person
+                habit_hint = self.habit_predictor.get_habit_hint(person_name, "person")
+                habit_context = self.habit_predictor.get_habit_context_for_prompt(person_name, "person")
+                
+                # Add habit context to the sensor context for the LLM
+                context_with_habits = {**context, "habit_hint": habit_context}
+                
                 guess = await self.provider.deduce_presence(
                     hass=self.hass,
-                    context=context,
+                    context=context_with_habits,
                     entity_name=person_name,
                     entity_type="person",
                     rooms=self.rooms,
                 )
+                
+                # Combine confidence from multiple sources
+                final_room, final_confidence, explanation = self.confidence_combiner.combine(
+                    llm_room=guess.room,
+                    llm_confidence=guess.confidence,
+                    habit_room=habit_hint.get("predicted_room"),
+                    habit_confidence=habit_hint.get("confidence", 0),
+                    sensor_indicators=guess.indicators,
+                    camera_ai_room=self._get_camera_ai_room(context, "person"),
+                )
+                
+                # Update guess with combined confidence
+                guess.confidence = final_confidence
+                if guess.room != final_room:
+                    _LOGGER.debug(
+                        "Confidence combiner changed %s from %s to %s",
+                        person_name, guess.room, final_room
+                    )
+                    guess.room = final_room
+                
+                # Log the event for ML training
+                self._log_presence_event(person_name, "person", guess, context)
+                
+                # Check for room transitions
+                self._check_room_transition(person_name, guess.room, guess.confidence)
+                
                 results["persons"][person_name] = guess
             
             for pet in self.pets:
                 pet_name = pet.get("name", "unknown")
+                
+                # Get habit hint for this pet
+                habit_hint = self.habit_predictor.get_habit_hint(pet_name, "pet")
+                habit_context = self.habit_predictor.get_habit_context_for_prompt(pet_name, "pet")
+                
+                context_with_habits = {**context, "habit_hint": habit_context}
+                
                 guess = await self.provider.deduce_presence(
                     hass=self.hass,
-                    context=context,
+                    context=context_with_habits,
                     entity_name=pet_name,
                     entity_type="pet",
                     rooms=self.rooms,
                 )
+                
+                # Combine confidence
+                final_room, final_confidence, explanation = self.confidence_combiner.combine(
+                    llm_room=guess.room,
+                    llm_confidence=guess.confidence,
+                    habit_room=habit_hint.get("predicted_room"),
+                    habit_confidence=habit_hint.get("confidence", 0),
+                    sensor_indicators=guess.indicators,
+                    camera_ai_room=self._get_camera_ai_room(context, "animal"),
+                )
+                
+                guess.confidence = final_confidence
+                if guess.room != final_room:
+                    guess.room = final_room
+                
+                # Log the event
+                self._log_presence_event(pet_name, "pet", guess, context)
+                
+                # Check for room transitions
+                self._check_room_transition(pet_name, guess.room, guess.confidence)
+                
                 results["pets"][pet_name] = guess
             
             return results
@@ -108,11 +181,24 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _gather_sensor_context(self) -> dict[str, Any]:
         """Gather current state of all relevant sensors."""
+        now = dt_util.now()
+        
         context: dict[str, Any] = {
             "lights": {},
             "motion": {},
             "media": {},
             "device_trackers": {},
+            "doors": {},
+            "climate": {},
+            "computers": {},  # PC/workstation indicators
+            "ai_detection": {},  # AI-based person/animal detection from cameras
+            "time_context": {
+                "current_time": now.strftime("%H:%M"),
+                "day_of_week": now.strftime("%A"),
+                "is_night": now.hour >= 22 or now.hour < 6,
+                "is_morning": 6 <= now.hour < 10,
+                "is_evening": 18 <= now.hour < 22,
+            },
         }
         
         # Get all entity states
@@ -120,35 +206,183 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         
         for state in states:
             entity_id = state.entity_id
+            last_changed = state.last_changed
+            
+            # Calculate how long ago the state changed
+            time_since_change = None
+            if last_changed:
+                delta = now - last_changed
+                if delta.total_seconds() < 60:
+                    time_since_change = f"{int(delta.total_seconds())}s ago"
+                elif delta.total_seconds() < 3600:
+                    time_since_change = f"{int(delta.total_seconds() / 60)}m ago"
+                else:
+                    time_since_change = f"{int(delta.total_seconds() / 3600)}h ago"
             
             # Collect lights
             if entity_id.startswith("light."):
                 context["lights"][entity_id] = {
                     "state": state.state,
-                    "last_changed": state.last_changed.isoformat() if state.last_changed else None,
+                    "last_changed": time_since_change,
+                    "brightness": state.attributes.get("brightness"),
                 }
             
             # Collect motion sensors
             elif entity_id.startswith("binary_sensor.") and "motion" in entity_id.lower():
                 context["motion"][entity_id] = {
                     "state": state.state,
-                    "last_changed": state.last_changed.isoformat() if state.last_changed else None,
+                    "last_changed": time_since_change,
                 }
             
-            # Collect media players
-            elif entity_id.startswith("media_player."):
-                context["media"][entity_id] = {
+            # Collect door/window sensors
+            elif entity_id.startswith("binary_sensor.") and any(x in entity_id.lower() for x in ["door", "window", "contact"]):
+                context["doors"][entity_id] = {
                     "state": state.state,
-                    "last_changed": state.last_changed.isoformat() if state.last_changed else None,
+                    "last_changed": time_since_change,
                 }
+            
+            # Collect media players with more detail
+            elif entity_id.startswith("media_player."):
+                media_info = {
+                    "state": state.state,
+                    "last_changed": time_since_change,
+                }
+                # Add what's playing if available
+                if state.attributes.get("media_title"):
+                    media_info["playing"] = state.attributes.get("media_title")
+                if state.attributes.get("app_name"):
+                    media_info["app"] = state.attributes.get("app_name")
+                if state.attributes.get("source"):
+                    media_info["source"] = state.attributes.get("source")
+                context["media"][entity_id] = media_info
             
             # Collect device trackers and persons
             elif entity_id.startswith(("device_tracker.", "person.")):
                 context["device_trackers"][entity_id] = {
                     "state": state.state,
-                    "last_changed": state.last_changed.isoformat() if state.last_changed else None,
+                    "last_changed": time_since_change,
+                }
+            
+            # Collect climate/temperature sensors for room occupancy hints
+            elif entity_id.startswith("sensor.") and any(x in entity_id.lower() for x in ["temperature", "humidity"]):
+                # Only include room-specific sensors
+                if any(room in entity_id.lower() for room in ["living", "bedroom", "office", "kitchen", "bathroom"]):
+                    context["climate"][entity_id] = {
+                        "state": state.state,
+                        "unit": state.attributes.get("unit_of_measurement"),
+                    }
+            
+            # Collect PC/computer indicators (switches, binary sensors, device trackers)
+            elif any(x in entity_id.lower() for x in ["_pc", "pc_", "computer", "desktop", "workstation", "ben_pc"]):
+                if entity_id.startswith(("switch.", "binary_sensor.", "device_tracker.")):
+                    context["computers"][entity_id] = {
+                        "state": state.state,
+                        "last_changed": time_since_change,
+                        "friendly_name": state.attributes.get("friendly_name", ""),
+                    }
+            
+            # Collect AI-based person/animal detection from cameras (e.g., E1 Zoom)
+            # These are VERY strong indicators of presence!
+            elif entity_id.startswith("binary_sensor.") and any(x in entity_id.lower() for x in ["_person", "_animal", "_pet", "_human"]):
+                # Try to determine which room the camera is in from entity name
+                camera_name = entity_id.replace("binary_sensor.", "").replace("_person", "").replace("_animal", "").replace("_pet", "").replace("_human", "")
+                detection_type = "person" if "person" in entity_id.lower() or "human" in entity_id.lower() else "animal"
+                context["ai_detection"][entity_id] = {
+                    "state": state.state,
+                    "last_changed": time_since_change,
+                    "camera": camera_name,
+                    "detection_type": detection_type,
                 }
         
         return context
+
+    def _log_presence_event(
+        self,
+        entity_name: str,
+        entity_type: str,
+        guess: Any,
+        context: dict[str, Any],
+    ) -> None:
+        """Log presence event for ML training."""
+        try:
+            self.event_logger.log_presence_event(
+                entity_name=entity_name,
+                entity_type=entity_type,
+                room=guess.room,
+                confidence=guess.confidence,
+                raw_response=guess.raw_response,
+                indicators=guess.indicators,
+                sensor_context=context,
+                detection_method="llm",
+            )
+        except Exception as err:
+            _LOGGER.warning("Failed to log presence event: %s", err)
+
+    def _check_room_transition(
+        self,
+        entity_name: str,
+        new_room: str,
+        confidence: float,
+    ) -> None:
+        """Check if entity moved rooms and log transition."""
+        previous_room = self._previous_rooms.get(entity_name)
+        
+        if previous_room and previous_room != new_room and new_room != "unknown":
+            try:
+                self.event_logger.log_room_transition(
+                    entity_name=entity_name,
+                    from_room=previous_room,
+                    to_room=new_room,
+                    confidence=confidence,
+                )
+                _LOGGER.debug(
+                    "Room transition: %s moved from %s to %s",
+                    entity_name, previous_room, new_room
+                )
+            except Exception as err:
+                _LOGGER.warning("Failed to log room transition: %s", err)
+        
+        self._previous_rooms[entity_name] = new_room
+
+    def _get_camera_ai_room(
+        self,
+        context: dict[str, Any],
+        detection_type: str,
+    ) -> str | None:
+        """Get room where camera AI detected a person/animal."""
+        ai_detections = context.get("ai_detection", {})
+        
+        for entity_id, data in ai_detections.items():
+            if data.get("state") == "on":
+                det_type = data.get("detection_type", "")
+                if detection_type == "person" and det_type == "person":
+                    # Try to map camera to room
+                    camera = data.get("camera", "").lower()
+                    return self._camera_to_room(camera)
+                elif detection_type == "animal" and det_type == "animal":
+                    camera = data.get("camera", "").lower()
+                    return self._camera_to_room(camera)
+        
+        return None
+
+    def _camera_to_room(self, camera_name: str) -> str | None:
+        """Map camera name to room name."""
+        # Common mappings - customize for your setup
+        camera_room_map = {
+            "e1_zoom": "living_room",  # Adjust based on where your E1 Zoom is
+            "living": "living_room",
+            "kitchen": "kitchen",
+            "bedroom": "bedroom",
+            "office": "office",
+            "front": "entry",
+            "entry": "entry",
+            "hallway": "entry",
+        }
+        
+        for key, room in camera_room_map.items():
+            if key in camera_name:
+                return room
+        
+        return None
 
 

@@ -1,0 +1,561 @@
+###############################################################################
+#                    LLM ROOM PRESENCE DASHBOARD
+#                    Intelligent Presence Detection
+###############################################################################
+# A beautiful, modern dashboard for visualizing LLM-powered room presence
+# detection. Shows who is where with confidence levels and indicators.
+#
+# Installation:
+#   1. Copy this file to your Home Assistant config directory
+#   2. Add to configuration.yaml:
+#      lovelace:
+#        mode: yaml
+#        dashboards:
+#          llm-presence:
+#            mode: yaml
+#            title: LLM Presence
+#            icon: mdi:brain
+#            show_in_sidebar: true
+#            filename: llm-presence-dashboard.yaml
+#   3. Restart Home Assistant
+#
+# Or import via UI:
+#   Settings → Dashboards → Add Dashboard → Take Control → Raw Config Editor
+###############################################################################
+
+title: "🧠 LLM Room Presence"
+views:
+  - title: Presence Overview
+    path: presence
+    icon: mdi:home-account
+    type: sections
+    max_columns: 3
+    sections:
+      ##########################################################################
+      # HEADER SECTION - Status Overview
+      ##########################################################################
+      - type: grid
+        cards:
+          - type: markdown
+            content: |
+              # 🧠 LLM Room Presence
+              ### Intelligent presence detection powered by local AI
+              
+              This dashboard shows real-time room presence deduced by analyzing
+              lights, motion sensors, media players, and device trackers through
+              a local LLM (Ollama).
+            card_mod:
+              style: |
+                ha-card {
+                  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+                  border: 1px solid #e94560;
+                  border-radius: 16px;
+                  color: #eee;
+                }
+
+      ##########################################################################
+      # PERSON PRESENCE - Current Room for Each Person
+      ##########################################################################
+      - type: grid
+        title: "👥 People"
+        cards:
+          # Person Room Sensor Card Template
+          # Duplicate and modify for each person tracked
+          - type: custom:mushroom-template-card
+            primary: "{{ state_attr('sensor.alice_room', 'friendly_name') | default('Alice') }}"
+            secondary: |
+              {% set room = states('sensor.alice_room') %}
+              {% set confidence = state_attr('sensor.alice_room', 'confidence') | default(0) | float %}
+              {% if room == 'unknown' or room == 'unavailable' %}
+                Location unknown
+              {% else %}
+                📍 {{ room | replace('_', ' ') | title }}
+                {% if confidence > 0 %}({{ (confidence * 100) | round }}% confident){% endif %}
+              {% endif %}
+            icon: mdi:account
+            icon_color: |
+              {% set room = states('sensor.alice_room') %}
+              {% if room == 'office' %}blue
+              {% elif room == 'living_room' %}green
+              {% elif room == 'bedroom' %}purple
+              {% elif room == 'kitchen' %}orange
+              {% elif room == 'away' %}grey
+              {% else %}red
+              {% endif %}
+            badge_icon: |
+              {% set confidence = state_attr('sensor.alice_room', 'confidence') | default(0) | float %}
+              {% if confidence > 0.8 %}mdi:check-circle
+              {% elif confidence > 0.5 %}mdi:help-circle
+              {% else %}mdi:alert-circle
+              {% endif %}
+            badge_color: |
+              {% set confidence = state_attr('sensor.alice_room', 'confidence') | default(0) | float %}
+              {% if confidence > 0.8 %}green
+              {% elif confidence > 0.5 %}orange
+              {% else %}red
+              {% endif %}
+            tap_action:
+              action: more-info
+            entity: sensor.alice_room
+            layout: horizontal
+            fill_container: true
+
+          # Add more person cards here by duplicating the above
+          # and changing 'alice' to the person's name
+
+      ##########################################################################
+      # PET PRESENCE - Current Room for Each Pet
+      ##########################################################################
+      - type: grid
+        title: "🐾 Pets"
+        cards:
+          - type: custom:mushroom-template-card
+            primary: "Pet Location"
+            secondary: |
+              {% set entities = states.sensor | selectattr('entity_id', 'search', 'pet.*_room') | list %}
+              {% if entities | length > 0 %}
+                {% for entity in entities %}
+                  {{ entity.name }}: {{ entity.state | replace('_', ' ') | title }}
+                {% endfor %}
+              {% else %}
+                No pets configured
+              {% endif %}
+            icon: mdi:paw
+            icon_color: amber
+            layout: horizontal
+            fill_container: true
+
+      ##########################################################################
+      # ROOM OCCUPANCY GRID - Visual Room Status
+      ##########################################################################
+      - type: grid
+        title: "🏠 Room Status"
+        columns: 3
+        cards:
+          # Office
+          - type: custom:mushroom-template-card
+            primary: "Office"
+            secondary: |
+              {% set occupants = [] %}
+              {% for entity in states.binary_sensor | selectattr('entity_id', 'search', '_in_office') | selectattr('state', 'eq', 'on') | list %}
+                {% set occupants = occupants + [entity.name | replace(' in Office', '')] %}
+              {% endfor %}
+              {% if occupants | length > 0 %}
+                {{ occupants | join(', ') }}
+              {% else %}
+                Empty
+              {% endif %}
+            icon: mdi:desk
+            icon_color: |
+              {% set occupied = states.binary_sensor | selectattr('entity_id', 'search', '_in_office') | selectattr('state', 'eq', 'on') | list | length > 0 %}
+              {% if occupied %}blue{% else %}grey{% endif %}
+            tap_action:
+              action: navigate
+              navigation_path: /llm-presence/office
+            layout: vertical
+            fill_container: true
+
+          # Living Room
+          - type: custom:mushroom-template-card
+            primary: "Living Room"
+            secondary: |
+              {% set occupants = [] %}
+              {% for entity in states.binary_sensor | selectattr('entity_id', 'search', '_in_living_room') | selectattr('state', 'eq', 'on') | list %}
+                {% set occupants = occupants + [entity.name | replace(' in Living Room', '')] %}
+              {% endfor %}
+              {% if occupants | length > 0 %}
+                {{ occupants | join(', ') }}
+              {% else %}
+                Empty
+              {% endif %}
+            icon: mdi:sofa
+            icon_color: |
+              {% set occupied = states.binary_sensor | selectattr('entity_id', 'search', '_in_living_room') | selectattr('state', 'eq', 'on') | list | length > 0 %}
+              {% if occupied %}green{% else %}grey{% endif %}
+            tap_action:
+              action: navigate
+              navigation_path: /llm-presence/living-room
+            layout: vertical
+            fill_container: true
+
+          # Bedroom
+          - type: custom:mushroom-template-card
+            primary: "Bedroom"
+            secondary: |
+              {% set occupants = [] %}
+              {% for entity in states.binary_sensor | selectattr('entity_id', 'search', '_in_bedroom') | selectattr('state', 'eq', 'on') | list %}
+                {% set occupants = occupants + [entity.name | replace(' in Bedroom', '')] %}
+              {% endfor %}
+              {% if occupants | length > 0 %}
+                {{ occupants | join(', ') }}
+              {% else %}
+                Empty
+              {% endif %}
+            icon: mdi:bed
+            icon_color: |
+              {% set occupied = states.binary_sensor | selectattr('entity_id', 'search', '_in_bedroom') | selectattr('state', 'eq', 'on') | list | length > 0 %}
+              {% if occupied %}purple{% else %}grey{% endif %}
+            tap_action:
+              action: navigate
+              navigation_path: /llm-presence/bedroom
+            layout: vertical
+            fill_container: true
+
+          # Kitchen
+          - type: custom:mushroom-template-card
+            primary: "Kitchen"
+            secondary: |
+              {% set occupants = [] %}
+              {% for entity in states.binary_sensor | selectattr('entity_id', 'search', '_in_kitchen') | selectattr('state', 'eq', 'on') | list %}
+                {% set occupants = occupants + [entity.name | replace(' in Kitchen', '')] %}
+              {% endfor %}
+              {% if occupants | length > 0 %}
+                {{ occupants | join(', ') }}
+              {% else %}
+                Empty
+              {% endif %}
+            icon: mdi:stove
+            icon_color: |
+              {% set occupied = states.binary_sensor | selectattr('entity_id', 'search', '_in_kitchen') | selectattr('state', 'eq', 'on') | list | length > 0 %}
+              {% if occupied %}orange{% else %}grey{% endif %}
+            tap_action:
+              action: navigate
+              navigation_path: /llm-presence/kitchen
+            layout: vertical
+            fill_container: true
+
+          # Bathroom
+          - type: custom:mushroom-template-card
+            primary: "Bathroom"
+            secondary: |
+              {% set occupants = [] %}
+              {% for entity in states.binary_sensor | selectattr('entity_id', 'search', '_in_bathroom') | selectattr('state', 'eq', 'on') | list %}
+                {% set occupants = occupants + [entity.name | replace(' in Bathroom', '')] %}
+              {% endfor %}
+              {% if occupants | length > 0 %}
+                {{ occupants | join(', ') }}
+              {% else %}
+                Empty
+              {% endif %}
+            icon: mdi:shower
+            icon_color: |
+              {% set occupied = states.binary_sensor | selectattr('entity_id', 'search', '_in_bathroom') | selectattr('state', 'eq', 'on') | list | length > 0 %}
+              {% if occupied %}cyan{% else %}grey{% endif %}
+            layout: vertical
+            fill_container: true
+
+          # Away
+          - type: custom:mushroom-template-card
+            primary: "Away"
+            secondary: |
+              {% set occupants = [] %}
+              {% for entity in states.binary_sensor | selectattr('entity_id', 'search', '_in_away') | selectattr('state', 'eq', 'on') | list %}
+                {% set occupants = occupants + [entity.name | replace(' in Away', '')] %}
+              {% endfor %}
+              {% if occupants | length > 0 %}
+                {{ occupants | join(', ') }}
+              {% else %}
+                Everyone home
+              {% endif %}
+            icon: mdi:home-export-outline
+            icon_color: |
+              {% set away = states.binary_sensor | selectattr('entity_id', 'search', '_in_away') | selectattr('state', 'eq', 'on') | list | length > 0 %}
+              {% if away %}red{% else %}grey{% endif %}
+            layout: vertical
+            fill_container: true
+
+      ##########################################################################
+      # CONFIDENCE METRICS
+      ##########################################################################
+      - type: grid
+        title: "📊 Detection Confidence"
+        cards:
+          - type: custom:mushroom-template-card
+            primary: "Detection Quality"
+            secondary: |
+              {% set sensors = states.sensor | selectattr('entity_id', 'search', 'llm_presence') | selectattr('entity_id', 'search', '_room') | list %}
+              {% set total_conf = 0 %}
+              {% set count = 0 %}
+              {% for sensor in sensors %}
+                {% set conf = state_attr(sensor.entity_id, 'confidence') | default(0) | float %}
+                {% if conf > 0 %}
+                  {% set total_conf = total_conf + conf %}
+                  {% set count = count + 1 %}
+                {% endif %}
+              {% endfor %}
+              {% if count > 0 %}
+                Average: {{ ((total_conf / count) * 100) | round }}%
+              {% else %}
+                No data yet
+              {% endif %}
+            icon: mdi:chart-arc
+            icon_color: |
+              {% set sensors = states.sensor | selectattr('entity_id', 'search', 'llm_presence') | selectattr('entity_id', 'search', '_room') | list %}
+              {% set total_conf = 0 %}
+              {% set count = 0 %}
+              {% for sensor in sensors %}
+                {% set conf = state_attr(sensor.entity_id, 'confidence') | default(0) | float %}
+                {% if conf > 0 %}
+                  {% set total_conf = total_conf + conf %}
+                  {% set count = count + 1 %}
+                {% endif %}
+              {% endfor %}
+              {% set avg = (total_conf / count) if count > 0 else 0 %}
+              {% if avg > 0.8 %}green
+              {% elif avg > 0.5 %}orange
+              {% else %}red
+              {% endif %}
+            layout: horizontal
+            fill_container: true
+
+      ##########################################################################
+      # LLM STATUS & INDICATORS
+      ##########################################################################
+      - type: grid
+        title: "🤖 LLM Analysis"
+        cards:
+          - type: markdown
+            content: |
+              ### Current Indicators
+              
+              The LLM analyzes these signals to determine presence:
+              
+              | Signal | Status |
+              |--------|--------|
+              | 💡 Lights | Active rooms detected |
+              | 🏃 Motion | Recent activity tracked |
+              | 📺 Media | Playing devices monitored |
+              | 📱 Trackers | Device locations checked |
+              
+              ---
+              
+              **Last Update:** {{ now().strftime('%H:%M:%S') }}
+              
+              **Poll Interval:** 10 seconds
+
+  ##############################################################################
+  # DETAILED ROOM VIEW - Office
+  ##############################################################################
+  - title: Office
+    path: office
+    icon: mdi:desk
+    type: sections
+    sections:
+      - type: grid
+        cards:
+          - type: markdown
+            content: |
+              # 🖥️ Office Presence
+              
+              Detailed view of office occupancy and the signals used for detection.
+
+          - type: entities
+            title: "Office Occupancy Sensors"
+            entities:
+              - entity: binary_sensor.alice_in_office
+                name: Ben in Office
+              # Add more binary sensors for each person
+
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: entity
+                entity: light.office
+                icon: mdi:lightbulb
+              - type: entity
+                entity: binary_sensor.office_motion
+                icon: mdi:motion-sensor
+              - type: entity
+                entity: media_player.office_speakers
+                icon: mdi:speaker
+
+  ##############################################################################
+  # DETAILED ROOM VIEW - Living Room
+  ##############################################################################
+  - title: Living Room
+    path: living-room
+    icon: mdi:sofa
+    type: sections
+    sections:
+      - type: grid
+        cards:
+          - type: markdown
+            content: |
+              # 🛋️ Living Room Presence
+              
+              Detailed view of living room occupancy and the signals used for detection.
+
+          - type: entities
+            title: "Living Room Occupancy Sensors"
+            entities:
+              - entity: binary_sensor.alice_in_living_room
+                name: Ben in Living Room
+
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: entity
+                entity: light.living_room
+                icon: mdi:lightbulb
+              - type: entity
+                entity: media_player.living_room_tv
+                icon: mdi:television
+
+  ##############################################################################
+  # DETAILED ROOM VIEW - Bedroom
+  ##############################################################################
+  - title: Bedroom
+    path: bedroom
+    icon: mdi:bed
+    type: sections
+    sections:
+      - type: grid
+        cards:
+          - type: markdown
+            content: |
+              # 🛏️ Bedroom Presence
+              
+              Detailed view of bedroom occupancy and the signals used for detection.
+
+          - type: entities
+            title: "Bedroom Occupancy Sensors"
+            entities:
+              - entity: binary_sensor.alice_in_bedroom
+                name: Ben in Bedroom
+
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: entity
+                entity: light.bedroom
+                icon: mdi:lightbulb
+              - type: entity
+                entity: media_player.bedroom_tv
+                icon: mdi:television
+
+  ##############################################################################
+  # DETAILED ROOM VIEW - Kitchen
+  ##############################################################################
+  - title: Kitchen
+    path: kitchen
+    icon: mdi:stove
+    type: sections
+    sections:
+      - type: grid
+        cards:
+          - type: markdown
+            content: |
+              # 🍳 Kitchen Presence
+              
+              Detailed view of kitchen occupancy and the signals used for detection.
+
+          - type: entities
+            title: "Kitchen Occupancy Sensors"
+            entities:
+              - entity: binary_sensor.alice_in_kitchen
+                name: Ben in Kitchen
+
+          - type: custom:mushroom-chips-card
+            chips:
+              - type: entity
+                entity: light.kitchen
+                icon: mdi:lightbulb
+
+  ##############################################################################
+  # HISTORY & ANALYTICS VIEW
+  ##############################################################################
+  - title: History
+    path: history
+    icon: mdi:chart-timeline-variant
+    type: sections
+    sections:
+      - type: grid
+        cards:
+          - type: markdown
+            content: |
+              # 📈 Presence History
+              
+              Track presence patterns over time.
+
+          - type: history-graph
+            title: "Room Presence Over Time"
+            hours_to_show: 24
+            entities:
+              - entity: sensor.alice_room
+                name: User's Location
+
+          - type: history-graph
+            title: "Room Occupancy"
+            hours_to_show: 24
+            entities:
+              - entity: binary_sensor.alice_in_office
+                name: Office
+              - entity: binary_sensor.alice_in_living_room
+                name: Living Room
+              - entity: binary_sensor.alice_in_bedroom
+                name: Bedroom
+              - entity: binary_sensor.alice_in_kitchen
+                name: Kitchen
+
+  ##############################################################################
+  # SETTINGS & DEBUG VIEW
+  ##############################################################################
+  - title: Settings
+    path: settings
+    icon: mdi:cog
+    type: sections
+    sections:
+      - type: grid
+        cards:
+          - type: markdown
+            content: |
+              # ⚙️ LLM Presence Settings
+              
+              ### Configuration
+              
+              - **Provider:** Ollama
+              - **Model:** llama3.2
+              - **Poll Interval:** 10 seconds
+              - **Ollama URL:** http://192.168.1.101:11434
+              
+              ### Tracked Rooms
+              
+              - Office
+              - Living Room
+              - Bedroom
+              - Kitchen
+              - Bathroom
+              - Away
+              
+              ### How to Reconfigure
+              
+              1. Go to **Settings** → **Devices & Services**
+              2. Find **LLM Room Presence**
+              3. Click **Configure** to change settings
+              
+              ---
+              
+              ### Debug Information
+              
+              Check Home Assistant logs for detailed LLM responses:
+              
+              ```
+              Settings → System → Logs → Filter: llm_presence
+              ```
+
+          - type: entities
+            title: "All LLM Presence Entities"
+            show_header_toggle: false
+            entities:
+              - type: section
+                label: "Room Sensors"
+              - entity: sensor.alice_room
+              - type: section
+                label: "Binary Sensors"
+              - entity: binary_sensor.alice_in_office
+              - entity: binary_sensor.alice_in_living_room
+              - entity: binary_sensor.alice_in_bedroom
+              - entity: binary_sensor.alice_in_kitchen
+              - entity: binary_sensor.alice_in_bathroom
+              - entity: binary_sensor.alice_in_away
+
+
+
+

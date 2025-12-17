@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant, callback, Event
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -45,6 +46,9 @@ async def async_setup_entry(
                 entity_type="pet",
             )
         )
+    
+    # Create vision identification sensor
+    entities.append(LLMVisionSensor(hass, coordinator))
     
     async_add_entities(entities)
 
@@ -107,5 +111,82 @@ class LLMPresenceSensor(CoordinatorEntity[LLMPresenceCoordinator], SensorEntity)
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         self.async_write_ha_state()
+
+
+class LLMVisionSensor(SensorEntity):
+    """Sensor showing last vision identification result."""
+
+    _attr_has_entity_name = True
+    _attr_unique_id = f"{DOMAIN}_vision_last_identification"
+    _attr_name = "Vision Last Identification"
+    _attr_icon = "mdi:camera-iris"
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        coordinator: LLMPresenceCoordinator,
+    ) -> None:
+        """Initialize the vision sensor."""
+        self.hass = hass
+        self._coordinator = coordinator
+        self._identified: str = "none"
+        self._confidence: str = "none"
+        self._description: str = ""
+        self._camera: str = ""
+        self._detection_type: str = ""
+        self._timestamp: str = ""
+        self._raw_response: str = ""
+        
+        # Listen for vision identification events
+        self._unsub = None
+
+    async def async_added_to_hass(self) -> None:
+        """Register event listener when added to hass."""
+        @callback
+        def handle_vision_event(event: Event) -> None:
+            """Handle vision identification event."""
+            data = event.data
+            self._identified = data.get("identified", "unknown")
+            self._confidence = data.get("confidence", "low")
+            self._description = data.get("description", "")
+            self._camera = data.get("camera", "")
+            self._detection_type = data.get("detection_type", "")
+            self._timestamp = datetime.now().isoformat()
+            self._raw_response = data.get("raw_response", "")
+            
+            _LOGGER.info(
+                "Vision sensor updated: %s (%s) from %s",
+                self._identified,
+                self._confidence,
+                self._camera
+            )
+            self.async_write_ha_state()
+        
+        self._unsub = self.hass.bus.async_listen(
+            f"{DOMAIN}_vision_identification",
+            handle_vision_event
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister event listener when removed."""
+        if self._unsub:
+            self._unsub()
+
+    @property
+    def native_value(self) -> str:
+        """Return the last identified person/pet."""
+        return self._identified
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return additional attributes."""
+        return {
+            "confidence": self._confidence,
+            "description": self._description,
+            "camera": self._camera,
+            "detection_type": self._detection_type,
+            "timestamp": self._timestamp,
+            "raw_response": self._raw_response,
+        }
 
 

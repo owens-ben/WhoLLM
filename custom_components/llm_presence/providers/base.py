@@ -88,32 +88,128 @@ class BaseLLMProvider(ABC):
         
         Can be overridden by subclasses for provider-specific formatting.
         """
-        lines = [f"Current home sensor states for {entity_type} '{entity_name}':\n"]
+        lines = []
         
-        # Lights
-        lines.append("LIGHTS:")
+        # Time context first - very important for behavior patterns
+        time_ctx = context.get("time_context", {})
+        lines.append(f"CURRENT TIME: {time_ctx.get('current_time', 'unknown')} ({time_ctx.get('day_of_week', 'unknown')})")
+        if time_ctx.get("is_night"):
+            lines.append("  ** It is NIGHTTIME (10pm-6am) - people are likely sleeping or getting ready for bed **")
+        elif time_ctx.get("is_morning"):
+            lines.append("  ** It is MORNING (6am-10am) - people are likely waking up or getting ready **")
+        elif time_ctx.get("is_evening"):
+            lines.append("  ** It is EVENING (6pm-10pm) - people are likely relaxing, watching TV, or winding down **")
+        
+        lines.append("")
+        
+        # Lights - with recency info
+        lines.append("LIGHTS (room: state, when changed):")
         for entity_id, data in context.get("lights", {}).items():
             room = entity_id.replace("light.", "").replace("_", " ").title()
-            lines.append(f"  - {room}: {data.get('state', 'unknown')}")
+            state = data.get('state', 'unknown')
+            changed = data.get('last_changed', '')
+            if state == 'on':
+                brightness = data.get('brightness')
+                if brightness:
+                    pct = round(brightness / 255 * 100)
+                    lines.append(f"  - {room}: ON ({pct}% brightness) - changed {changed}")
+                else:
+                    lines.append(f"  - {room}: ON - changed {changed}")
+            elif state == 'off' and changed:
+                lines.append(f"  - {room}: off - changed {changed}")
         
-        # Motion
-        lines.append("\nMOTION SENSORS:")
+        # Motion - with recency (very important!)
+        lines.append("\nMOTION SENSORS (recent motion is key indicator!):")
         for entity_id, data in context.get("motion", {}).items():
             room = entity_id.replace("binary_sensor.", "").replace("_motion", "").replace("_", " ").title()
-            status = "detected" if data.get("state") == "on" else "no motion"
-            lines.append(f"  - {room}: {status}")
+            state = data.get("state")
+            changed = data.get('last_changed', '')
+            if state == "on":
+                lines.append(f"  - {room}: MOTION DETECTED NOW!")
+            else:
+                lines.append(f"  - {room}: no motion (last detected {changed})")
         
-        # Media
-        lines.append("\nMEDIA DEVICES:")
+        # AI Detection from cameras (VERY reliable - camera AI detected person/animal)
+        if context.get("ai_detection"):
+            lines.append("\nCAMERA AI DETECTION (very reliable - camera visually confirmed!):")
+            for entity_id, data in context.get("ai_detection", {}).items():
+                camera = data.get("camera", "unknown").replace("_", " ").title()
+                detection_type = data.get("detection_type", "unknown")
+                state = data.get("state")
+                changed = data.get('last_changed', '')
+                if state == "on":
+                    if detection_type == "person":
+                        lines.append(f"  - {camera}: 🚨 PERSON DETECTED NOW by camera AI!")
+                    else:
+                        lines.append(f"  - {camera}: 🐾 ANIMAL/PET DETECTED NOW by camera AI!")
+                else:
+                    lines.append(f"  - {camera}: no {detection_type} detected (last seen {changed})")
+        
+        # Doors - for entry/exit tracking
+        if context.get("doors"):
+            lines.append("\nDOORS/WINDOWS:")
+            for entity_id, data in context.get("doors", {}).items():
+                name = entity_id.replace("binary_sensor.", "").replace("_", " ").title()
+                state = "OPEN" if data.get("state") == "on" else "closed"
+                changed = data.get('last_changed', '')
+                lines.append(f"  - {name}: {state} - changed {changed}")
+        
+        # Media - with what's playing (very strong indicator!)
+        lines.append("\nMEDIA DEVICES (TV/speakers on = strong presence indicator):")
         for entity_id, data in context.get("media", {}).items():
             device = entity_id.replace("media_player.", "").replace("_", " ").title()
-            lines.append(f"  - {device}: {data.get('state', 'unknown')}")
+            state = data.get('state', 'unknown')
+            changed = data.get('last_changed', '')
+            
+            if state == "playing":
+                playing = data.get('playing', '')
+                app = data.get('app', '')
+                source = data.get('source', '')
+                info_parts = [f"PLAYING"]
+                if app:
+                    info_parts.append(f"app={app}")
+                if playing:
+                    info_parts.append(f"'{playing}'")
+                if source:
+                    info_parts.append(f"source={source}")
+                lines.append(f"  - {device}: {' '.join(info_parts)}")
+            elif state == "paused":
+                lines.append(f"  - {device}: PAUSED (someone was just watching) - changed {changed}")
+            elif state == "idle":
+                lines.append(f"  - {device}: idle - changed {changed}")
+            elif state == "off":
+                lines.append(f"  - {device}: off - changed {changed}")
+        
+        # Computers/PCs (very strong office indicator!)
+        if context.get("computers"):
+            lines.append("\nCOMPUTERS/WORKSTATIONS (PC on = person likely at desk in OFFICE!):")
+            for entity_id, data in context.get("computers", {}).items():
+                # Use friendly_name if available, otherwise parse entity_id
+                friendly_name = data.get('friendly_name', '')
+                name = friendly_name if friendly_name else entity_id.split(".")[-1].replace("_", " ").title()
+                state = data.get('state', 'unknown')
+                changed = data.get('last_changed', '')
+                if state in ["on", "home"]:
+                    lines.append(f"  - {name}: 🖥️ ON/ACTIVE - person is at their desk! - {changed}")
+                else:
+                    lines.append(f"  - {name}: off/away - {changed}")
         
         # Device Trackers
-        lines.append("\nDEVICE TRACKERS:")
+        lines.append("\nDEVICE TRACKERS (home/away status):")
         for entity_id, data in context.get("device_trackers", {}).items():
             device = entity_id.replace("device_tracker.", "").replace("person.", "").replace("_", " ").title()
-            lines.append(f"  - {device}: {data.get('state', 'unknown')}")
+            state = data.get('state', 'unknown')
+            if state == "home":
+                lines.append(f"  - {device}: HOME")
+            elif state in ["not_home", "away"]:
+                lines.append(f"  - {device}: AWAY/NOT HOME")
+            else:
+                lines.append(f"  - {device}: {state}")
+        
+        # Add habit hint if available
+        habit_hint = context.get("habit_hint", "")
+        if habit_hint:
+            lines.append(habit_hint)
         
         return "\n".join(lines)
     
@@ -130,28 +226,40 @@ class BaseLLMProvider(ABC):
         rooms_str = ", ".join(rooms)
         
         if entity_type == "pet":
-            return f"""You are a home presence detection assistant for pets. Based on sensor data, determine which room the pet '{entity_name}' is most likely in.
+            return f"""You are a smart home presence detection AI. Determine which room the pet '{entity_name}' is most likely in based on sensor data.
 
-Rules for pets:
-1. Pets tend to follow their owners or stay in warm/comfortable spots
-2. Motion in a room without lights on might indicate pet movement
-3. Pets don't use media devices, but may be near them for warmth
-4. If no clear indicators, guess based on typical pet behavior patterns
-5. Consider time of day - pets often sleep during certain hours
+REASONING RULES FOR PETS:
+1. Pets follow their owners - if owners are in a room, pet is likely there too
+2. At night, pets often sleep in bedrooms or their favorite spots
+3. Motion in a dark room might be a pet moving around
+4. Pets don't use TVs/media, but may be near warm electronics
+5. If a door just opened, pet might have moved through it
+6. Consider time of day - pets sleep more during certain hours
 
-Respond with ONLY ONE of these exact words: {rooms_str}
-No explanation, just the room name."""
+OUTPUT: Respond with ONLY ONE word from this list: {rooms_str}
+No explanation, no punctuation, just the room name."""
         
-        return f"""You are a home presence detection assistant. Based on sensor data, determine which room {entity_name} is most likely in.
+        return f"""You are a smart home presence detection AI. Determine which room {entity_name} is most likely in based on sensor data.
 
-Rules:
-1. Lights ON is a strong indicator of presence
-2. Motion sensors can timeout when sitting still - don't rely on them alone
-3. Media playing (TV, computer) is a very strong indicator
-4. If device tracker shows "not_home" or "away", respond with "away"
-5. Consider cross-room signals - if office lights are on and bedroom lights are off, person is likely in office
+REASONING RULES (in priority order):
+1. DEVICE TRACKER: If their phone/device shows "not_home" or "away", respond "away"
+2. CAMERA AI DETECTION: If camera AI detects "PERSON DETECTED NOW" - this is VERY reliable, person is definitely in that room!
+3. TV/MEDIA PLAYING: If a room's TV is playing/paused, person is DEFINITELY there
+4. PC/COMPUTER ON: If someone's PC is on/active, they're likely at their desk (office)
+5. LIGHTS ON: Room with lights on is a STRONG indicator - if office lights are on, person is likely in office even at night
+6. MOTION: Recent motion detection (within last few minutes) is a good indicator
+7. CROSS-ROOM LOGIC: 
+   - If office lights ON and bedroom lights OFF → person is in office
+   - If bedroom lights ON and office lights OFF → person is in bedroom
+   - If bathroom light ON → person might be in bathroom temporarily
+8. TIME CONTEXT (use as TIE-BREAKER only, not primary indicator):
+   - Late night with NO lights on anywhere: likely bedroom/sleeping
+   - If bedroom TV just turned OFF at night: person is going to sleep
 
-Respond with ONLY ONE of these exact words: {rooms_str}
-No explanation, just the room name."""
+IMPORTANT: Camera AI detection and actual sensor data OVERRIDE time-of-day assumptions!
+If camera sees a person in living room at 2am, trust the camera!
+
+OUTPUT: Respond with ONLY ONE word from this list: {rooms_str}
+No explanation, no punctuation, just the room name."""
 
 

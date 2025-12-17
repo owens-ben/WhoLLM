@@ -1,0 +1,83 @@
+# LLM Vision Identification Automation
+# Triggers vision identification when camera detects person/animal
+# Place this in your Home Assistant automations.yaml or create via UI
+
+alias: "LLM Presence - Vision Identification on Motion"
+description: "When camera AI detects a person or animal, capture image and identify who it is"
+mode: queued
+max: 3  # Allow up to 3 queued identifications
+
+trigger:
+  # Trigger on person detection
+  - platform: state
+    entity_id: binary_sensor.e1_zoom_person
+    to: "on"
+    id: person_detected
+  # Trigger on animal detection
+  - platform: state
+    entity_id: binary_sensor.e1_zoom_animal
+    to: "on"
+    id: animal_detected
+
+condition:
+  # Debounce - don't trigger if we just identified someone
+  - condition: template
+    value_template: >
+      {{ (as_timestamp(now()) - as_timestamp(state_attr('sensor.llm_vision_last_identification', 'timestamp') or 0)) > 30 }}
+
+action:
+  # Enable tracking to follow the subject
+  - service: switch.turn_on
+    target:
+      entity_id: switch.e1_zoom_auto_tracking
+  
+  # Wait a moment for tracking to lock on
+  - delay:
+      seconds: 2
+  
+  # Call vision identification service
+  - service: llm_presence.identify_person
+    data:
+      camera_entity_id: camera.e1_zoom_clear  # Use clear stream for better quality
+      detection_type: >
+        {{ 'person' if trigger.id == 'person_detected' else 'animal' }}
+  
+  # Wait for identification to complete (moondream is fast)
+  - delay:
+      seconds: 20
+  
+  # Disable tracking after a delay
+  - delay:
+      seconds: 10
+  - service: switch.turn_off
+    target:
+      entity_id: switch.e1_zoom_auto_tracking
+
+---
+# Alternative: Simpler version without tracking control
+alias: "LLM Presence - Quick Vision Check"
+description: "Quick vision identification on motion detection"
+mode: single
+
+trigger:
+  - platform: state
+    entity_id: 
+      - binary_sensor.e1_zoom_person
+      - binary_sensor.e1_zoom_animal
+    to: "on"
+
+condition:
+  # Only run once every 60 seconds
+  - condition: template
+    value_template: >
+      {{ (as_timestamp(now()) - as_timestamp(this.attributes.last_triggered or 0)) > 60 }}
+
+action:
+  - service: llm_presence.identify_person
+    data:
+      camera_entity_id: camera.e1_zoom_fluent
+      detection_type: >
+        {{ 'person' if 'person' in trigger.entity_id else 'animal' }}
+
+
+

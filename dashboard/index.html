@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Room Presence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a25;
+            --bg-card-hover: #222230;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-tertiary: #a855f7;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2d2d3a;
+            --glow-primary: rgba(99, 102, 241, 0.3);
+            --glow-success: rgba(16, 185, 129, 0.3);
+            
+            /* Room colors */
+            --room-office: #3b82f6;
+            --room-living: #10b981;
+            --room-bedroom: #8b5cf6;
+            --room-kitchen: #f59e0b;
+            --room-bathroom: #06b6d4;
+            --room-entry: #ec4899;
+            --room-away: #6b7280;
+            --room-unknown: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
+            z-index: -1;
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Grid pattern overlay */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 0 30px var(--glow-primary);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Status indicator */
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        .status-dot.online { background: var(--accent-success); box-shadow: 0 0 10px var(--glow-success); }
+        .status-dot.offline { background: var(--accent-danger); }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-tertiary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-primary);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        /* Person card */
+        .person-card .card-icon { background: rgba(99, 102, 241, 0.2); }
+        .pet-card .card-icon { background: rgba(245, 158, 11, 0.2); }
+
+        .person-location {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-transform: capitalize;
+        }
+
+        .confidence-bar {
+            height: 6px;
+            background: var(--bg-secondary);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+        }
+
+        .confidence-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .indicators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .indicator.active {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--accent-success);
+            color: var(--accent-success);
+        }
+
+        /* Room grid */
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .room-tile {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .room-tile:hover {
+            transform: scale(1.05);
+        }
+
+        .room-tile.occupied {
+            border-color: var(--accent-success);
+            box-shadow: 0 0 20px var(--glow-success);
+        }
+
+        .room-tile .room-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .room-tile .room-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .room-tile .room-status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .room-tile.occupied .room-status {
+            color: var(--accent-success);
+        }
+
+        /* Specific room colors */
+        .room-tile[data-room="office"].occupied { border-color: var(--room-office); box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+        .room-tile[data-room="living_room"].occupied { border-color: var(--room-living); box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+        .room-tile[data-room="bedroom"].occupied { border-color: var(--room-bedroom); box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+        .room-tile[data-room="kitchen"].occupied { border-color: var(--room-kitchen); box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+        .room-tile[data-room="bathroom"].occupied { border-color: var(--room-bathroom); box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
+        .room-tile[data-room="entry"].occupied { border-color: var(--room-entry); box-shadow: 0 0 20px rgba(236, 72, 153, 0.3); }
+
+        /* LLM response card */
+        .llm-response {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-secondary);
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 1.5rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.5rem;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            border: 2px solid var(--bg-card);
+        }
+
+        .timeline-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .timeline-content {
+            margin-top: 0.25rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 2rem;
+        }
+
+        footer a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .status-bar {
+                gap: 1rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error state */
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--accent-danger);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--accent-danger);
+            text-align: center;
+        }
+
+        /* Config form */
+        .config-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .config-section h2 {
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px var(--glow-primary);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🧠</div>
+                <div>
+                    <h1>LLM Room Presence</h1>
+                    <p class="subtitle">Intelligent presence detection powered by local AI</p>
+                </div>
+            </div>
+            
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-dot" id="ha-status"></span>
+                    <span>Home Assistant</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot" id="ollama-status"></span>
+                    <span>Ollama</span>
+                </div>
+                <div class="status-item">
+                    <span>🕐</span>
+                    <span id="last-update">--:--:--</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Configuration Section (shown when not configured) -->
+        <section class="config-section" id="config-section">
+            <h2>⚙️ Configuration</h2>
+            <form id="config-form">
+                <div class="form-group">
+                    <label for="ha-url">Home Assistant URL</label>
+                    <input type="text" id="ha-url" placeholder="http://192.168.1.100:8123" value="http://192.168.1.100:8123">
+                </div>
+                <div class="form-group">
+                    <label for="ha-token">Long-Lived Access Token</label>
+                    <input type="password" id="ha-token" placeholder="Your HA token">
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="remember-token" checked style="width: auto;">
+                    <label for="remember-token" style="margin: 0; cursor: pointer;">Remember credentials (stored locally)</label>
+                </div>
+                <button type="submit" class="btn">
+                    🔗 Connect to Home Assistant
+                </button>
+            </form>
+        </section>
+
+        <!-- Connected indicator (shown when connected) -->
+        <section class="config-section" id="connected-section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="status-dot online" style="width: 12px; height: 12px;"></span>
+                    <span>Connected to <strong id="connected-url"></strong></span>
+                </div>
+                <button type="button" class="btn btn-secondary" id="disconnect-btn">
+                    🔌 Disconnect
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Dashboard (shown when connected) -->
+        <main id="dashboard" style="display: none;">
+            <!-- Person Cards -->
+            <section class="dashboard-grid" id="persons-grid">
+                <!-- Dynamically populated -->
+            </section>
+
+            <!-- Room Overview -->
+            <section class="card" style="margin-bottom: 2rem;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.2);">🏠</div>
+                        <span>Room Overview</span>
+                    </div>
+                </div>
+                <div class="rooms-grid" id="rooms-grid">
+                    <!-- Dynamically populated -->
+                </div>
+            </section>
+
+            <!-- Vision Identification -->
+            <section class="card" style="margin-bottom: 2rem;" id="vision-section">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon" style="background: rgba(236, 72, 153, 0.2);">📷</div>
+                        <span>Vision Identification</span>
+                    </div>
+                    <button class="btn btn-secondary" id="trigger-vision-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        🔍 Identify Now
+                    </button>
+                </div>
+                <div id="vision-result" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div>
+                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Last Identified</div>
+                        <div id="vision-identified" style="font-size: 1.75rem; font-weight: 600; color: var(--accent-primary);">
+                            --
+                        </div>
+                        <div id="vision-confidence" style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">
+                            Confidence: --
+                        </div>
+                        <div id="vision-time" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">
+                            --
+                        </div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Description</div>
+                        <div id="vision-description" class="llm-response" style="max-height: 100px; font-size: 0.8rem;">
+                            No vision identification yet. Click "Identify Now" or wait for motion detection.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Two column layout for details -->
+            <div class="dashboard-grid">
+                <!-- LLM Analysis -->
+                <section class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon" style="background: rgba(139, 92, 246, 0.2);">🤖</div>
+                            <span>LLM Analysis</span>
+                        </div>
+                    </div>
+                    <div class="llm-response" id="llm-response">
+                        Waiting for data...
+                    </div>
+                </section>
+
+                <!-- Activity Timeline -->
+                <section class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon" style="background: rgba(6, 182, 212, 0.2);">📜</div>
+                            <span>Recent Activity</span>
+                        </div>
+                    </div>
+                    <div class="timeline" id="timeline">
+                        <!-- Dynamically populated -->
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <p>
+                LLM Room Presence • 
+                <a href="https://github.com/owens-ben/llm-room-presence" target="_blank">GitHub</a> • 
+                Powered by Ollama
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            haUrl: localStorage.getItem('ha_url') || '',
+            haToken: localStorage.getItem('ha_token') || '',
+            pollInterval: 5000, // 5 seconds
+            rooms: ['office', 'living_room', 'bedroom', 'kitchen', 'bathroom', 'entry', 'away'],
+            roomIcons: {
+                office: '🖥️',
+                living_room: '🛋️',
+                bedroom: '🛏️',
+                kitchen: '🍳',
+                bathroom: '🚿',
+                entry: '🚪',
+                away: '🏃',
+                unknown: '❓'
+            }
+        };
+
+        // State
+        let state = {
+            connected: false,
+            persons: {},
+            pets: {},
+            timeline: [],
+            previousRooms: {}  // Track previous room assignments to detect changes
+        };
+
+        // DOM Elements
+        const elements = {
+            configSection: document.getElementById('config-section'),
+            connectedSection: document.getElementById('connected-section'),
+            connectedUrl: document.getElementById('connected-url'),
+            disconnectBtn: document.getElementById('disconnect-btn'),
+            dashboard: document.getElementById('dashboard'),
+            configForm: document.getElementById('config-form'),
+            haUrl: document.getElementById('ha-url'),
+            haToken: document.getElementById('ha-token'),
+            rememberToken: document.getElementById('remember-token'),
+            haStatus: document.getElementById('ha-status'),
+            ollamaStatus: document.getElementById('ollama-status'),
+            lastUpdate: document.getElementById('last-update'),
+            personsGrid: document.getElementById('persons-grid'),
+            roomsGrid: document.getElementById('rooms-grid'),
+            llmResponse: document.getElementById('llm-response'),
+            timeline: document.getElementById('timeline')
+        };
+
+        // Initialize
+        function init() {
+            // Load saved config
+            if (CONFIG.haUrl) {
+                elements.haUrl.value = CONFIG.haUrl;
+            }
+            if (CONFIG.haToken) {
+                elements.haToken.value = CONFIG.haToken;
+            }
+
+            // Check if we have credentials - auto-connect if saved
+            if (CONFIG.haUrl && CONFIG.haToken) {
+                console.log('Found saved credentials, auto-connecting...');
+                showDashboard();
+                startPolling();
+            }
+
+            // Form submission
+            elements.configForm.addEventListener('submit', handleConfigSubmit);
+            
+            // Disconnect button
+            elements.disconnectBtn.addEventListener('click', handleDisconnect);
+            
+            // Vision trigger button
+            document.getElementById('trigger-vision-btn').addEventListener('click', triggerVisionIdentification);
+        }
+        
+        function handleDisconnect() {
+            // Clear credentials
+            localStorage.removeItem('ha_url');
+            localStorage.removeItem('ha_token');
+            CONFIG.haUrl = '';
+            CONFIG.haToken = '';
+            
+            // Stop polling
+            stopPolling();
+            
+            // Reset state
+            state.connected = false;
+            state.persons = {};
+            state.pets = {};
+            
+            // Show config section
+            elements.configSection.style.display = 'block';
+            elements.connectedSection.style.display = 'none';
+            elements.dashboard.style.display = 'none';
+            
+            // Reset form
+            elements.haUrl.value = 'http://192.168.1.100:8123';
+            elements.haToken.value = '';
+            
+            // Update status indicators
+            elements.haStatus.classList.remove('online');
+            elements.haStatus.classList.add('offline');
+        }
+
+        function handleConfigSubmit(e) {
+            e.preventDefault();
+            CONFIG.haUrl = elements.haUrl.value.trim();
+            CONFIG.haToken = elements.haToken.value.trim();
+            
+            // Save to localStorage if checkbox is checked
+            if (elements.rememberToken.checked) {
+                localStorage.setItem('ha_url', CONFIG.haUrl);
+                localStorage.setItem('ha_token', CONFIG.haToken);
+                console.log('Credentials saved to localStorage');
+            }
+            
+            showDashboard();
+            startPolling();
+        }
+
+        function showDashboard() {
+            elements.configSection.style.display = 'none';
+            elements.connectedSection.style.display = 'block';
+            elements.connectedUrl.textContent = CONFIG.haUrl;
+            elements.dashboard.style.display = 'block';
+            renderRoomsGrid();
+        }
+
+        function renderRoomsGrid() {
+            elements.roomsGrid.innerHTML = CONFIG.rooms.map(room => `
+                <div class="room-tile" data-room="${room}" id="room-${room}">
+                    <div class="room-icon">${CONFIG.roomIcons[room] || '🏠'}</div>
+                    <div class="room-name">${room.replace('_', ' ')}</div>
+                    <div class="room-status">Empty</div>
+                </div>
+            `).join('');
+        }
+
+        async function fetchStates() {
+            try {
+                // Use local proxy to avoid CORS issues
+                // The nginx proxy forwards /api/* to Home Assistant
+                const apiUrl = '/api/states';
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${CONFIG.haToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const states = await response.json();
+                
+                // Update connection status
+                elements.haStatus.classList.add('online');
+                elements.haStatus.classList.remove('offline');
+                state.connected = true;
+
+                // Process LLM presence entities
+                processStates(states);
+                
+                // Update last update time
+                elements.lastUpdate.textContent = new Date().toLocaleTimeString();
+
+            } catch (error) {
+                console.error('Error fetching states:', error);
+                elements.haStatus.classList.remove('online');
+                elements.haStatus.classList.add('offline');
+                state.connected = false;
+            }
+        }
+
+        function processStates(states) {
+            // Find LLM presence sensors
+            const roomSensors = states.filter(s => 
+                s.entity_id.startsWith('sensor.') && 
+                s.entity_id.includes('_room') &&
+                (s.attributes.entity_type === 'person' || s.attributes.entity_type === 'pet')
+            );
+
+            const binarySensors = states.filter(s =>
+                s.entity_id.startsWith('binary_sensor.') &&
+                s.entity_id.includes('_in_')
+            );
+
+            // Find vision identification sensor
+            const visionSensor = states.find(s => 
+                s.entity_id === 'sensor.llm_presence_vision_last_identification'
+            );
+            if (visionSensor) {
+                updateVisionDisplay(visionSensor);
+            }
+
+            // Reset room occupancy
+            const roomOccupancy = {};
+            CONFIG.rooms.forEach(room => roomOccupancy[room] = []);
+
+            // Track if this is first load (no previous rooms tracked)
+            const isFirstLoad = Object.keys(state.previousRooms).length === 0;
+
+            // Process room sensors
+            roomSensors.forEach(sensor => {
+                const name = sensor.attributes.friendly_name?.replace(' Room', '') || 'Unknown';
+                const room = sensor.state;
+                const confidence = sensor.attributes.confidence || 0;
+                const indicators = sensor.attributes.indicators || [];
+                const rawResponse = sensor.attributes.raw_response || '';
+                const entityType = sensor.attributes.entity_type || 'person';
+                const lastChanged = sensor.last_changed;
+
+                const data = {
+                    name,
+                    room,
+                    confidence,
+                    indicators,
+                    rawResponse,
+                    entityType,
+                    lastChanged
+                };
+
+                // On first load, add initial state to timeline
+                if (isFirstLoad && room && room !== 'unknown') {
+                    const icon = entityType === 'pet' ? '🐾' : '👤';
+                    addTimelineEvent({
+                        message: `${icon} <strong>${name}</strong> detected in <span style="color: var(--room-${room?.replace('_', '-') || 'unknown'})">${room?.replace('_', ' ')}</span>`,
+                        type: 'initial_state',
+                        entity: name,
+                        from: null,
+                        to: room
+                    });
+                }
+                // Check if room changed - add to timeline
+                else if (state.previousRooms[name] && state.previousRooms[name] !== room) {
+                    const icon = entityType === 'pet' ? '🐾' : '👤';
+                    addTimelineEvent({
+                        message: `${icon} <strong>${name}</strong> moved from <span style="color: var(--room-${state.previousRooms[name]?.replace('_', '-') || 'unknown'})">${state.previousRooms[name]?.replace('_', ' ')}</span> → <span style="color: var(--room-${room?.replace('_', '-') || 'unknown'})">${room?.replace('_', ' ')}</span>`,
+                        type: 'room_change',
+                        entity: name,
+                        from: state.previousRooms[name],
+                        to: room
+                    });
+                }
+                state.previousRooms[name] = room;
+
+                if (entityType === 'person') {
+                    state.persons[name] = data;
+                } else {
+                    state.pets[name] = data;
+                }
+
+                // Add to room occupancy
+                if (roomOccupancy[room]) {
+                    roomOccupancy[room].push(name);
+                }
+            });
+
+            // Update UI
+            renderPersonCards();
+            updateRoomTiles(roomOccupancy);
+            updateLLMResponse();
+            renderTimeline();
+        }
+
+        function renderPersonCards() {
+            const allEntities = { ...state.persons, ...state.pets };
+            
+            if (Object.keys(allEntities).length === 0) {
+                elements.personsGrid.innerHTML = `
+                    <div class="card">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <span>Waiting for LLM Presence data...</span>
+                        </div>
+                        <p style="margin-top: 1rem; color: var(--text-muted); text-align: center;">
+                            Make sure the LLM Room Presence integration is configured in Home Assistant.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            elements.personsGrid.innerHTML = Object.entries(allEntities).map(([name, data]) => {
+                const isPerson = data.entityType === 'person';
+                const cardClass = isPerson ? 'person-card' : 'pet-card';
+                const icon = isPerson ? '👤' : '🐾';
+                const confidencePercent = Math.round(data.confidence * 100);
+                
+                return `
+                    <div class="card ${cardClass}">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <div class="card-icon">${icon}</div>
+                                <span>${name}</span>
+                            </div>
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                                ${isPerson ? 'Person' : 'Pet'}
+                            </span>
+                        </div>
+                        <div class="person-location" style="color: var(--room-${data.room?.replace('_', '-') || 'unknown'});">
+                            ${CONFIG.roomIcons[data.room] || '❓'} ${data.room?.replace('_', ' ') || 'Unknown'}
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
+                        </div>
+                        <div class="confidence-text">
+                            <span>Confidence</span>
+                            <span>${confidencePercent}%</span>
+                        </div>
+                        ${data.indicators && data.indicators.length > 0 ? `
+                            <div class="indicators">
+                                ${data.indicators.map(ind => `
+                                    <span class="indicator active">${ind}</span>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateRoomTiles(roomOccupancy) {
+            CONFIG.rooms.forEach(room => {
+                const tile = document.getElementById(`room-${room}`);
+                if (!tile) return;
+
+                const occupants = roomOccupancy[room] || [];
+                const isOccupied = occupants.length > 0;
+
+                tile.classList.toggle('occupied', isOccupied);
+                tile.querySelector('.room-status').textContent = 
+                    isOccupied ? occupants.join(', ') : 'Empty';
+            });
+        }
+
+        function updateLLMResponse() {
+            const allEntities = { ...state.persons, ...state.pets };
+            const responses = Object.values(allEntities)
+                .map(p => {
+                    const icon = p.entityType === 'pet' ? '🐾' : '👤';
+                    const roomIcon = CONFIG.roomIcons[p.room] || '❓';
+                    const rawResp = p.rawResponse || '(no response yet)';
+                    const indicatorList = p.indicators?.length > 0 ? p.indicators.join(', ') : 'none';
+                    return `${icon} ${p.name} → ${roomIcon} ${p.room?.replace('_', ' ') || 'unknown'}\n` +
+                           `   Confidence: ${Math.round(p.confidence * 100)}%\n` +
+                           `   LLM said: "${rawResp}"\n` +
+                           `   Evidence: ${indicatorList}`;
+                });
+
+            if (responses.length > 0) {
+                elements.llmResponse.textContent = responses.join('\n\n');
+            } else {
+                elements.llmResponse.textContent = 'Waiting for LLM Presence data...\n\nMake sure the integration is configured in Home Assistant and Ollama is running.';
+            }
+        }
+
+        function addTimelineEvent(event) {
+            // Check for duplicate events (same entity, same from/to within 5 seconds)
+            const isDuplicate = state.timeline.some(e => 
+                e.entity === event.entity && 
+                e.from === event.from && 
+                e.to === event.to &&
+                (new Date() - e.time) < 5000
+            );
+            
+            if (isDuplicate) return;
+            
+            state.timeline.unshift({
+                time: new Date(),
+                ...event
+            });
+            
+            // Keep only last 20 events
+            state.timeline = state.timeline.slice(0, 20);
+        }
+
+        function renderTimeline() {
+            if (state.timeline.length === 0) {
+                elements.timeline.innerHTML = `
+                    <div style="color: var(--text-muted); text-align: center; padding: 1rem;">
+                        <p>No room changes detected yet.</p>
+                        <p style="font-size: 0.8rem; margin-top: 0.5rem;">Events will appear here when someone moves between rooms.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            elements.timeline.innerHTML = state.timeline.map(event => `
+                <div class="timeline-item">
+                    <div class="timeline-time">${event.time.toLocaleTimeString()}</div>
+                    <div class="timeline-content">${event.message}</div>
+                </div>
+            `).join('');
+        }
+
+        // Update vision display
+        function updateVisionDisplay(sensor) {
+            const identified = sensor.state || 'none';
+            const attrs = sensor.attributes || {};
+            
+            document.getElementById('vision-identified').textContent = 
+                identified === 'none' ? '--' : identified;
+            document.getElementById('vision-confidence').textContent = 
+                `Confidence: ${attrs.confidence || '--'}`;
+            document.getElementById('vision-description').textContent = 
+                attrs.description || 'No description available';
+            
+            if (attrs.timestamp) {
+                const time = new Date(attrs.timestamp);
+                document.getElementById('vision-time').textContent = 
+                    `Camera: ${attrs.camera?.replace('camera.', '') || '--'} • ${time.toLocaleTimeString()}`;
+            }
+            
+            // Color code based on identification
+            const identEl = document.getElementById('vision-identified');
+            if (identified.toLowerCase() === 'alice') {
+                identEl.style.color = 'var(--room-office)';
+            } else if (identified.toLowerCase() === 'bob') {
+                identEl.style.color = 'var(--room-bedroom)';
+            } else if (identified.toLowerCase() === 'max') {
+                identEl.style.color = 'var(--room-kitchen)';
+            } else {
+                identEl.style.color = 'var(--accent-primary)';
+            }
+            
+            // Add to timeline if new identification
+            if (identified !== 'none' && identified !== 'unknown' && attrs.timestamp) {
+                const lastVisionTime = state.lastVisionTime || 0;
+                const newTime = new Date(attrs.timestamp).getTime();
+                if (newTime > lastVisionTime) {
+                    state.lastVisionTime = newTime;
+                    addTimelineEvent({
+                        message: `📷 Vision identified <strong>${identified}</strong> (${attrs.confidence}) - ${attrs.description?.substring(0, 50) || ''}...`,
+                        type: 'vision',
+                        entity: identified
+                    });
+                }
+            }
+        }
+
+        // Trigger vision identification
+        async function triggerVisionIdentification() {
+            const btn = document.getElementById('trigger-vision-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Identifying...';
+            
+            try {
+                const response = await fetch('/api/services/llm_presence/identify_person', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${CONFIG.haToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        camera_entity_id: 'camera.e1_zoom_clear',
+                        detection_type: 'person'
+                    })
+                });
+                
+                if (response.ok) {
+                    btn.textContent = '✓ Request sent';
+                    // Refresh states after a delay to get the result
+                    setTimeout(() => {
+                        fetchStates();
+                        btn.disabled = false;
+                        btn.textContent = '🔍 Identify Now';
+                    }, 15000); // Wait 15s for vision to complete
+                } else {
+                    throw new Error('Service call failed');
+                }
+            } catch (error) {
+                console.error('Vision trigger error:', error);
+                btn.textContent = '❌ Error';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '🔍 Identify Now';
+                }, 3000);
+            }
+        }
+
+        // Check Ollama status
+        async function checkOllamaStatus() {
+            try {
+                // Try to reach Ollama through HA or directly
+                const ollamaUrl = 'http://192.168.1.101:11434/api/tags';
+                const response = await fetch(ollamaUrl, { mode: 'no-cors' });
+                elements.ollamaStatus.classList.add('online');
+                elements.ollamaStatus.classList.remove('offline');
+            } catch {
+                // Can't check directly due to CORS, assume it's running if HA is connected
+                if (state.connected) {
+                    elements.ollamaStatus.classList.add('online');
+                    elements.ollamaStatus.classList.remove('offline');
+                }
+            }
+        }
+
+        // Polling
+        let pollInterval;
+
+        function startPolling() {
+            fetchStates();
+            checkOllamaStatus();
+            
+            pollInterval = setInterval(() => {
+                fetchStates();
+            }, CONFIG.pollInterval);
+        }
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+            }
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
+
+

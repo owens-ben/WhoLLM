@@ -92,6 +92,16 @@ ollama pull mistral
 3. Go to Settings → Devices & Services → Add Integration
 4. Search for "LLM Room Presence"
 
+### Development Setup
+
+For local development and testing, see [DEVELOPMENT.md](DEVELOPMENT.md) for detailed instructions. You can also use the automated setup script:
+
+```bash
+./setup_local_testing.sh
+```
+
+This script will help you link the integration to your Home Assistant instance for development.
+
 ## Configuration
 
 1. Go to **Settings** → **Devices & Services** → **Add Integration**

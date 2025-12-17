@@ -29,6 +29,12 @@ class OllamaProvider(BaseLLMProvider):
         prompt = self._format_context_for_prompt(context, entity_name, entity_type)
         system_prompt = self._get_system_prompt(entity_name, entity_type, rooms)
         
+        # Log the prompt being sent to Ollama
+        _LOGGER.debug(
+            "=== OLLAMA QUERY for %s (%s) ===\nSYSTEM PROMPT:\n%s\n\nUSER PROMPT:\n%s",
+            entity_name, entity_type, system_prompt, prompt
+        )
+        
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -57,6 +63,12 @@ class OllamaProvider(BaseLLMProvider):
                     result = await response.json()
                     raw_answer = result.get("response", "").strip()
                     answer = raw_answer.lower().replace(" ", "_")
+                    
+                    # Log the response from Ollama
+                    _LOGGER.debug(
+                        "=== OLLAMA RESPONSE for %s ===\nRaw: '%s'\nParsed: '%s'",
+                        entity_name, raw_answer, answer
+                    )
                     
                     # Validate response
                     room = "unknown"
@@ -154,6 +166,13 @@ class OllamaProvider(BaseLLMProvider):
         for entity_id, data in context.get("media", {}).items():
             if room_lower in entity_id.lower() and data.get("state") == "playing":
                 indicators.append(f"Media playing: {entity_id}")
+        
+        # Check computers/PCs - PC on is a strong office indicator
+        if room_lower == "office":
+            for entity_id, data in context.get("computers", {}).items():
+                if data.get("state") in ["on", "home"]:
+                    friendly_name = data.get("friendly_name", entity_id)
+                    indicators.append(f"PC active: {friendly_name}")
         
         return indicators
 

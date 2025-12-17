@@ -1,0 +1,53 @@
+identify_person:
+  name: Identify Person
+  description: Use camera vision to identify who is in view
+  fields:
+    camera_entity_id:
+      name: Camera
+      description: The camera entity to capture from
+      required: true
+      example: "camera.e1_zoom_fluent"
+      selector:
+        entity:
+          domain: camera
+    detection_type:
+      name: Detection Type
+      description: What to look for (person or animal)
+      required: false
+      default: "person"
+      selector:
+        select:
+          options:
+            - "person"
+            - "animal"
+
+enable_tracking:
+  name: Enable Camera Tracking
+  description: Enable auto-tracking on a camera
+  fields:
+    camera_name:
+      name: Camera Name
+      description: The camera name (without domain prefix)
+      required: true
+      example: "e1_zoom"
+      selector:
+        text:
+
+disable_tracking:
+  name: Disable Camera Tracking
+  description: Disable auto-tracking on a camera
+  fields:
+    camera_name:
+      name: Camera Name
+      description: The camera name (without domain prefix)
+      required: true
+      example: "e1_zoom"
+      selector:
+        text:
+
+request_vision_update:
+  name: Request Vision Update
+  description: Manually trigger a vision-based identification for all configured cameras
+
+
+
