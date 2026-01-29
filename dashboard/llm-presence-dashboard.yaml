@@ -60,6 +60,7 @@ views:
         title: "👥 People"
         cards:
           # Person Room Sensor Card Template
+          # Replace 'alice' with your configured person name (e.g., sensor.bob_room)
           # Duplicate and modify for each person tracked
           - type: custom:mushroom-template-card
             primary: "{{ state_attr('sensor.alice_room', 'friendly_name') | default('Alice') }}"
@@ -352,8 +353,9 @@ views:
           - type: entities
             title: "Office Occupancy Sensors"
             entities:
+              # Replace with your configured person names
               - entity: binary_sensor.alice_in_office
-                name: Ben in Office
+                name: Alice in Office
               # Add more binary sensors for each person
 
           - type: custom:mushroom-chips-card
@@ -388,7 +390,7 @@ views:
             title: "Living Room Occupancy Sensors"
             entities:
               - entity: binary_sensor.alice_in_living_room
-                name: Ben in Living Room
+                name: Alice in Living Room
 
           - type: custom:mushroom-chips-card
             chips:
@@ -419,7 +421,7 @@ views:
             title: "Bedroom Occupancy Sensors"
             entities:
               - entity: binary_sensor.alice_in_bedroom
-                name: Ben in Bedroom
+                name: Alice in Bedroom
 
           - type: custom:mushroom-chips-card
             chips:
@@ -450,7 +452,7 @@ views:
             title: "Kitchen Occupancy Sensors"
             entities:
               - entity: binary_sensor.alice_in_kitchen
-                name: Ben in Kitchen
+                name: Alice in Kitchen
 
           - type: custom:mushroom-chips-card
             chips:
@@ -478,13 +480,15 @@ views:
             title: "Room Presence Over Time"
             hours_to_show: 24
             entities:
+              # Replace with your configured person name
               - entity: sensor.alice_room
-                name: User's Location
+                name: Alice's Location
 
           - type: history-graph
             title: "Room Occupancy"
             hours_to_show: 24
             entities:
+              # Replace with your configured person name
               - entity: binary_sensor.alice_in_office
                 name: Office
               - entity: binary_sensor.alice_in_living_room
@@ -510,10 +514,10 @@ views:
               
               ### Configuration
               
-              - **Provider:** Ollama
-              - **Model:** llama3.2
-              - **Poll Interval:** 10 seconds
-              - **Ollama URL:** http://192.168.1.101:11434
+              - **Provider:** Ollama (or CrewAI)
+              - **Model:** Configured in integration settings
+              - **Poll Interval:** Default 10 seconds
+              - **Ollama URL:** Configured during setup
               
               ### Tracked Rooms
               
@@ -544,6 +548,7 @@ views:
             title: "All LLM Presence Entities"
             show_header_toggle: false
             entities:
+              # Replace 'alice' with your configured person name
               - type: section
                 label: "Room Sensors"
               - entity: sensor.alice_room

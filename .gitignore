@@ -75,4 +75,14 @@ Thumbs.db
 home-assistant.log
 home-assistant_v2.db
 
+# Training data and models (contains personal data)
+data/
+models/
+custom_components/llm_presence/models/
+*.pkl
+*.jsonl
+
+# Keep example data structure
+!data/.gitkeep
+!models/.gitkeep
 

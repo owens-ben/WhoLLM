@@ -18,14 +18,19 @@ CONF_VISION_CAMERAS = "vision_cameras"  # List of camera entity IDs to use
 CONF_VISION_ON_DETECTION = "vision_on_detection"  # Trigger vision on AI detection
 CONF_AUTO_TRACKING = "auto_tracking"  # Enable/disable camera tracking control
 
-# Provider types (Ollama only for now, others stubbed)
+# Provider types
 PROVIDER_OLLAMA = "ollama"
+PROVIDER_CREWAI = "crewai"  # Uses CrewAI API with Claude/Ollama
 PROVIDER_OPENAI = "openai"  # Stubbed
 PROVIDER_ANTHROPIC = "anthropic"  # Stubbed
 PROVIDER_LOCAL = "local"  # Stubbed
 
-SUPPORTED_PROVIDERS = [PROVIDER_OLLAMA]  # Only Ollama enabled for now
-ALL_PROVIDERS = [PROVIDER_OLLAMA, PROVIDER_OPENAI, PROVIDER_ANTHROPIC, PROVIDER_LOCAL]
+SUPPORTED_PROVIDERS = [PROVIDER_OLLAMA, PROVIDER_CREWAI]
+ALL_PROVIDERS = [PROVIDER_OLLAMA, PROVIDER_CREWAI, PROVIDER_OPENAI, PROVIDER_ANTHROPIC, PROVIDER_LOCAL]
+
+# CrewAI defaults
+DEFAULT_CREWAI_URL = "http://localhost:8502"
+DEFAULT_CREWAI_MODEL = "sonnet"  # "haiku", "sonnet", or "opus"
 
 # Defaults
 DEFAULT_PROVIDER = PROVIDER_OLLAMA

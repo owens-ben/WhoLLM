@@ -3,10 +3,12 @@ from __future__ import annotations
 
 from .base import BaseLLMProvider
 from .ollama import OllamaProvider
+from .crewai import CrewAIProvider
 
 # Provider registry
 _PROVIDERS: dict[str, type[BaseLLMProvider]] = {
     "ollama": OllamaProvider,
+    "crewai": CrewAIProvider,
     # Stubbed providers - not yet implemented
     # "openai": OpenAIProvider,
     # "anthropic": AnthropicProvider,
@@ -39,6 +41,7 @@ def get_available_providers() -> list[str]:
 __all__ = [
     "BaseLLMProvider",
     "OllamaProvider",
+    "CrewAIProvider",
     "get_provider",
     "get_available_providers",
 ]

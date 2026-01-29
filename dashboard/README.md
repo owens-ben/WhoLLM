@@ -20,11 +20,11 @@ A beautiful, modern dashboard for visualizing LLM-powered room presence detectio
 ### Option 1: Docker (Recommended)
 
 ```bash
-cd /path/to/llm-room-presence/dashboard
+cd llm-room-presence/dashboard
 docker compose up -d
 ```
 
-Access at: http://192.168.1.100:3380
+Access at: `http://YOUR_HOST:3380`
 
 ### Option 2: Home Assistant Dashboard
 
@@ -53,7 +53,7 @@ Serve the `index.html` file with any web server (nginx, Apache, Python http.serv
 
 ```bash
 # Quick test with Python
-cd /path/to/llm-room-presence/dashboard
+cd llm-room-presence/dashboard
 python3 -m http.server 3380
 ```
 
@@ -61,7 +61,7 @@ python3 -m http.server 3380
 
 On first load, enter your Home Assistant details:
 
-1. **Home Assistant URL**: `http://192.168.1.100:8123`
+1. **Home Assistant URL**: `http://homeassistant.local:8123` (or your HA IP/hostname)
 2. **Long-Lived Access Token**: Generate in HA → Profile → Long-Lived Access Tokens
 
 Settings are saved to browser localStorage.
@@ -127,7 +127,7 @@ The Docker container includes Homepage labels for automatic discovery:
 ### "Waiting for LLM Presence data..."
 
 - Ensure the LLM Room Presence integration is configured in Home Assistant
-- Check that entities like `sensor.alice_room` exist
+- Check that entities like `sensor.{person_name}_room` exist (e.g., `sensor.alice_room`)
 - Verify the integration is polling (check HA logs)
 
 ### Connection Failed

@@ -583,7 +583,7 @@
             <form id="config-form">
                 <div class="form-group">
                     <label for="ha-url">Home Assistant URL</label>
-                    <input type="text" id="ha-url" placeholder="http://192.168.1.100:8123" value="http://192.168.1.100:8123">
+                    <input type="text" id="ha-url" placeholder="http://homeassistant.local:8123" value="">
                 </div>
                 <div class="form-group">
                     <label for="ha-token">Long-Lived Access Token</label>
@@ -800,7 +800,7 @@
             elements.dashboard.style.display = 'none';
             
             // Reset form
-            elements.haUrl.value = 'http://192.168.1.100:8123';
+            elements.haUrl.value = '';
             elements.haToken.value = '';
             
             // Update status indicators
@@ -855,6 +855,30 @@
                 });
 
                 if (!response.ok) {
+                    // Handle 401 Unauthorized - token is invalid/expired
+                    if (response.status === 401) {
+                        console.error('Token invalid or expired (401). Stopping polling and showing config.');
+                        stopPolling();
+                        
+                        // Clear stored credentials since they're invalid
+                        localStorage.removeItem('ha_token');
+                        CONFIG.haToken = '';
+                        
+                        // Show config section for user to re-enter token
+                        elements.configSection.style.display = 'block';
+                        elements.connectedSection.style.display = 'none';
+                        elements.dashboard.style.display = 'none';
+                        
+                        // Keep URL but clear token field
+                        elements.haToken.value = '';
+                        elements.haToken.placeholder = 'Token expired - please re-enter';
+                        
+                        // Update status
+                        elements.haStatus.classList.remove('online');
+                        elements.haStatus.classList.add('offline');
+                        state.connected = false;
+                        return;
+                    }
                     throw new Error(`HTTP ${response.status}`);
                 }
 
@@ -1120,13 +1144,15 @@
             }
             
             // Color code based on identification
+            // Colors are assigned dynamically based on person/pet order
             const identEl = document.getElementById('vision-identified');
-            if (identified.toLowerCase() === 'alice') {
-                identEl.style.color = 'var(--room-office)';
-            } else if (identified.toLowerCase() === 'bob') {
-                identEl.style.color = 'var(--room-bedroom)';
-            } else if (identified.toLowerCase() === 'max') {
-                identEl.style.color = 'var(--room-kitchen)';
+            const personColors = ['var(--room-office)', 'var(--room-bedroom)', 'var(--room-kitchen)', 'var(--room-living)'];
+            const personIndex = Object.keys(state.persons).indexOf(identified.toLowerCase());
+            const petIndex = Object.keys(state.pets).indexOf(identified.toLowerCase());
+            if (personIndex >= 0) {
+                identEl.style.color = personColors[personIndex % personColors.length];
+            } else if (petIndex >= 0) {
+                identEl.style.color = personColors[(petIndex + Object.keys(state.persons).length) % personColors.length];
             } else {
                 identEl.style.color = 'var(--accent-primary)';
             }
@@ -1188,18 +1214,11 @@
 
         // Check Ollama status
         async function checkOllamaStatus() {
-            try {
-                // Try to reach Ollama through HA or directly
-                const ollamaUrl = 'http://192.168.1.101:11434/api/tags';
-                const response = await fetch(ollamaUrl, { mode: 'no-cors' });
+            // Note: Direct Ollama checks are blocked by CORS in most setups
+            // We assume Ollama is running if Home Assistant is connected and the integration is working
+            if (state.connected) {
                 elements.ollamaStatus.classList.add('online');
                 elements.ollamaStatus.classList.remove('offline');
-            } catch {
-                // Can't check directly due to CORS, assume it's running if HA is connected
-                if (state.connected) {
-                    elements.ollamaStatus.classList.add('online');
-                    elements.ollamaStatus.classList.remove('offline');
-                }
             }
         }
 

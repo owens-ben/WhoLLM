@@ -26,8 +26,9 @@ ROOM_KEYWORDS = {
     'entry': ['entry', 'front_door', 'hallway', 'foyer', 'front'],
 }
 
-# People to track
-PEOPLE = []
+# People to track - customize for your household
+# These are detected from training data or can be set here
+PEOPLE = []  # Will be auto-detected from data, or set manually like: ['alice', 'bob', 'max']
 
 
 def extract_room_from_entity(entity_id: str) -> str | None:

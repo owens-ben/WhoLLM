@@ -73,7 +73,7 @@ def extract_features(event: dict) -> dict:
     }
     
     # Person encoding (one-hot)
-    person = event.get('entity_name', 'Alice')
+    person = event.get('entity_name', 'Unknown')
     for p in PEOPLE:
         features[f'is_{p.lower()}'] = 1.0 if person == p else 0.0
     

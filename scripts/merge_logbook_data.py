@@ -63,11 +63,10 @@ def merge_logbook_files(input_files: list[Path], output_file: Path):
 
 
 if __name__ == '__main__':
-    # Find all logbook files in raw directory
-    raw_dir = Path('/path/to/llm-room-presence/data/raw')
-    
-    # Also check the agent-tools directory for recent fetches
-    agent_tools = Path('/path/to/.cursor/projects/home-ben/agent-tools')
+    # Use relative paths from script location
+    script_dir = Path(__file__).parent
+    project_dir = script_dir.parent
+    raw_dir = project_dir / 'data' / 'raw'
     
     input_files = []
     
@@ -75,23 +74,19 @@ if __name__ == '__main__':
     if raw_dir.exists():
         input_files.extend(raw_dir.glob('*.json'))
     
-    # Add recent agent-tools files (logbook data)
-    if agent_tools.exists():
-        for f in agent_tools.glob('*.txt'):
-            # Check if it's a logbook file by peeking at content
-            try:
-                with open(f) as fp:
-                    first_chars = fp.read(100)
-                    if '"entries"' in first_chars or '"entity_id"' in first_chars:
-                        input_files.append(f)
-            except:
-                pass
+    # Allow passing additional files as arguments
+    for arg in sys.argv[1:]:
+        input_path = Path(arg)
+        if input_path.exists():
+            input_files.append(input_path)
     
     if not input_files:
         print("No input files found!")
+        print(f"Place logbook JSON files in: {raw_dir}")
+        print("Or pass file paths as arguments")
         sys.exit(1)
     
     print(f"Found {len(input_files)} input files")
     
-    output_file = Path('/path/to/llm-room-presence/data/raw/merged_logbook.json')
+    output_file = raw_dir / 'merged_logbook.json'
     merge_logbook_files(input_files, output_file)

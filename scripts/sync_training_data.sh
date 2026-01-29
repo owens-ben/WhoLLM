@@ -1,12 +1,18 @@
 #!/bin/bash
 # Sync training data from Home Assistant and prepare for ML
+#
+# Usage: ./sync_training_data.sh [HA_CONFIG_PATH]
+# 
+# If HA_CONFIG_PATH is not provided, it defaults to /config (standard HA path)
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 DATA_DIR="$PROJECT_DIR/data"
-HA_CONFIG="/path/to/homelab/infrastructure/docker/homeassistant/config"
+
+# Home Assistant config path - pass as argument or set to your HA config directory
+HA_CONFIG="${1:-/config}"
 
 echo "=== LLM Presence Training Data Sync ==="
 echo "Date: $(date)"

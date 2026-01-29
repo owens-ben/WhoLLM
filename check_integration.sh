@@ -1,7 +1,11 @@
 #!/bin/bash
 # Quick check script for LLM Room Presence integration
+#
+# Usage: ./check_integration.sh [HA_CONFIG_PATH]
+# Example: ./check_integration.sh /config
 
-HA_CONFIG="/path/to/homelab/infrastructure/docker/homeassistant/config"
+# Set your HA config path here or pass as argument
+HA_CONFIG="${1:-/config}"
 INTEGRATION_DST="$HA_CONFIG/custom_components/llm_presence"
 
 echo "🔍 LLM Room Presence Integration Check"

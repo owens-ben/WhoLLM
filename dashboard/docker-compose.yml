@@ -6,29 +6,30 @@ services:
     container_name: llm-presence-dashboard
     restart: unless-stopped
     ports:
-      - "3380:80"
+      - "${DASHBOARD_PORT:-3380}:80"
     volumes:
       - ./:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    networks:
-      - traefik
+    environment:
+      - HA_URL=${HA_URL:-http://homeassistant.local:8123}
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
-    labels:
-      - "homepage.group=AI"
-      - "homepage.name=LLM Presence Dashboard"
-      - "homepage.icon=brain"
-      - "homepage.href=http://192.168.1.100:3380"
-      - "homepage.description=LLM-powered room presence visualization"
-      - "homepage.siteMonitor=http://192.168.1.100:3380"
+      start_period: 30s
+    # Uncomment and customize labels for your dashboard (Homepage, Traefik, etc.)
+    # labels:
+    #   - "homepage.group=AI"
+    #   - "homepage.name=LLM Presence Dashboard"
+    #   - "homepage.icon=brain"
+    #   - "homepage.href=http://YOUR_HOST:3380"
+    #   - "homepage.description=LLM-powered room presence visualization"
 
-networks:
-  traefik:
-    external: true
+# Uncomment if using Traefik or other network
+# networks:
+#   traefik:
+#     external: true
 
 
 

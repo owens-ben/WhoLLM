@@ -9,8 +9,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import pickle
 
-DATA_DIR = Path('/path/to/llm-room-presence/data/ml_ready')
-MODEL_DIR = Path('/path/to/llm-room-presence/models')
+# Paths - relative to script location
+SCRIPT_DIR = Path(__file__).parent
+PROJECT_DIR = SCRIPT_DIR.parent
+DATA_DIR = PROJECT_DIR / 'data' / 'ml_ready'
+MODEL_DIR = PROJECT_DIR / 'models'
 
 def load_data():
     """Load training and validation data."""

@@ -206,10 +206,47 @@ class BaseLLMProvider(ABC):
             else:
                 lines.append(f"  - {device}: {state}")
         
+        # Climate sensors for bathroom detection (humidity spike = showering)
+        climate = context.get("climate", {})
+        if climate:
+            lines.append("\nCLIMATE SENSORS (humidity spike in bathroom = likely showering!):")
+            for entity_id, data in climate.items():
+                name = entity_id.replace("sensor.", "").replace("_", " ").title()
+                state = data.get("state", "unknown")
+                unit = data.get("unit", "")
+                # Highlight elevated humidity
+                if "humidity" in entity_id.lower() and "bathroom" in entity_id.lower():
+                    try:
+                        humidity_val = float(state)
+                        if humidity_val > 65:
+                            lines.append(f"  - {name}: {state}{unit} (elevated)")
+                        else:
+                            lines.append(f"  - {name}: {state}{unit}")
+                    except (ValueError, TypeError):
+                        lines.append(f"  - {name}: {state}{unit}")
+                else:
+                    lines.append(f"  - {name}: {state}°{unit}")
+        
         # Add habit hint if available
         habit_hint = context.get("habit_hint", "")
         if habit_hint:
             lines.append(habit_hint)
+        
+        # Add behavioral indicators (IMPORTANT - cross-person logic)
+        behavioral = context.get("behavioral_indicators", [])
+        if behavioral:
+            lines.append("\nCUSTOM BEHAVIORAL INDICATORS (strong signals!):")
+            for indicator in behavioral:
+                # Extract room suggestion if present
+                if "→" in indicator:
+                    parts = indicator.split("→")
+                    lines.append(f"  - {parts[0].strip()} → suggests {parts[1].strip()}")
+                elif "suggests" in indicator.lower():
+                    lines.append(f"  - {indicator}")
+                elif "likely" in indicator.lower():
+                    lines.append(f"  - {indicator}")
+                else:
+                    lines.append(f"  - {indicator}")
         
         return "\n".join(lines)
     

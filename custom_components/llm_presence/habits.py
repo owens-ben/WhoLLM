@@ -9,49 +9,64 @@ from typing import Any
 
 _LOGGER = logging.getLogger(__name__)
 
-# Hardcoded habit patterns (will be replaced by learned patterns)
-# Format: {person: {(start_hour, end_hour): (room, confidence)}}
+# =============================================================================
+# EXAMPLE HABIT PATTERNS - CUSTOMIZE FOR YOUR HOUSEHOLD
+# =============================================================================
+# These are example patterns using placeholder names. The integration will use
+# these as defaults if a person matches the name, OR you can customize by:
+#   1. Editing this file directly with your household's patterns
+#   2. Creating a learned_habits.json file in your HA config directory
+#   3. Using the integration's learning features over time
+#
+# Format: {person_name: {(start_hour, end_hour): (room, confidence, activity)}}
+# =============================================================================
+
 DEFAULT_HABITS = {
+    # Example: Person who works from home in an office
     "Alice": {
-        # Night (sleeping)
-        (0, 6): ("bedroom", 0.9, "sleeping"),
-        (22, 24): ("bedroom", 0.8, "going to bed or sleeping"),
+        # Night patterns
+        (0, 4): ("office", 0.6, "late night work/gaming"),
+        (4, 7): ("bedroom", 0.9, "sleeping"),
+        (22, 24): ("office", 0.7, "evening computing"),
         # Morning routine
-        (6, 7): ("bedroom", 0.6, "waking up"),
-        (7, 8): ("bathroom", 0.5, "morning routine"),
-        (8, 9): ("kitchen", 0.6, "breakfast"),
-        # Work day
-        (9, 12): ("office", 0.8, "working"),
+        (7, 8): ("bedroom", 0.6, "waking up"),
+        (8, 9): ("kitchen", 0.5, "breakfast"),
+        # Work day (remote worker example)
+        (9, 12): ("office", 0.85, "working"),
         (12, 13): ("kitchen", 0.5, "lunch"),
-        (13, 17): ("office", 0.8, "working"),
+        (13, 17): ("office", 0.85, "working"),
         # Evening
-        (17, 19): ("kitchen", 0.5, "dinner prep"),
-        (19, 22): ("living_room", 0.6, "relaxing"),
+        (17, 19): ("living_room", 0.5, "relaxing or dinner"),
+        (19, 22): ("office", 0.7, "evening activities"),
     },
+    # Example: Person who is often in living areas
     "Bob": {
-        # Night (sleeping)
+        # Night patterns
         (0, 7): ("bedroom", 0.9, "sleeping"),
-        (23, 24): ("bedroom", 0.8, "going to bed"),
+        (23, 24): ("bedroom", 0.85, "getting ready for bed"),
         # Morning
         (7, 9): ("kitchen", 0.5, "morning routine"),
-        # Day
-        (9, 17): ("living_room", 0.4, "home during day"),
+        # Day patterns
+        (9, 17): ("living_room", 0.5, "daytime activities"),
         # Evening
-        (17, 19): ("kitchen", 0.5, "dinner"),
-        (19, 23): ("living_room", 0.6, "watching TV"),
+        (17, 19): ("living_room", 0.6, "dinner/TV time"),
+        (19, 23): ("living_room", 0.75, "watching TV"),
     },
-    "Max": {  # Pet
-        # Pets follow owners and have favorite spots
+    # Example: Pet patterns (dog/cat)
+    "Max": {
+        # Pets typically follow owners and have favorite spots
         (0, 7): ("bedroom", 0.7, "sleeping with owners"),
-        (7, 9): ("kitchen", 0.5, "breakfast time"),
-        (9, 17): ("living_room", 0.5, "napping on couch"),
+        (7, 9): ("kitchen", 0.5, "feeding time"),
+        # During day - napping or following household members
+        (9, 17): ("living_room", 0.6, "napping or with family"),
         (17, 19): ("kitchen", 0.4, "dinner time"),
-        (19, 22): ("living_room", 0.6, "with family"),
-        (22, 24): ("bedroom", 0.6, "going to bed with owners"),
+        # Evening - with family
+        (19, 22): ("living_room", 0.5, "with family"),
+        (22, 24): ("bedroom", 0.5, "settling down for night"),
     },
 }
 
-# Day-specific overrides (e.g., weekends are different)
+# Day-specific overrides (weekends often have different patterns)
 WEEKEND_OVERRIDES = {
     "Alice": {
         (9, 12): ("living_room", 0.5, "weekend morning"),
@@ -180,17 +195,19 @@ Note: This is a typical pattern - actual sensor data should override this if con
 class ConfidenceCombiner:
     """Combine confidence scores from multiple sources."""
     
-    # Weight factors for different detection methods
+    # Weight factors for different detection methods - IMPROVED WEIGHTS
     WEIGHTS = {
         "camera_ai": 0.95,      # Camera AI detection is very reliable
         "face_recognition": 0.90,  # Face recognition is reliable
         "vision_llm": 0.70,     # LLM vision is decent
-        "llm_reasoning": 0.60,  # LLM text reasoning
-        "habit": 0.40,          # Habit-based prediction
-        "motion": 0.50,         # Motion sensor
-        "media": 0.80,          # Media playing (strong indicator)
-        "light": 0.30,          # Light on (weak indicator)
-        "computer": 0.75,       # Computer on (good indicator)
+        "llm_reasoning": 0.50,  # LLM text reasoning (reduced - was over-trusted)
+        "habit": 0.35,          # Habit-based prediction (reduced)
+        "motion": 0.60,         # Motion sensor (increased)
+        "media_playing": 0.90,  # TV/media PLAYING is very strong (increased!)
+        "media_paused": 0.70,   # Media paused - still strong
+        "light": 0.25,          # Light on - weak indicator alone
+        "computer_active": 0.85,  # Computer actively in use - very strong for office
+        "behavioral": 0.80,     # Cross-person behavioral logic
     }
     
     @classmethod
@@ -202,9 +219,23 @@ class ConfidenceCombiner:
         habit_confidence: float = 0.0,
         sensor_indicators: list[str] | None = None,
         camera_ai_room: str | None = None,
+        media_context: dict | None = None,
+        entity_name: str | None = None,
+        pc_is_on: bool = False,
     ) -> tuple[str, float, str]:
         """Combine multiple signals into final prediction.
         
+        Args:
+            llm_room: Room predicted by LLM
+            llm_confidence: LLM's confidence
+            habit_room: Room from habit patterns
+            habit_confidence: Habit pattern confidence
+            sensor_indicators: List of indicator strings
+            camera_ai_room: Room from camera AI detection
+            media_context: Dict of media player states {room: state}
+            entity_name: Name of person (for behavioral logic)
+            pc_is_on: Whether a PC is actively on
+            
         Returns:
             Tuple of (room, confidence, explanation)
         """
@@ -214,19 +245,43 @@ class ConfidenceCombiner:
         # Camera AI is highest priority
         if camera_ai_room and camera_ai_room != "unknown":
             candidates[camera_ai_room] = candidates.get(camera_ai_room, 0) + cls.WEIGHTS["camera_ai"]
-            explanations.append(f"Camera AI detected in {camera_ai_room}")
+            explanations.append(f"Camera AI: {camera_ai_room}")
         
-        # LLM reasoning
+        # MEDIA PLAYING - Very strong signal! (NEW IMPROVED)
+        if media_context:
+            for room, state in media_context.items():
+                if state == "playing":
+                    candidates[room] = candidates.get(room, 0) + cls.WEIGHTS["media_playing"]
+                    explanations.append(f"Media PLAYING in {room}")
+                elif state == "paused":
+                    candidates[room] = candidates.get(room, 0) + cls.WEIGHTS["media_paused"]
+                    explanations.append(f"Media paused in {room}")
+        
+        # BEHAVIORAL LOGIC - Cross-person inference based on PC activity
+        # This assumes the PC owner (first person configured) is in office when PC is on
+        # Customize this logic for your household
+        if entity_name and pc_is_on:
+            # PC is active - strong indicator someone is in office
+            # The logic below is an example - customize for your setup
+            candidates["office"] = candidates.get("office", 0) + cls.WEIGHTS["computer_active"]
+            explanations.append("PC active -> office")
+            
+            # If media is playing elsewhere, other household members are likely there
+            if media_context and media_context.get("living_room") == "playing":
+                # Boost living room for other people when PC user is in office
+                candidates["living_room"] = candidates.get("living_room", 0) + cls.WEIGHTS["behavioral"] * 0.5
+                explanations.append("Media playing in living_room")
+        
+        # LLM reasoning (slightly reduced weight)
         if llm_room and llm_room != "unknown":
             weighted = llm_confidence * cls.WEIGHTS["llm_reasoning"]
             candidates[llm_room] = candidates.get(llm_room, 0) + weighted
-            explanations.append(f"LLM reasoning: {llm_room} ({int(llm_confidence*100)}%)")
+            explanations.append(f"LLM: {llm_room}")
         
-        # Habit prediction
+        # Habit prediction (reduced weight)
         if habit_room and habit_room != "unknown" and habit_confidence > 0:
             weighted = habit_confidence * cls.WEIGHTS["habit"]
             candidates[habit_room] = candidates.get(habit_room, 0) + weighted
-            explanations.append(f"Habit pattern: {habit_room} ({int(habit_confidence*100)}%)")
         
         # Sensor indicators boost
         if sensor_indicators:
@@ -234,15 +289,12 @@ class ConfidenceCombiner:
                 indicator_lower = indicator.lower()
                 # Extract room from indicator if possible
                 for room in ["office", "bedroom", "living_room", "kitchen", "bathroom", "entry"]:
-                    if room.replace("_", " ") in indicator_lower or room in indicator_lower:
+                    room_match = room.replace("_", " ") in indicator_lower or room in indicator_lower
+                    if room_match:
                         if "motion" in indicator_lower:
                             candidates[room] = candidates.get(room, 0) + cls.WEIGHTS["motion"]
                         elif "light" in indicator_lower:
                             candidates[room] = candidates.get(room, 0) + cls.WEIGHTS["light"]
-                        elif "tv" in indicator_lower or "media" in indicator_lower:
-                            candidates[room] = candidates.get(room, 0) + cls.WEIGHTS["media"]
-                        elif "pc" in indicator_lower or "computer" in indicator_lower:
-                            candidates[room] = candidates.get(room, 0) + cls.WEIGHTS["computer"]
         
         if not candidates:
             return "unknown", 0.0, "No signals available"
@@ -251,17 +303,26 @@ class ConfidenceCombiner:
         best_room = max(candidates, key=candidates.get)
         best_score = candidates[best_room]
         
-        # Normalize confidence to 0-1 range
-        max_possible = sum(cls.WEIGHTS.values())
-        final_confidence = min(1.0, best_score / max_possible * 2)  # Scale up a bit
+        # Calculate confidence based on signal strength
+        # Strong signals should give HIGH confidence
+        max_possible = cls.WEIGHTS["camera_ai"] + cls.WEIGHTS["media_playing"] + cls.WEIGHTS["computer_active"]
+        final_confidence = min(1.0, best_score / max_possible)
         
-        # Boost confidence if multiple sources agree
-        agreeing_sources = sum(1 for room, score in candidates.items() if room == best_room and score > 0.1)
-        if agreeing_sources >= 2:
+        # Minimum confidence floors based on signal types
+        if camera_ai_room and camera_ai_room == best_room:
+            final_confidence = max(0.85, final_confidence)
+        elif media_context and media_context.get(best_room) == "playing":
+            final_confidence = max(0.75, final_confidence)
+        elif pc_is_on and best_room == "office":
+            final_confidence = max(0.80, final_confidence)
+        
+        # Boost confidence if multiple strong sources agree
+        strong_signals = sum(1 for room, score in candidates.items() if room == best_room and score >= 0.5)
+        if strong_signals >= 2:
             final_confidence = min(1.0, final_confidence + 0.1)
-            explanations.append("Multiple sources agree")
+            explanations.append("Multiple strong signals agree")
         
-        explanation = " | ".join(explanations)
+        explanation = " | ".join(explanations[:4])  # Limit explanation length
         
         return best_room, final_confidence, explanation
 
