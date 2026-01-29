@@ -19,9 +19,10 @@
       },
       "rooms": {
         "title": "Room Configuration",
-        "description": "Select the rooms to track.",
+        "description": "Select the rooms in your home to track. You can also add custom room names.",
         "data": {
-          "rooms": "Rooms"
+          "rooms": "Rooms",
+          "custom_rooms": "Custom Rooms (comma-separated)"
         }
       },
       "persons": {
@@ -31,6 +32,11 @@
           "persons": "People (comma-separated)",
           "pets": "Pets (comma-separated)"
         }
+      },
+      "room_entities": {
+        "title": "Room Entity Mapping",
+        "description": "Assign sensors and devices to each room. This helps WhoLLM understand which entities indicate activity in which room.\n\nSelect motion sensors, media players, lights, computers, and other devices for each room.",
+        "data": {}
       }
     },
     "error": {
@@ -48,9 +54,31 @@
     "step": {
       "init": {
         "title": "WhoLLM Options",
-        "data": {
-          "poll_interval": "Poll Interval (seconds)"
+        "menu_options": {
+          "general": "General Settings",
+          "room_entities": "Room Entity Mapping",
+          "person_devices": "Person Device Ownership",
+          "confidence_weights": "Confidence Weights"
         }
+      },
+      "general": {
+        "title": "General Settings",
+        "data": {
+          "poll_interval": "Poll Interval (seconds)",
+          "learning_enabled": "Enable Pattern Learning"
+        }
+      },
+      "room_entities": {
+        "title": "Room Entity Mapping",
+        "description": "Assign sensors and devices to each room."
+      },
+      "person_devices": {
+        "title": "Person Device Ownership",
+        "description": "Assign devices owned by each person (their phone, PC, etc). If that device is active, it strongly suggests that person is nearby."
+      },
+      "confidence_weights": {
+        "title": "Confidence Weights",
+        "description": "Adjust how much each signal type contributes to presence detection. Higher percentage = more influence on the final prediction."
       }
     }
   }

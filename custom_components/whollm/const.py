@@ -11,6 +11,53 @@ CONF_PERSONS = "persons"
 CONF_PETS = "pets"
 CONF_ROOMS = "rooms"
 
+# Room-entity mapping configuration
+# Maps rooms to lists of entities that indicate activity in that room
+CONF_ROOM_ENTITIES = "room_entities"  # Dict[room_name, List[entity_id]]
+
+# Entity type hints - what kind of signal does this entity provide?
+ENTITY_HINT_MOTION = "motion"           # Motion sensors
+ENTITY_HINT_MEDIA = "media"             # Media players (TV, speakers)
+ENTITY_HINT_LIGHT = "light"             # Lights
+ENTITY_HINT_COMPUTER = "computer"       # PC/workstation indicators
+ENTITY_HINT_CAMERA = "camera"           # Camera with AI detection
+ENTITY_HINT_CLIMATE = "climate"         # Temperature/humidity sensors
+ENTITY_HINT_DOOR = "door"               # Door/window sensors
+ENTITY_HINT_APPLIANCE = "appliance"     # Other appliances
+ENTITY_HINT_PRESENCE = "presence"       # BLE/WiFi presence sensors
+
+ENTITY_HINTS = [
+    ENTITY_HINT_MOTION,
+    ENTITY_HINT_MEDIA,
+    ENTITY_HINT_LIGHT,
+    ENTITY_HINT_COMPUTER,
+    ENTITY_HINT_CAMERA,
+    ENTITY_HINT_CLIMATE,
+    ENTITY_HINT_DOOR,
+    ENTITY_HINT_APPLIANCE,
+    ENTITY_HINT_PRESENCE,
+]
+
+# Confidence weights for different entity types (can be overridden in options)
+CONF_CONFIDENCE_WEIGHTS = "confidence_weights"
+DEFAULT_CONFIDENCE_WEIGHTS = {
+    ENTITY_HINT_CAMERA: 0.95,       # Camera AI detection is very reliable
+    ENTITY_HINT_COMPUTER: 0.85,     # PC actively in use - very strong for office
+    ENTITY_HINT_MEDIA: 0.80,        # Media playing is strong
+    ENTITY_HINT_MOTION: 0.60,       # Motion sensor
+    ENTITY_HINT_PRESENCE: 0.70,     # BLE/WiFi presence
+    ENTITY_HINT_APPLIANCE: 0.50,    # Appliance in use
+    ENTITY_HINT_LIGHT: 0.25,        # Light on - weak indicator alone
+    ENTITY_HINT_DOOR: 0.40,         # Door recently opened
+    ENTITY_HINT_CLIMATE: 0.20,      # Climate change - very weak
+    "llm_reasoning": 0.50,          # LLM text reasoning
+    "habit": 0.35,                  # Habit-based prediction
+}
+
+# Person-device ownership mapping
+# Maps person names to their "owned" entities (e.g., their PC, their phone tracker)
+CONF_PERSON_DEVICES = "person_devices"  # Dict[person_name, List[entity_id]]
+
 # Vision configuration keys
 CONF_VISION_ENABLED = "vision_enabled"
 CONF_VISION_MODEL = "vision_model"
@@ -44,7 +91,7 @@ DEFAULT_VISION_ENABLED = False
 ENTITY_TYPE_PERSON = "person"
 ENTITY_TYPE_PET = "pet"
 
-# Valid room states
+# Valid room states (defaults, users can add custom rooms)
 VALID_ROOMS = ["office", "living_room", "bedroom", "kitchen", "bathroom", "entry", "away", "unknown"]
 
 # Attributes
@@ -61,4 +108,6 @@ CONF_MAX_FILE_SIZE_MB = "max_file_size_mb"
 DEFAULT_RETENTION_DAYS = 30
 DEFAULT_MAX_FILE_SIZE_MB = 100
 
-
+# Learning configuration
+CONF_LEARNING_ENABLED = "learning_enabled"
+DEFAULT_LEARNING_ENABLED = True

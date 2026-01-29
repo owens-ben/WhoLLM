@@ -10,20 +10,28 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
+from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 
 from .const import (
+    CONF_CONFIDENCE_WEIGHTS,
     CONF_MODEL,
+    CONF_PERSON_DEVICES,
     CONF_PERSONS,
     CONF_PETS,
     CONF_POLL_INTERVAL,
     CONF_PROVIDER,
+    CONF_ROOM_ENTITIES,
     CONF_ROOMS,
     CONF_URL,
+    CONF_LEARNING_ENABLED,
+    DEFAULT_CONFIDENCE_WEIGHTS,
+    DEFAULT_LEARNING_ENABLED,
     DEFAULT_MODEL,
     DEFAULT_POLL_INTERVAL,
     DEFAULT_PROVIDER,
     DEFAULT_URL,
     DOMAIN,
+    ENTITY_HINTS,
     SUPPORTED_PROVIDERS,
     VALID_ROOMS,
 )
@@ -35,7 +43,7 @@ _LOGGER = logging.getLogger(__name__)
 class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for WhoLLM."""
 
-    VERSION = 1
+    VERSION = 2  # Bumped for new room_entities config
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -121,8 +129,16 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         
         if user_input is not None:
-            rooms = user_input.get(CONF_ROOMS, VALID_ROOMS)
-            # Validate that at least one room is selected
+            rooms = user_input.get(CONF_ROOMS, [])
+            custom_rooms = user_input.get("custom_rooms", "")
+            
+            # Add custom rooms
+            if custom_rooms:
+                for room in custom_rooms.split(","):
+                    room = room.strip().lower().replace(" ", "_")
+                    if room and room not in rooms:
+                        rooms.append(room)
+            
             if not rooms or len(rooms) == 0:
                 errors["base"] = "at_least_one_room"
             else:
@@ -133,15 +149,19 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="rooms",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_ROOMS, default=VALID_ROOMS): selector.SelectSelector(
+                    vol.Required(CONF_ROOMS, default=VALID_ROOMS[:6]): selector.SelectSelector(
                         selector.SelectSelectorConfig(
-                            options=VALID_ROOMS,
+                            options=VALID_ROOMS[:-2],  # Exclude 'away' and 'unknown'
                             multiple=True,
                             mode=selector.SelectSelectorMode.LIST,
                         )
                     ),
+                    vol.Optional("custom_rooms", default=""): str,
                 }
             ),
+            description_placeholders={
+                "custom_rooms_hint": "Add custom rooms (comma-separated, e.g., garage, basement)",
+            },
             errors=errors,
         )
 
@@ -176,12 +196,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 self._data[CONF_PERSONS] = persons
                 self._data[CONF_PETS] = pets
-                
-                # Create the config entry
-                return self.async_create_entry(
-                    title=f"WhoLLM ({self._data[CONF_PROVIDER]})",
-                    data=self._data,
-                )
+                return await self.async_step_room_entities()
 
         return self.async_show_form(
             step_id="persons",
@@ -193,10 +208,84 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             description_placeholders={
                 "persons_hint": "Comma-separated names (e.g., Alice, Bob)",
-                "pets_hint": "Comma-separated names (e.g., Max, Luna)",
+                "pets_hint": "Comma-separated names (e.g., Fido, Whiskers)",
             },
             errors=errors,
         )
+
+    async def async_step_room_entities(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle room-entity mapping configuration."""
+        if user_input is not None:
+            # Process room entity mappings
+            room_entities = {}
+            for room in self._data.get(CONF_ROOMS, []):
+                key = f"entities_{room}"
+                entities = user_input.get(key, [])
+                if entities:
+                    room_entities[room] = [
+                        {"entity_id": e, "hint_type": self._guess_entity_hint(e)}
+                        for e in entities
+                    ]
+            
+            self._data[CONF_ROOM_ENTITIES] = room_entities
+            
+            # Initialize empty person devices (can be configured in options later)
+            self._data[CONF_PERSON_DEVICES] = {}
+            self._data[CONF_LEARNING_ENABLED] = True
+            
+            # Create the config entry
+            return self.async_create_entry(
+                title=f"WhoLLM ({self._data[CONF_PROVIDER]})",
+                data=self._data,
+            )
+
+        # Build dynamic schema based on selected rooms
+        rooms = self._data.get(CONF_ROOMS, [])
+        schema_dict = {}
+        
+        for room in rooms:
+            # Create entity selector for each room
+            schema_dict[vol.Optional(f"entities_{room}", default=[])] = selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    multiple=True,
+                    filter=selector.EntityFilterSelectorConfig(
+                        domain=["binary_sensor", "sensor", "light", "switch", "media_player", "device_tracker", "camera"]
+                    ),
+                )
+            )
+
+        return self.async_show_form(
+            step_id="room_entities",
+            data_schema=vol.Schema(schema_dict),
+            description_placeholders={
+                "room_hint": "Select entities that indicate activity in each room. This helps WhoLLM understand which sensors/devices belong to which room.",
+            },
+        )
+
+    def _guess_entity_hint(self, entity_id: str) -> str:
+        """Guess the entity hint type from the entity ID."""
+        entity_lower = entity_id.lower()
+        
+        if "motion" in entity_lower or "occupancy" in entity_lower:
+            return "motion"
+        elif "media_player" in entity_lower or "tv" in entity_lower:
+            return "media"
+        elif "light." in entity_lower:
+            return "light"
+        elif "pc" in entity_lower or "computer" in entity_lower or "desktop" in entity_lower:
+            return "computer"
+        elif "camera" in entity_lower or "person" in entity_lower or "animal" in entity_lower:
+            return "camera"
+        elif "door" in entity_lower or "window" in entity_lower or "contact" in entity_lower:
+            return "door"
+        elif "temperature" in entity_lower or "humidity" in entity_lower:
+            return "climate"
+        elif "device_tracker" in entity_lower:
+            return "presence"
+        else:
+            return "appliance"
 
     @staticmethod
     @callback
@@ -217,12 +306,21 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Manage the options."""
+        """Manage the options - show menu."""
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["general", "room_entities", "person_devices", "confidence_weights"],
+        )
+
+    async def async_step_general(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """General options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(
-            step_id="init",
+            step_id="general",
             data_schema=vol.Schema(
                 {
                     vol.Optional(
@@ -237,8 +335,170 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                             mode=selector.NumberSelectorMode.SLIDER,
                         )
                     ),
+                    vol.Optional(
+                        CONF_LEARNING_ENABLED,
+                        default=self.config_entry.data.get(CONF_LEARNING_ENABLED, DEFAULT_LEARNING_ENABLED),
+                    ): bool,
                 }
             ),
         )
 
+    async def async_step_room_entities(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Configure room-entity mappings."""
+        if user_input is not None:
+            # Process and save room entity mappings
+            room_entities = self.config_entry.data.get(CONF_ROOM_ENTITIES, {}).copy()
+            rooms = self.config_entry.data.get(CONF_ROOMS, [])
+            
+            for room in rooms:
+                key = f"entities_{room}"
+                entities = user_input.get(key, [])
+                if entities:
+                    room_entities[room] = [
+                        {"entity_id": e, "hint_type": self._guess_entity_hint(e)}
+                        for e in entities
+                    ]
+                elif room in room_entities:
+                    del room_entities[room]
+            
+            return self.async_create_entry(title="", data={CONF_ROOM_ENTITIES: room_entities})
 
+        # Build dynamic schema
+        rooms = self.config_entry.data.get(CONF_ROOMS, [])
+        current_mappings = self.config_entry.data.get(CONF_ROOM_ENTITIES, {})
+        schema_dict = {}
+        
+        for room in rooms:
+            current_entities = [e["entity_id"] for e in current_mappings.get(room, [])]
+            schema_dict[vol.Optional(f"entities_{room}", default=current_entities)] = selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    multiple=True,
+                    filter=selector.EntityFilterSelectorConfig(
+                        domain=["binary_sensor", "sensor", "light", "switch", "media_player", "device_tracker", "camera"]
+                    ),
+                )
+            )
+
+        return self.async_show_form(
+            step_id="room_entities",
+            data_schema=vol.Schema(schema_dict),
+        )
+
+    async def async_step_person_devices(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Configure person-device ownership mappings."""
+        if user_input is not None:
+            # Process and save person device mappings
+            person_devices = {}
+            persons = self.config_entry.data.get(CONF_PERSONS, [])
+            pets = self.config_entry.data.get(CONF_PETS, [])
+            
+            for person in persons + pets:
+                name = person.get("name", "")
+                key = f"devices_{name}"
+                devices = user_input.get(key, [])
+                if devices:
+                    person_devices[name] = devices
+            
+            return self.async_create_entry(title="", data={CONF_PERSON_DEVICES: person_devices})
+
+        # Build dynamic schema
+        persons = self.config_entry.data.get(CONF_PERSONS, [])
+        pets = self.config_entry.data.get(CONF_PETS, [])
+        current_mappings = self.config_entry.data.get(CONF_PERSON_DEVICES, {})
+        schema_dict = {}
+        
+        for entity in persons + pets:
+            name = entity.get("name", "")
+            current_devices = current_mappings.get(name, [])
+            schema_dict[vol.Optional(f"devices_{name}", default=current_devices)] = selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    multiple=True,
+                    filter=selector.EntityFilterSelectorConfig(
+                        domain=["device_tracker", "binary_sensor", "switch", "sensor"]
+                    ),
+                )
+            )
+
+        return self.async_show_form(
+            step_id="person_devices",
+            data_schema=vol.Schema(schema_dict),
+            description_placeholders={
+                "hint": "Assign devices owned by each person (their phone, PC, etc). If that device is active, it strongly suggests that person is nearby.",
+            },
+        )
+
+    async def async_step_confidence_weights(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Configure confidence weights for different signal types."""
+        if user_input is not None:
+            weights = {}
+            for key, value in user_input.items():
+                if key.startswith("weight_"):
+                    hint_type = key.replace("weight_", "")
+                    weights[hint_type] = value / 100  # Convert from percentage
+            
+            return self.async_create_entry(title="", data={CONF_CONFIDENCE_WEIGHTS: weights})
+
+        current_weights = self.config_entry.data.get(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
+        schema_dict = {}
+        
+        weight_descriptions = {
+            "camera": "Camera AI Detection",
+            "computer": "PC/Computer Active",
+            "media": "Media Playing",
+            "motion": "Motion Sensor",
+            "presence": "BLE/WiFi Presence",
+            "appliance": "Appliance In Use",
+            "light": "Light On",
+            "door": "Door/Window Sensor",
+            "llm_reasoning": "LLM Reasoning",
+            "habit": "Learned Patterns",
+        }
+        
+        for hint_type, description in weight_descriptions.items():
+            default_value = int(current_weights.get(hint_type, 0.5) * 100)
+            schema_dict[vol.Optional(f"weight_{hint_type}", default=default_value)] = selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=100,
+                    step=5,
+                    unit_of_measurement="%",
+                    mode=selector.NumberSelectorMode.SLIDER,
+                )
+            )
+
+        return self.async_show_form(
+            step_id="confidence_weights",
+            data_schema=vol.Schema(schema_dict),
+            description_placeholders={
+                "hint": "Adjust how much each signal type contributes to presence detection. Higher = more influence.",
+            },
+        )
+
+    def _guess_entity_hint(self, entity_id: str) -> str:
+        """Guess the entity hint type from the entity ID."""
+        entity_lower = entity_id.lower()
+        
+        if "motion" in entity_lower or "occupancy" in entity_lower:
+            return "motion"
+        elif "media_player" in entity_lower or "tv" in entity_lower:
+            return "media"
+        elif "light." in entity_lower:
+            return "light"
+        elif "pc" in entity_lower or "computer" in entity_lower or "desktop" in entity_lower:
+            return "computer"
+        elif "camera" in entity_lower or "person" in entity_lower or "animal" in entity_lower:
+            return "camera"
+        elif "door" in entity_lower or "window" in entity_lower or "contact" in entity_lower:
+            return "door"
+        elif "temperature" in entity_lower or "humidity" in entity_lower:
+            return "climate"
+        elif "device_tracker" in entity_lower:
+            return "presence"
+        else:
+            return "appliance"
