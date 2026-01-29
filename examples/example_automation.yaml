@@ -1,4 +1,4 @@
-# Example Home Assistant automations using LLM Room Presence
+# Example Home Assistant automations using WhoLLM
 
 # Turn on lights when someone enters a room
 automation:

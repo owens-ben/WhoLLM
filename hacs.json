@@ -1,9 +1,4 @@
 {
-  "name": "LLM Room Presence",
-  "homeassistant": "2024.1.0",
-  "render_readme": true,
-  "zip_release": true,
-  "filename": "llm_presence.zip"
+  "name": "WhoLLM",
+  "render_readme": true
 }
-
-

@@ -1,4 +1,4 @@
-"""Sensor platform for LLM Room Presence."""
+"""Sensor platform for WhoLLM."""
 from __future__ import annotations
 
 import logging
@@ -22,7 +22,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up LLM Presence sensors from a config entry."""
+    """Set up WhoLLM sensors from a config entry."""
     coordinator: LLMPresenceCoordinator = hass.data[DOMAIN][entry.entry_id]
     
     entities: list[SensorEntity] = []

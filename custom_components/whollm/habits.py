@@ -85,7 +85,7 @@ class HabitPredictor:
         """Initialize with habit patterns."""
         self.habits = habits or DEFAULT_HABITS
         self.weekend_overrides = WEEKEND_OVERRIDES
-        self._learned_patterns_path = Path("/config/llm_presence_learned_habits.json")
+        self._learned_patterns_path = Path("/config/whollm_learned_habits.json")
         self._load_learned_patterns()
     
     def _load_learned_patterns(self) -> None:

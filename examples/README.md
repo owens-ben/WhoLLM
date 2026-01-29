@@ -1,10 +1,10 @@
-# LLM Room Presence Examples
+# WhoLLM Examples
 
-This directory contains example configurations for using the LLM Room Presence integration.
+This directory contains example configurations for using the WhoLLM integration.
 
 ## Files
 
-- `example_automation.yaml` - Example automations using LLM Room Presence sensors
+- `example_automation.yaml` - Example automations using WhoLLM sensors
 
 ## Usage
 

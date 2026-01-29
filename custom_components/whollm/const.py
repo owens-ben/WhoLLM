@@ -1,6 +1,6 @@
-"""Constants for LLM Room Presence integration."""
+"""Constants for WhoLLM integration."""
 
-DOMAIN = "llm_presence"
+DOMAIN = "whollm"
 
 # Configuration keys
 CONF_PROVIDER = "provider"

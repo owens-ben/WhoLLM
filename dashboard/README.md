@@ -1,4 +1,4 @@
-# LLM Room Presence Dashboard
+# WhoLLM Dashboard
 
 A beautiful, modern dashboard for visualizing LLM-powered room presence detection.
 
@@ -20,7 +20,7 @@ A beautiful, modern dashboard for visualizing LLM-powered room presence detectio
 ### Option 1: Docker (Recommended)
 
 ```bash
-cd llm-room-presence/dashboard
+cd whollm/dashboard
 docker compose up -d
 ```
 
@@ -39,7 +39,7 @@ lovelace:
   dashboards:
     llm-presence:
       mode: yaml
-      title: LLM Presence
+      title: WhoLLM
       icon: mdi:brain
       show_in_sidebar: true
       filename: llm-presence-dashboard.yaml
@@ -53,7 +53,7 @@ Serve the `index.html` file with any web server (nginx, Apache, Python http.serv
 
 ```bash
 # Quick test with Python
-cd llm-room-presence/dashboard
+cd whollm/dashboard
 python3 -m http.server 3380
 ```
 
@@ -68,7 +68,7 @@ Settings are saved to browser localStorage.
 
 ## Requirements
 
-- LLM Room Presence integration installed in Home Assistant
+- WhoLLM integration installed in Home Assistant
 - Home Assistant accessible from the browser
 - Valid long-lived access token
 
@@ -119,14 +119,14 @@ Modify CSS variables in the `:root` section:
 The Docker container includes Homepage labels for automatic discovery:
 
 - **Group**: AI
-- **Name**: LLM Presence Dashboard
+- **Name**: WhoLLM Dashboard
 - **Port**: 3380
 
 ## Troubleshooting
 
-### "Waiting for LLM Presence data..."
+### "Waiting for WhoLLM data..."
 
-- Ensure the LLM Room Presence integration is configured in Home Assistant
+- Ensure the WhoLLM integration is configured in Home Assistant
 - Check that entities like `sensor.{person_name}_room` exist (e.g., `sensor.alice_room`)
 - Verify the integration is polling (check HA logs)
 
@@ -139,11 +139,11 @@ The Docker container includes Homepage labels for automatic discovery:
 ### No Room Data
 
 - The integration needs to be configured with persons/pets and rooms
-- Go to Settings → Devices & Services → LLM Room Presence → Configure
+- Go to Settings → Devices & Services → WhoLLM → Configure
 
 ## License
 
-MIT License - Part of the [LLM Room Presence](https://github.com/owens-ben/llm-room-presence) project.
+MIT License - Part of the [WhoLLM](https://github.com/owens-ben/whollm) project.
 
 
 

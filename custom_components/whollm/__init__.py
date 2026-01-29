@@ -1,4 +1,4 @@
-"""LLM Room Presence integration for Home Assistant.
+"""WhoLLM integration for Home Assistant.
 
 Uses local LLMs (Ollama) to intelligently deduce room presence
 based on sensor data (lights, motion, media, device trackers).
@@ -59,14 +59,14 @@ CLEANUP_STORAGE_SCHEMA = vol.Schema({
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up LLM Presence from YAML configuration."""
+    """Set up WhoLLM from YAML configuration."""
     hass.data.setdefault(DOMAIN, {})
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up LLM Presence from a config entry."""
-    _LOGGER.info("Setting up LLM Presence integration")
+    """Set up WhoLLM from a config entry."""
+    _LOGGER.info("Setting up WhoLLM integration")
     
     coordinator = LLMPresenceCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
@@ -142,7 +142,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_register_services(hass: HomeAssistant) -> None:
-    """Register LLM Presence services."""
+    """Register WhoLLM services."""
     
     async def handle_identify_person(call: ServiceCall) -> dict[str, Any]:
         """Handle the identify_person service call."""
@@ -270,12 +270,12 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             schema=CLEANUP_STORAGE_SCHEMA,
         )
         
-        _LOGGER.info("Registered LLM Presence services")
+        _LOGGER.info("Registered WhoLLM services")
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    _LOGGER.info("Unloading LLM Presence integration")
+    _LOGGER.info("Unloading WhoLLM integration")
     
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     

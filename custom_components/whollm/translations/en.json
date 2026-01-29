@@ -41,13 +41,13 @@
       "at_least_one_room": "Please select at least one room to track."
     },
     "abort": {
-      "already_configured": "LLM Presence is already configured"
+      "already_configured": "WhoLLM is already configured"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "LLM Presence Options",
+        "title": "WhoLLM Options",
         "data": {
           "poll_interval": "Poll Interval (seconds)"
         }

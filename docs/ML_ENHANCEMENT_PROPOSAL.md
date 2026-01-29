@@ -1,8 +1,8 @@
-# Machine Learning Enhancement Proposal for LLM Room Presence
+# Machine Learning Enhancement Proposal for WhoLLM
 
 ## Executive Summary
 
-This document outlines strategies to enhance the LLM Room Presence system with machine learning capabilities that learn from user habits over time, process queued images for timeline building, and integrate with proven open-source face recognition systems.
+This document outlines strategies to enhance the WhoLLM system with machine learning capabilities that learn from user habits over time, process queued images for timeline building, and integrate with proven open-source face recognition systems.
 
 ## Current State
 
@@ -73,7 +73,7 @@ Camera → Frigate/HA → Person Detected Event
                            ↓
                     "Alice" (confidence: 0.95)
                            ↓
-                    Update LLM Presence Sensor
+                    Update WhoLLM Sensor
 ```
 
 ### Phase 2: Image Queue & Timeline Database
@@ -359,7 +359,7 @@ class FeedbackCollector:
 
 ### Week 1: Face Recognition Integration
 1. Deploy CompreFace Docker containers
-2. Create API client for LLM Presence
+2. Create API client for WhoLLM
 3. Add face enrollment UI/service
 4. Replace LLM vision with CompreFace for known faces
 
@@ -541,7 +541,7 @@ def weighted_presence(
 
 ## Conclusion
 
-By integrating face recognition (CompreFace), building a historical database, and implementing habit learning, the LLM Room Presence system can:
+By integrating face recognition (CompreFace), building a historical database, and implementing habit learning, the WhoLLM system can:
 
 1. **Speed up identification**: 100ms vs 30-60s
 2. **Learn over time**: Patterns emerge from data

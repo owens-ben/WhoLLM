@@ -1,4 +1,4 @@
-"""Config flow for LLM Room Presence integration."""
+"""Config flow for WhoLLM integration."""
 from __future__ import annotations
 
 import logging
@@ -33,7 +33,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for LLM Room Presence."""
+    """Handle a config flow for WhoLLM."""
 
     VERSION = 1
 
@@ -179,7 +179,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 
                 # Create the config entry
                 return self.async_create_entry(
-                    title=f"LLM Presence ({self._data[CONF_PROVIDER]})",
+                    title=f"WhoLLM ({self._data[CONF_PROVIDER]})",
                     data=self._data,
                 )
 
@@ -208,7 +208,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
-    """Handle options flow for LLM Presence."""
+    """Handle options flow for WhoLLM."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""

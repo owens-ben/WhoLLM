@@ -1,0 +1,12 @@
+{
+  "domain": "whollm",
+  "name": "WhoLLM",
+  "codeowners": ["@owens-ben"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/owens-ben/WhoLLM",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/owens-ben/WhoLLM/issues",
+  "requirements": ["aiohttp>=3.8.0"],
+  "version": "0.1.0-alpha"
+}

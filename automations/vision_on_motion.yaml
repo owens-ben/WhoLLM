@@ -2,7 +2,7 @@
 # Triggers vision identification when camera detects person/animal
 # Place this in your Home Assistant automations.yaml or create via UI
 
-alias: "LLM Presence - Vision Identification on Motion"
+alias: "WhoLLM - Vision Identification on Motion"
 description: "When camera AI detects a person or animal, capture image and identify who it is"
 mode: queued
 max: 3  # Allow up to 3 queued identifications
@@ -36,7 +36,7 @@ action:
       seconds: 2
   
   # Call vision identification service
-  - service: llm_presence.identify_person
+  - service: whollm.identify_person
     data:
       camera_entity_id: camera.e1_zoom_clear  # Use clear stream for better quality
       detection_type: >
@@ -55,7 +55,7 @@ action:
 
 ---
 # Alternative: Simpler version without tracking control
-alias: "LLM Presence - Quick Vision Check"
+alias: "WhoLLM - Quick Vision Check"
 description: "Quick vision identification on motion detection"
 mode: single
 
@@ -73,7 +73,7 @@ condition:
       {{ (as_timestamp(now()) - as_timestamp(this.attributes.last_triggered or 0)) > 60 }}
 
 action:
-  - service: llm_presence.identify_person
+  - service: whollm.identify_person
     data:
       camera_entity_id: camera.e1_zoom_fluent
       detection_type: >

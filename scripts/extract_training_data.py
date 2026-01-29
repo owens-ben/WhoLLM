@@ -57,7 +57,7 @@ def extract_person_presence(entity_id: str, state: str) -> tuple[str, str, bool]
     """
     entity_lower = entity_id.lower()
     
-    # Check for llm_presence binary sensors like binary_sensor.alice_in_office
+    # Check for whollm binary sensors like binary_sensor.alice_in_office
     if entity_lower.startswith('binary_sensor.'):
         name = entity_lower.replace('binary_sensor.', '')
         

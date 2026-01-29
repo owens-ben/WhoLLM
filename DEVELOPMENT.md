@@ -1,6 +1,6 @@
 # Development Setup Guide
 
-This guide will help you set up the LLM Room Presence integration for local testing in your Home Assistant instance.
+This guide will help you set up the WhoLLM integration for local testing in your Home Assistant instance.
 
 ## Prerequisites
 
@@ -25,14 +25,14 @@ This allows you to edit code and see changes after restart:
 
 ```bash
 # Find your HA config directory first, then:
-ln -s /path/to/llm-room-presence/custom_components/llm_presence /path/to/your/ha/config/custom_components/llm_presence
+ln -s /path/to/whollm/custom_components/whollm /path/to/your/ha/config/custom_components/whollm
 ```
 
 ### Option B: Copy Files
 
 ```bash
 # Copy the integration folder
-cp -r /path/to/llm-room-presence/custom_components/llm_presence /path/to/your/ha/config/custom_components/
+cp -r /path/to/whollm/custom_components/whollm /path/to/your/ha/config/custom_components/
 ```
 
 ## Step 3: Verify Structure
@@ -43,7 +43,7 @@ Your Home Assistant config directory should have this structure:
 config/
 ├── configuration.yaml
 ├── custom_components/
-│   └── llm_presence/
+│   └── whollm/
 │       ├── __init__.py
 │       ├── manifest.json
 │       ├── config_flow.py
@@ -69,7 +69,7 @@ Add this to your `configuration.yaml` to see detailed logs:
 logger:
   default: info
   logs:
-    custom_components.llm_presence: debug
+    custom_components.whollm: debug
 ```
 
 ## Step 5: Restart Home Assistant
@@ -85,11 +85,11 @@ Restart Home Assistant to load the custom integration:
 After restart, check the logs for:
 
 ```
-INFO (MainThread) [custom_components.llm_presence] Setting up LLM Presence integration
+INFO (MainThread) [custom_components.whollm] Setting up WhoLLM integration
 ```
 
 If you see errors, check:
-- The `custom_components/llm_presence` folder exists
+- The `custom_components/whollm` folder exists
 - All Python files are present
 - `manifest.json` is valid JSON
 - Dependencies are installed (aiohttp)
@@ -98,7 +98,7 @@ If you see errors, check:
 
 1. Go to **Settings** → **Devices & Services**
 2. Click **+ Add Integration**
-3. Search for **"LLM Room Presence"**
+3. Search for **"WhoLLM"**
 4. Follow the setup wizard:
    - Enter Ollama URL (default: `http://localhost:11434`)
    - Select poll interval
@@ -114,8 +114,8 @@ After configuration, check that entities are created:
 - `binary_sensor.{person_name}_in_{room}` - Binary sensors for each person × room combination
 
 You can verify in:
-- **Settings** → **Devices & Services** → **LLM Room Presence**
-- **Developer Tools** → **States** (search for `llm_presence`)
+- **Settings** → **Devices & Services** → **WhoLLM**
+- **Developer Tools** → **States** (search for `whollm`)
 
 ## Troubleshooting
 
@@ -124,17 +124,17 @@ You can verify in:
 1. **Check logs** for import errors:
    ```bash
    # In Home Assistant logs
-   grep -i "llm_presence" home-assistant.log
+   grep -i "whollm" home-assistant.log
    ```
 
 2. **Verify manifest.json**:
    ```bash
-   python3 -m json.tool custom_components/llm_presence/manifest.json
+   python3 -m json.tool custom_components/whollm/manifest.json
    ```
 
 3. **Check Python syntax**:
    ```bash
-   python3 -m py_compile custom_components/llm_presence/*.py
+   python3 -m py_compile custom_components/whollm/*.py
    ```
 
 ### Dependencies Not Installed
@@ -161,7 +161,7 @@ If you see `ModuleNotFoundError: No module named 'aiohttp'`:
 1. **Edit files** in your development directory
 2. **Restart Home Assistant** to reload changes
 3. **Check logs** for any new errors
-4. **Reload integration** if needed: Settings → Devices & Services → LLM Room Presence → Reload
+4. **Reload integration** if needed: Settings → Devices & Services → WhoLLM → Reload
 
 ## Development Tips
 
@@ -182,12 +182,12 @@ docker restart homeassistant
 
 ```bash
 # Follow Home Assistant logs
-tail -f /path/to/ha/config/home-assistant.log | grep llm_presence
+tail -f /path/to/ha/config/home-assistant.log | grep whollm
 ```
 
 ### Test Configuration Flow
 
-1. Remove integration: Settings → Devices & Services → LLM Room Presence → Delete
+1. Remove integration: Settings → Devices & Services → WhoLLM → Delete
 2. Restart HA
 3. Add integration again to test config flow changes
 

@@ -1,4 +1,4 @@
-"""Data update coordinator for LLM Presence."""
+"""Data update coordinator for WhoLLM."""
 from __future__ import annotations
 
 import logging
@@ -74,7 +74,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         
         _LOGGER.info(
-            "LLM Presence coordinator initialized: provider=%s, url=%s, model=%s, event_logging=enabled",
+            "WhoLLM coordinator initialized: provider=%s, url=%s, model=%s, event_logging=enabled",
             self.provider_type,
             self.provider_url,
             self.model,

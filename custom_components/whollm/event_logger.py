@@ -11,7 +11,7 @@ from typing import Any
 _LOGGER = logging.getLogger(__name__)
 
 # Default log file location
-DEFAULT_LOG_PATH = "/config/llm_presence_events.jsonl"
+DEFAULT_LOG_PATH = "/config/whollm_events.jsonl"
 
 # Storage management defaults
 DEFAULT_RETENTION_DAYS = 30  # Keep events for 30 days
