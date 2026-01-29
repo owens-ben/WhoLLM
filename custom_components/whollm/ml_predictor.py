@@ -260,7 +260,7 @@ class MLPredictor:
         options_text = ", ".join([f"{r} ({p*100:.0f}%)" for r, p in top_rooms])
         
         message = (
-            f"🤔 Uncertain about {entity_name}'s location.\n\n"
+            f"Uncertain about {entity_name}'s location.\n\n"
             f"Best guess: {predicted_room} ({confidence*100:.0f}%)\n"
             f"Options: {options_text}\n\n"
             f"Tap to correct (this helps train the model)."

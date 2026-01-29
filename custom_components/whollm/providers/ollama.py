@@ -192,7 +192,7 @@ class OllamaProvider(BaseLLMProvider):
                 # Map camera to room
                 camera_room = self._camera_name_to_room(camera)
                 if camera_room == room.lower().replace(" ", "_"):
-                    indicators.append(f"👤 {detection_type.title()} detected by camera: {camera}")
+                    indicators.append(f"{detection_type.title()} detected by camera: {camera}")
         
         return indicators
 
@@ -253,11 +253,11 @@ class OllamaProvider(BaseLLMProvider):
             if pc_is_on:
                 room = "office"
                 confidence = 0.5
-                indicators.append("🎯 PC is active (fallback logic)")
+                indicators.append("PC is active (fallback logic)")
             elif living_room_tv_on:
                 room = "living_room"
                 confidence = 0.55
-                indicators.append("📺 Living room TV playing (fallback logic)")
+                indicators.append("Living room TV playing (fallback logic)")
             else:
                 # Default to common areas
                 room = "living_room"
@@ -268,11 +268,11 @@ class OllamaProvider(BaseLLMProvider):
             if living_room_tv_on:
                 room = "living_room"
                 confidence = 0.4
-                indicators.append("🐾 TV on - pet likely with family")
+                indicators.append("TV on - pet likely with family")
             elif pc_is_on:
                 room = "office"
                 confidence = 0.35
-                indicators.append("🐾 PC active - pet may be with owner")
+                indicators.append("PC active - pet may be with owner")
             else:
                 room = "bedroom"
                 confidence = 0.3

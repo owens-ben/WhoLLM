@@ -94,7 +94,7 @@ class CrewAIProvider(BaseLLMProvider):
                     
                     # Add reason as an indicator
                     if reason:
-                        indicators.insert(0, f"🤖 {model_used}: {reason}")
+                        indicators.insert(0, f"Model {model_used}: {reason}")
                     
                     return PresenceGuess(
                         room=room,
@@ -158,12 +158,12 @@ class CrewAIProvider(BaseLLMProvider):
         # Check lights
         for entity_id, data in context.get("lights", {}).items():
             if room_lower in entity_id.lower() and data.get("state") == "on":
-                indicators.append(f"💡 Light on: {entity_id}")
+                indicators.append(f"Light on: {entity_id}")
         
         # Check motion
         for entity_id, data in context.get("motion", {}).items():
             if room_lower in entity_id.lower() and data.get("state") == "on":
-                indicators.append(f"🚶 Motion detected: {entity_id}")
+                indicators.append(f"Motion detected: {entity_id}")
         
         # Check media
         for entity_id, data in context.get("media", {}).items():
@@ -177,18 +177,18 @@ class CrewAIProvider(BaseLLMProvider):
                     media_room = "office"
                 
                 if media_room == room.lower().replace(" ", "_"):
-                    indicators.append(f"📺 Media playing: {entity_id}")
+                    indicators.append(f"Media playing: {entity_id}")
         
         # Check computers/PCs
         for entity_id, data in context.get("computers", {}).items():
             if data.get("state") in ["on", "home"] and room_lower == "office":
                 friendly_name = data.get("friendly_name", entity_id)
-                indicators.append(f"🖥️ PC active: {friendly_name}")
+                indicators.append(f"PC active: {friendly_name}")
         
         # Check device trackers for PC
         for entity_id, data in context.get("device_trackers", {}).items():
             if "pc" in entity_id.lower() and data.get("state") == "home" and room_lower == "office":
-                indicators.append(f"🖥️ PC online: {entity_id}")
+                indicators.append(f"PC online: {entity_id}")
         
         # Check camera AI detection
         for entity_id, data in context.get("ai_detection", {}).items():
@@ -197,7 +197,7 @@ class CrewAIProvider(BaseLLMProvider):
                 detection_type = data.get("detection_type", "unknown")
                 camera_room = self._camera_name_to_room(camera)
                 if camera_room == room.lower().replace(" ", "_"):
-                    indicators.append(f"👤 {detection_type.title()} detected by camera: {camera}")
+                    indicators.append(f"{detection_type.title()} detected by camera: {camera}")
         
         return indicators
     
@@ -255,11 +255,11 @@ class CrewAIProvider(BaseLLMProvider):
             if pc_is_on:
                 room = "office"
                 confidence = 0.5
-                indicators.append("🎯 PC is active (fallback)")
+                indicators.append("PC is active (fallback)")
             elif living_room_tv_on:
                 room = "living_room"
                 confidence = 0.55
-                indicators.append("📺 TV playing (fallback)")
+                indicators.append("TV playing (fallback)")
             else:
                 room = "living_room"
                 confidence = 0.3
@@ -267,11 +267,11 @@ class CrewAIProvider(BaseLLMProvider):
             if living_room_tv_on:
                 room = "living_room"
                 confidence = 0.4
-                indicators.append("🐾 TV on - pet with family")
+                indicators.append("TV on - pet with family")
             elif pc_is_on:
                 room = "office"
                 confidence = 0.35
-                indicators.append("🐾 PC active - pet may be with owner")
+                indicators.append("PC active - pet may be with owner")
             else:
                 room = "bedroom"
                 confidence = 0.3
