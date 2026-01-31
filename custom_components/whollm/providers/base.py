@@ -139,9 +139,9 @@ class BaseLLMProvider(ABC):
                 changed = data.get('last_changed', '')
                 if state == "on":
                     if detection_type == "person":
-                        lines.append(f"  - {camera}: 🚨 PERSON DETECTED NOW by camera AI!")
+                        lines.append(f"  - {camera}: PERSON DETECTED NOW by camera AI")
                     else:
-                        lines.append(f"  - {camera}: 🐾 ANIMAL/PET DETECTED NOW by camera AI!")
+                        lines.append(f"  - {camera}: ANIMAL/PET DETECTED NOW by camera AI")
                 else:
                     lines.append(f"  - {camera}: no {detection_type} detected (last seen {changed})")
         
@@ -190,7 +190,7 @@ class BaseLLMProvider(ABC):
                 state = data.get('state', 'unknown')
                 changed = data.get('last_changed', '')
                 if state in ["on", "home"]:
-                    lines.append(f"  - {name}: 🖥️ ON/ACTIVE - person is at their desk! - {changed}")
+                    lines.append(f"  - {name}: ON/ACTIVE - person is at their desk - {changed}")
                 else:
                     lines.append(f"  - {name}: off/away - {changed}")
         

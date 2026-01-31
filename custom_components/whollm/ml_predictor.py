@@ -39,33 +39,32 @@ class MLPredictor:
     
     def _load_models(self) -> bool:
         """Load trained models from disk."""
-        # Try config path first, then fallback
-        for path in [MODEL_PATH, FALLBACK_MODEL_PATH]:
-            if path.exists():
-                try:
-                    with open(path, 'rb') as f:
-                        data = pickle.load(f)
-                    
-                    self.models = {
-                        name: info['model'] 
-                        for name, info in data.get('models', {}).items()
-                    }
-                    self.feature_names = data.get('feature_names', [])
-                    self.rooms = data.get('rooms', [])
-                    self.uncertainty_threshold = data.get('uncertainty_threshold', UNCERTAINTY_THRESHOLD)
-                    self._model_metadata = data
-                    self._loaded = True
-                    
-                    _LOGGER.info(
-                        "Loaded ML models for %s from %s (trained: %s)",
-                        list(self.models.keys()),
-                        path,
-                        data.get('trained_at', 'unknown')
-                    )
-                    return True
-                    
-                except Exception as err:
-                    _LOGGER.error("Failed to load models from %s: %s", path, err)
+        # Try to load from config path
+        if MODEL_PATH.exists():
+            try:
+                with open(MODEL_PATH, 'rb') as f:
+                    data = pickle.load(f)
+                
+                self.models = {
+                    name: info['model'] 
+                    for name, info in data.get('models', {}).items()
+                }
+                self.feature_names = data.get('feature_names', [])
+                self.rooms = data.get('rooms', [])
+                self.uncertainty_threshold = data.get('uncertainty_threshold', UNCERTAINTY_THRESHOLD)
+                self._model_metadata = data
+                self._loaded = True
+                
+                _LOGGER.info(
+                    "Loaded ML models for %s from %s (trained: %s)",
+                    list(self.models.keys()),
+                    MODEL_PATH,
+                    data.get('trained_at', 'unknown')
+                )
+                return True
+                
+            except Exception as err:
+                _LOGGER.error("Failed to load models from %s: %s", MODEL_PATH, err)
         
         _LOGGER.warning("No ML models found, prediction disabled")
         return False
@@ -260,7 +259,7 @@ class MLPredictor:
         options_text = ", ".join([f"{r} ({p*100:.0f}%)" for r, p in top_rooms])
         
         message = (
-            f"🤔 Uncertain about {entity_name}'s location.\n\n"
+            f"Uncertain about {entity_name}'s location.\n\n"
             f"Best guess: {predicted_room} ({confidence*100:.0f}%)\n"
             f"Options: {options_text}\n\n"
             f"Tap to correct (this helps train the model)."
