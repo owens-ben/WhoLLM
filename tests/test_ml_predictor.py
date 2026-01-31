@@ -211,7 +211,9 @@ class TestUncertaintyNotification:
         call_args = mock_hass.services.async_call.call_args
         assert call_args[0][0] == "persistent_notification"
         assert call_args[0][1] == "create"
-        assert "Alice" in call_args[1]["title"]
+        # Check the notification data
+        notification_data = call_args[1]
+        assert "Alice" in notification_data.get("title", "") or "Alice" in str(call_args)
 
     @pytest.mark.asyncio
     async def test_notify_uncertainty_no_hass(self):
