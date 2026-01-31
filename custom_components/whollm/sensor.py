@@ -1,4 +1,5 @@
 """Sensor platform for WhoLLM."""
+
 from __future__ import annotations
 
 import logging
@@ -7,7 +8,7 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback, Event
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -24,9 +25,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up WhoLLM sensors from a config entry."""
     coordinator: LLMPresenceCoordinator = hass.data[DOMAIN][entry.entry_id]
-    
+
     entities: list[SensorEntity] = []
-    
+
     # Create a sensor for each person
     for person in coordinator.persons:
         entities.append(
@@ -36,7 +37,7 @@ async def async_setup_entry(
                 entity_type="person",
             )
         )
-    
+
     # Create a sensor for each pet
     for pet in coordinator.pets:
         entities.append(
@@ -46,10 +47,10 @@ async def async_setup_entry(
                 entity_type="pet",
             )
         )
-    
+
     # Create vision identification sensor
     entities.append(LLMVisionSensor(hass, coordinator))
-    
+
     async_add_entities(entities)
 
 
@@ -68,11 +69,11 @@ class LLMPresenceSensor(CoordinatorEntity[LLMPresenceCoordinator], SensorEntity)
         super().__init__(coordinator)
         self._entity_name = entity_name
         self._entity_type = entity_type
-        
+
         # Set unique ID and name
         self._attr_unique_id = f"{DOMAIN}_{entity_type}_{entity_name.lower().replace(' ', '_')}_room"
         self._attr_name = f"{entity_name} Room"
-        
+
         # Set icon based on type
         self._attr_icon = "mdi:account" if entity_type == "person" else "mdi:paw"
 
@@ -81,10 +82,10 @@ class LLMPresenceSensor(CoordinatorEntity[LLMPresenceCoordinator], SensorEntity)
         """Return the current room."""
         if not self.coordinator.data:
             return None
-        
+
         data_key = "persons" if self._entity_type == "person" else "pets"
         entity_data = self.coordinator.data.get(data_key, {}).get(self._entity_name)
-        
+
         if entity_data:
             return entity_data.room
         return None
@@ -94,10 +95,10 @@ class LLMPresenceSensor(CoordinatorEntity[LLMPresenceCoordinator], SensorEntity)
         """Return additional attributes."""
         if not self.coordinator.data:
             return {}
-        
+
         data_key = "persons" if self._entity_type == "person" else "pets"
         entity_data = self.coordinator.data.get(data_key, {}).get(self._entity_name)
-        
+
         if entity_data:
             return {
                 ATTR_CONFIDENCE: entity_data.confidence,
@@ -136,12 +137,13 @@ class LLMVisionSensor(SensorEntity):
         self._detection_type: str = ""
         self._timestamp: str = ""
         self._raw_response: str = ""
-        
+
         # Listen for vision identification events
         self._unsub = None
 
     async def async_added_to_hass(self) -> None:
         """Register event listener when added to hass."""
+
         @callback
         def handle_vision_event(event: Event) -> None:
             """Handle vision identification event."""
@@ -153,19 +155,11 @@ class LLMVisionSensor(SensorEntity):
             self._detection_type = data.get("detection_type", "")
             self._timestamp = datetime.now().isoformat()
             self._raw_response = data.get("raw_response", "")
-            
-            _LOGGER.info(
-                "Vision sensor updated: %s (%s) from %s",
-                self._identified,
-                self._confidence,
-                self._camera
-            )
+
+            _LOGGER.info("Vision sensor updated: %s (%s) from %s", self._identified, self._confidence, self._camera)
             self.async_write_ha_state()
-        
-        self._unsub = self.hass.bus.async_listen(
-            f"{DOMAIN}_vision_identification",
-            handle_vision_event
-        )
+
+        self._unsub = self.hass.bus.async_listen(f"{DOMAIN}_vision_identification", handle_vision_event)
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister event listener when removed."""
@@ -188,5 +182,3 @@ class LLMVisionSensor(SensorEntity):
             "timestamp": self._timestamp,
             "raw_response": self._raw_response,
         }
-
-

@@ -1,11 +1,11 @@
 """Vision-based person identification using Ollama vision models."""
+
 from __future__ import annotations
 
-import asyncio
 import base64
 import logging
 from io import BytesIO
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
 
@@ -23,7 +23,7 @@ DEFAULT_KNOWN_ENTITIES = {
 
 class VisionIdentifier:
     """Use Ollama vision models to identify people/pets in camera images."""
-    
+
     def __init__(
         self,
         ollama_url: str,
@@ -32,7 +32,7 @@ class VisionIdentifier:
         known_pets: list[str] | None = None,
     ) -> None:
         """Initialize the vision identifier.
-        
+
         Vision model options:
         - moondream: Fastest (~5-15s), good accuracy, 1.7GB
         - llava:7b: Slower (~50-60s), better accuracy, 4.7GB
@@ -42,7 +42,7 @@ class VisionIdentifier:
         self.known_persons = known_persons or DEFAULT_KNOWN_ENTITIES["persons"]
         self.known_pets = known_pets or DEFAULT_KNOWN_ENTITIES["pets"]
         _LOGGER.info("VisionIdentifier initialized with model: %s", vision_model)
-    
+
     async def identify_from_camera(
         self,
         hass: HomeAssistant,
@@ -50,12 +50,12 @@ class VisionIdentifier:
         detection_type: str = "person",  # "person" or "animal"
     ) -> dict[str, Any]:
         """Capture image from camera and identify who/what is in it.
-        
+
         Args:
             hass: Home Assistant instance
             camera_entity_id: Entity ID of the camera (e.g., camera.e1_zoom_fluent)
             detection_type: Whether we're looking for a person or animal
-            
+
         Returns:
             Dict with identification results
         """
@@ -64,22 +64,19 @@ class VisionIdentifier:
             image_data = await self._get_camera_snapshot(hass, camera_entity_id)
             if not image_data:
                 return {"success": False, "error": "Failed to get camera snapshot"}
-            
+
             # Compress image for faster processing
             compressed_image = await self._compress_image(image_data)
-            
+
             # Send to Ollama for identification
-            result = await self._identify_with_ollama(
-                compressed_image, 
-                detection_type
-            )
-            
+            result = await self._identify_with_ollama(compressed_image, detection_type)
+
             return result
-            
+
         except Exception as err:
             _LOGGER.error("Error in vision identification: %s", err)
             return {"success": False, "error": str(err)}
-    
+
     async def _get_camera_snapshot(
         self,
         hass: HomeAssistant,
@@ -89,14 +86,14 @@ class VisionIdentifier:
         try:
             # Use Home Assistant's camera component to get image
             from homeassistant.components.camera import async_get_image
-            
+
             image = await async_get_image(hass, camera_entity_id)
             return image.content
-            
+
         except Exception as err:
             _LOGGER.error("Failed to get camera snapshot from %s: %s", camera_entity_id, err)
             return None
-    
+
     async def _compress_image(
         self,
         image_data: bytes,
@@ -106,46 +103,42 @@ class VisionIdentifier:
         """Compress image for faster LLM processing."""
         try:
             from PIL import Image
-            
+
             # Open image
             img = Image.open(BytesIO(image_data))
-            
+
             # Convert to RGB if necessary
-            if img.mode in ('RGBA', 'P'):
-                img = img.convert('RGB')
-            
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+
             # Resize if larger than max_size
             img.thumbnail(max_size, Image.Resampling.LANCZOS)
-            
+
             # Save as JPEG with compression
             output = BytesIO()
-            img.save(output, format='JPEG', quality=quality, optimize=True)
-            
+            img.save(output, format="JPEG", quality=quality, optimize=True)
+
             compressed = output.getvalue()
-            _LOGGER.debug(
-                "Compressed image from %d bytes to %d bytes",
-                len(image_data),
-                len(compressed)
-            )
+            _LOGGER.debug("Compressed image from %d bytes to %d bytes", len(image_data), len(compressed))
             return compressed
-            
+
         except ImportError:
             _LOGGER.warning("PIL not available, using original image")
             return image_data
         except Exception as err:
             _LOGGER.warning("Failed to compress image: %s", err)
             return image_data
-    
+
     async def _identify_with_ollama(
         self,
         image_data: bytes,
         detection_type: str,
     ) -> dict[str, Any]:
         """Send image to Ollama vision model for identification."""
-        
+
         # Encode image as base64
-        image_b64 = base64.b64encode(image_data).decode('utf-8')
-        
+        image_b64 = base64.b64encode(image_data).decode("utf-8")
+
         # Build prompt based on detection type
         if detection_type == "person":
             known_list = ", ".join(self.known_persons)
@@ -173,7 +166,7 @@ Respond in this exact format:
 ANIMAL: [pet name or type like "cat", "dog", or "unknown"]
 CONFIDENCE: [high/medium/low]
 DESCRIPTION: [brief description of what you see]"""
-        
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -191,34 +184,25 @@ DESCRIPTION: [brief description of what you see]"""
                     timeout=aiohttp.ClientTimeout(total=60),  # Vision takes longer
                 ) as response:
                     if response.status != 200:
-                        return {
-                            "success": False,
-                            "error": f"Ollama API error: {response.status}"
-                        }
-                    
+                        return {"success": False, "error": f"Ollama API error: {response.status}"}
+
                     result = await response.json()
                     raw_response = result.get("response", "").strip()
-                    
+
                     # Parse the response
-                    parsed = self._parse_identification_response(
-                        raw_response, 
-                        detection_type
-                    )
+                    parsed = self._parse_identification_response(raw_response, detection_type)
                     parsed["raw_response"] = raw_response
                     parsed["success"] = True
-                    
-                    _LOGGER.info(
-                        "Vision identification result: %s",
-                        parsed
-                    )
-                    
+
+                    _LOGGER.info("Vision identification result: %s", parsed)
+
                     return parsed
-                    
-        except asyncio.TimeoutError:
+
+        except TimeoutError:
             return {"success": False, "error": "Vision model timeout"}
         except Exception as err:
             return {"success": False, "error": str(err)}
-    
+
     def _parse_identification_response(
         self,
         response: str,
@@ -230,8 +214,8 @@ DESCRIPTION: [brief description of what you see]"""
             "confidence": "low",
             "description": "",
         }
-        
-        lines = response.strip().split('\n')
+
+        lines = response.strip().split("\n")
         for line in lines:
             line = line.strip()
             if detection_type == "person" and line.upper().startswith("PERSON:"):
@@ -242,33 +226,33 @@ DESCRIPTION: [brief description of what you see]"""
                 result["confidence"] = line.split(":", 1)[1].strip().lower()
             elif line.upper().startswith("DESCRIPTION:"):
                 result["description"] = line.split(":", 1)[1].strip()
-        
+
         # Normalize the identified name
         identified = result["identified"].lower()
-        
+
         # Check if it matches any known person
         for person in self.known_persons:
             if person.lower() in identified:
                 result["identified"] = person
                 break
-        
+
         # Check if it matches any known pet
         for pet in self.known_pets:
             if pet.lower() in identified:
                 result["identified"] = pet
                 break
-        
+
         return result
 
 
 class CameraTrackingController:
     """Control camera PTZ tracking based on presence detection."""
-    
+
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the tracking controller."""
         self.hass = hass
         self._tracking_enabled: dict[str, bool] = {}
-    
+
     async def enable_tracking(self, camera_name: str) -> bool:
         """Enable auto-tracking on a camera."""
         entity_id = f"switch.{camera_name}_auto_tracking"
@@ -284,7 +268,7 @@ class CameraTrackingController:
         except Exception as err:
             _LOGGER.error("Failed to enable tracking on %s: %s", camera_name, err)
             return False
-    
+
     async def disable_tracking(self, camera_name: str) -> bool:
         """Disable auto-tracking on a camera."""
         entity_id = f"switch.{camera_name}_auto_tracking"
@@ -300,14 +284,14 @@ class CameraTrackingController:
         except Exception as err:
             _LOGGER.error("Failed to disable tracking on %s: %s", camera_name, err)
             return False
-    
+
     async def toggle_tracking_on_detection(
         self,
         camera_name: str,
         person_detected: bool,
     ) -> None:
         """Toggle tracking based on person detection.
-        
+
         Enable tracking when person detected, disable after timeout.
         """
         if person_detected:
@@ -315,4 +299,3 @@ class CameraTrackingController:
         else:
             # Could add a delay here before disabling
             await self.disable_tracking(camera_name)
-

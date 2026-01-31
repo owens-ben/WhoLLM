@@ -16,15 +16,15 @@ CONF_ROOMS = "rooms"
 CONF_ROOM_ENTITIES = "room_entities"  # Dict[room_name, List[entity_id]]
 
 # Entity type hints - what kind of signal does this entity provide?
-ENTITY_HINT_MOTION = "motion"           # Motion sensors
-ENTITY_HINT_MEDIA = "media"             # Media players (TV, speakers)
-ENTITY_HINT_LIGHT = "light"             # Lights
-ENTITY_HINT_COMPUTER = "computer"       # PC/workstation indicators
-ENTITY_HINT_CAMERA = "camera"           # Camera with AI detection
-ENTITY_HINT_CLIMATE = "climate"         # Temperature/humidity sensors
-ENTITY_HINT_DOOR = "door"               # Door/window sensors
-ENTITY_HINT_APPLIANCE = "appliance"     # Other appliances
-ENTITY_HINT_PRESENCE = "presence"       # BLE/WiFi presence sensors
+ENTITY_HINT_MOTION = "motion"  # Motion sensors
+ENTITY_HINT_MEDIA = "media"  # Media players (TV, speakers)
+ENTITY_HINT_LIGHT = "light"  # Lights
+ENTITY_HINT_COMPUTER = "computer"  # PC/workstation indicators
+ENTITY_HINT_CAMERA = "camera"  # Camera with AI detection
+ENTITY_HINT_CLIMATE = "climate"  # Temperature/humidity sensors
+ENTITY_HINT_DOOR = "door"  # Door/window sensors
+ENTITY_HINT_APPLIANCE = "appliance"  # Other appliances
+ENTITY_HINT_PRESENCE = "presence"  # BLE/WiFi presence sensors
 
 ENTITY_HINTS = [
     ENTITY_HINT_MOTION,
@@ -41,17 +41,17 @@ ENTITY_HINTS = [
 # Confidence weights for different entity types (can be overridden in options)
 CONF_CONFIDENCE_WEIGHTS = "confidence_weights"
 DEFAULT_CONFIDENCE_WEIGHTS = {
-    ENTITY_HINT_CAMERA: 0.95,       # Camera AI detection is very reliable
-    ENTITY_HINT_COMPUTER: 0.85,     # PC actively in use - very strong for office
-    ENTITY_HINT_MEDIA: 0.80,        # Media playing is strong
-    ENTITY_HINT_MOTION: 0.60,       # Motion sensor
-    ENTITY_HINT_PRESENCE: 0.70,     # BLE/WiFi presence
-    ENTITY_HINT_APPLIANCE: 0.50,    # Appliance in use
-    ENTITY_HINT_LIGHT: 0.25,        # Light on - weak indicator alone
-    ENTITY_HINT_DOOR: 0.40,         # Door recently opened
-    ENTITY_HINT_CLIMATE: 0.20,      # Climate change - very weak
-    "llm_reasoning": 0.50,          # LLM text reasoning
-    "habit": 0.35,                  # Habit-based prediction
+    ENTITY_HINT_CAMERA: 0.95,  # Camera AI detection is very reliable
+    ENTITY_HINT_COMPUTER: 0.85,  # PC actively in use - very strong for office
+    ENTITY_HINT_MEDIA: 0.80,  # Media playing is strong
+    ENTITY_HINT_MOTION: 0.60,  # Motion sensor
+    ENTITY_HINT_PRESENCE: 0.70,  # BLE/WiFi presence
+    ENTITY_HINT_APPLIANCE: 0.50,  # Appliance in use
+    ENTITY_HINT_LIGHT: 0.25,  # Light on - weak indicator alone
+    ENTITY_HINT_DOOR: 0.40,  # Door recently opened
+    ENTITY_HINT_CLIMATE: 0.20,  # Climate change - very weak
+    "llm_reasoning": 0.50,  # LLM text reasoning
+    "habit": 0.35,  # Habit-based prediction
 }
 
 # Person-device ownership mapping

@@ -1,4 +1,5 @@
 """Tests for habit learning and confidence combining."""
+
 from __future__ import annotations
 
 import json
@@ -40,7 +41,7 @@ class TestHabitPredictor:
             confidence=0.85,
             timestamp=ts,
         )
-        
+
         assert "Alice" in habit_predictor.habits
         # 14:30 falls into slot (14, 16)
         assert (14, 16) in habit_predictor.habits["Alice"]
@@ -51,12 +52,12 @@ class TestHabitPredictor:
     def test_learn_reinforces_same_room(self, habit_predictor):
         """Learning same room multiple times increases confidence."""
         ts = datetime(2024, 1, 15, 14, 30)
-        
+
         # First observation
         habit_predictor.learn_from_event("Alice", "office", 0.8, ts)
         # Second observation, same room
         habit_predictor.learn_from_event("Alice", "office", 0.9, ts)
-        
+
         pattern = habit_predictor.habits["Alice"][(14, 16)]
         # Confidence should be weighted average: (0.8 * 1 + 0.9) / 2 = 0.85
         assert pattern[1] == pytest.approx(0.85, rel=0.01)
@@ -65,10 +66,10 @@ class TestHabitPredictor:
     def test_learn_different_room_higher_confidence_wins(self, habit_predictor):
         """New room with higher confidence replaces existing."""
         ts = datetime(2024, 1, 15, 14, 30)
-        
+
         habit_predictor.learn_from_event("Alice", "office", 0.75, ts)
         habit_predictor.learn_from_event("Alice", "bedroom", 0.9, ts)  # Higher confidence
-        
+
         pattern = habit_predictor.habits["Alice"][(14, 16)]
         assert pattern[0] == "bedroom"
         assert pattern[1] == 0.9
@@ -76,17 +77,17 @@ class TestHabitPredictor:
     def test_learn_different_room_lower_confidence_ignored(self, habit_predictor):
         """New room with lower confidence does not replace."""
         ts = datetime(2024, 1, 15, 14, 30)
-        
+
         habit_predictor.learn_from_event("Alice", "office", 0.9, ts)
         habit_predictor.learn_from_event("Alice", "bedroom", 0.75, ts)  # Lower
-        
+
         pattern = habit_predictor.habits["Alice"][(14, 16)]
         assert pattern[0] == "office"  # Still office
 
     def test_get_habit_hint_no_patterns(self, habit_predictor):
         """Get hint when no patterns exist."""
         hint = habit_predictor.get_habit_hint("Alice", "person")
-        
+
         assert hint["predicted_room"] == "unknown"
         assert hint["confidence"] == 0.0
         assert "no learned patterns" in hint["reason"]
@@ -96,9 +97,9 @@ class TestHabitPredictor:
         # Learn a pattern for current time
         now = datetime.now()
         habit_predictor.learn_from_event("Alice", "office", 0.85, now)
-        
+
         hint = habit_predictor.get_habit_hint("Alice", "person")
-        
+
         assert hint["predicted_room"] == "office"
         assert hint["confidence"] == 0.85
         assert hint["source"] == "learned_habit"
@@ -109,10 +110,10 @@ class TestHabitPredictor:
         ts = datetime(2024, 1, 15, 10, 0)
         predictor1.learn_from_event("Alice", "kitchen", 0.9, ts)
         predictor1.save_learned_patterns()
-        
+
         # Create new predictor, should load saved patterns
         predictor2 = HabitPredictor(config_path=temp_config_dir)
-        
+
         assert "Alice" in predictor2.habits
         assert (10, 12) in predictor2.habits["Alice"]
         assert predictor2.habits["Alice"][(10, 12)][0] == "kitchen"
@@ -121,9 +122,9 @@ class TestHabitPredictor:
         """Clear patterns for one person."""
         habit_predictor.learn_from_event("Alice", "office", 0.9)
         habit_predictor.learn_from_event("Bob", "bedroom", 0.85)
-        
+
         habit_predictor.clear_patterns("Alice")
-        
+
         assert "Alice" not in habit_predictor.habits
         assert "Bob" in habit_predictor.habits
 
@@ -131,9 +132,9 @@ class TestHabitPredictor:
         """Clear all patterns."""
         habit_predictor.learn_from_event("Alice", "office", 0.9)
         habit_predictor.learn_from_event("Bob", "bedroom", 0.85)
-        
+
         habit_predictor.clear_patterns()
-        
+
         assert habit_predictor.habits == {}
 
     def test_get_daily_schedule(self, habit_predictor):
@@ -141,9 +142,9 @@ class TestHabitPredictor:
         habit_predictor.learn_from_event("Alice", "bedroom", 0.9, datetime(2024, 1, 15, 7, 0))
         habit_predictor.learn_from_event("Alice", "office", 0.85, datetime(2024, 1, 15, 10, 0))
         habit_predictor.learn_from_event("Alice", "office", 0.9, datetime(2024, 1, 15, 14, 0))
-        
+
         schedule = habit_predictor.get_daily_schedule("Alice")
-        
+
         assert len(schedule) == 3
         # Should be sorted by hour
         assert schedule[0]["start_hour"] == 6
@@ -159,7 +160,7 @@ class TestConfidenceCombiner:
             llm_room="unknown",
             llm_confidence=0.0,
         )
-        
+
         assert room == "unknown"
         assert confidence == 0.0
         assert "No signals" in explanation
@@ -170,7 +171,7 @@ class TestConfidenceCombiner:
             llm_room="office",
             llm_confidence=0.8,
         )
-        
+
         assert room == "office"
         assert confidence > 0
         assert "LLM" in explanation
@@ -182,7 +183,7 @@ class TestConfidenceCombiner:
             llm_confidence=0.7,
             sensor_indicators=sample_indicators,
         )
-        
+
         assert room == "office"
         assert confidence > 0.5  # Multiple signals should boost confidence
 
@@ -194,7 +195,7 @@ class TestConfidenceCombiner:
             habit_room="office",
             habit_confidence=0.9,
         )
-        
+
         # With strong habit signal, office should win
         # (depends on weight configuration)
         assert confidence > 0
@@ -204,28 +205,33 @@ class TestConfidenceCombiner:
         indicators = [
             {"entity_id": "switch.office_pc", "hint_type": ENTITY_HINT_COMPUTER, "room": "office", "state": "on"},
         ]
-        
+
         room, confidence, _ = confidence_combiner.combine(
             llm_room="bedroom",
             llm_confidence=0.5,
             sensor_indicators=indicators,
         )
-        
+
         # Computer on should strongly suggest office
         assert room == "office"
 
     def test_combine_media_playing_strong(self, confidence_combiner):
         """Media playing should be a strong signal."""
         indicators = [
-            {"entity_id": "media_player.living_room_tv", "hint_type": ENTITY_HINT_MEDIA, "room": "living_room", "state": "playing"},
+            {
+                "entity_id": "media_player.living_room_tv",
+                "hint_type": ENTITY_HINT_MEDIA,
+                "room": "living_room",
+                "state": "playing",
+            },
         ]
-        
+
         room, confidence, _ = confidence_combiner.combine(
             llm_room="office",
             llm_confidence=0.5,
             sensor_indicators=indicators,
         )
-        
+
         assert room == "living_room"
 
     def test_combine_media_paused_weaker(self, confidence_combiner):
@@ -236,14 +242,14 @@ class TestConfidenceCombiner:
         paused_indicators = [
             {"entity_id": "media_player.tv", "hint_type": ENTITY_HINT_MEDIA, "room": "living_room", "state": "paused"},
         ]
-        
+
         _, playing_conf, _ = confidence_combiner.combine(
             llm_room="living_room", llm_confidence=0.5, sensor_indicators=playing_indicators
         )
         _, paused_conf, _ = confidence_combiner.combine(
             llm_room="living_room", llm_confidence=0.5, sensor_indicators=paused_indicators
         )
-        
+
         assert playing_conf >= paused_conf
 
     def test_combine_multiple_rooms_picks_strongest(self, confidence_combiner):
@@ -251,15 +257,20 @@ class TestConfidenceCombiner:
         indicators = [
             {"entity_id": "light.bedroom", "hint_type": ENTITY_HINT_LIGHT, "room": "bedroom", "state": "on"},
             {"entity_id": "switch.office_pc", "hint_type": ENTITY_HINT_COMPUTER, "room": "office", "state": "on"},
-            {"entity_id": "binary_sensor.office_motion", "hint_type": ENTITY_HINT_MOTION, "room": "office", "state": "on"},
+            {
+                "entity_id": "binary_sensor.office_motion",
+                "hint_type": ENTITY_HINT_MOTION,
+                "room": "office",
+                "state": "on",
+            },
         ]
-        
+
         room, _, _ = confidence_combiner.combine(
             llm_room="bedroom",
             llm_confidence=0.4,
             sensor_indicators=indicators,
         )
-        
+
         # Office has computer (0.85) + motion (0.60) vs bedroom light (0.25)
         assert room == "office"
 
@@ -267,30 +278,40 @@ class TestConfidenceCombiner:
         """Multiple signals agreeing should boost confidence."""
         # Single signal
         single_indicators = [
-            {"entity_id": "binary_sensor.office_motion", "hint_type": ENTITY_HINT_MOTION, "room": "office", "state": "on"},
+            {
+                "entity_id": "binary_sensor.office_motion",
+                "hint_type": ENTITY_HINT_MOTION,
+                "room": "office",
+                "state": "on",
+            },
         ]
-        
+
         # Multiple signals
         multi_indicators = [
-            {"entity_id": "binary_sensor.office_motion", "hint_type": ENTITY_HINT_MOTION, "room": "office", "state": "on"},
+            {
+                "entity_id": "binary_sensor.office_motion",
+                "hint_type": ENTITY_HINT_MOTION,
+                "room": "office",
+                "state": "on",
+            },
             {"entity_id": "switch.office_pc", "hint_type": ENTITY_HINT_COMPUTER, "room": "office", "state": "on"},
             {"entity_id": "light.office", "hint_type": ENTITY_HINT_LIGHT, "room": "office", "state": "on"},
         ]
-        
+
         _, single_conf, _ = confidence_combiner.combine(
             llm_room="office", llm_confidence=0.6, sensor_indicators=single_indicators
         )
         _, multi_conf, _ = confidence_combiner.combine(
             llm_room="office", llm_confidence=0.6, sensor_indicators=multi_indicators
         )
-        
+
         assert multi_conf > single_conf
 
     def test_update_weights(self, confidence_combiner):
         """Test updating confidence weights."""
         original_motion = confidence_combiner.weights.get(ENTITY_HINT_MOTION)
-        
+
         confidence_combiner.update_weights({ENTITY_HINT_MOTION: 0.95})
-        
+
         assert confidence_combiner.weights[ENTITY_HINT_MOTION] == 0.95
         assert confidence_combiner.weights[ENTITY_HINT_MOTION] != original_motion

@@ -3,6 +3,7 @@
 WhoLLM learns presence patterns over time from observed data.
 No hardcoded patterns - all patterns are learned from your household's actual behavior.
 """
+
 from __future__ import annotations
 
 import json
@@ -12,16 +13,8 @@ from pathlib import Path
 from typing import Any
 
 from .const import (
-    CONF_CONFIDENCE_WEIGHTS,
     DEFAULT_CONFIDENCE_WEIGHTS,
-    ENTITY_HINT_CAMERA,
-    ENTITY_HINT_COMPUTER,
     ENTITY_HINT_MEDIA,
-    ENTITY_HINT_MOTION,
-    ENTITY_HINT_PRESENCE,
-    ENTITY_HINT_APPLIANCE,
-    ENTITY_HINT_LIGHT,
-    ENTITY_HINT_DOOR,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,18 +22,18 @@ _LOGGER = logging.getLogger(__name__)
 
 class HabitPredictor:
     """Predict presence based on learned habits and patterns.
-    
+
     Patterns are learned over time from observed presence events.
     No default patterns - starts blank and learns from your household.
     """
-    
+
     def __init__(self, config_path: Path | None = None):
         """Initialize with optional path to learned patterns."""
         self._config_path = config_path or Path("/config")
         self._learned_patterns_path = self._config_path / "whollm_learned_habits.json"
         self.habits: dict[str, dict] = {}
         self._load_learned_patterns()
-    
+
     def _load_learned_patterns(self) -> None:
         """Load learned patterns from file if available."""
         try:
@@ -55,13 +48,10 @@ class HabitPredictor:
                             if "-" in time_key:
                                 start, end = map(int, time_key.split("-"))
                                 self.habits[person][(start, end)] = tuple(pattern)
-                _LOGGER.info(
-                    "Loaded learned habit patterns for %d people",
-                    len(self.habits)
-                )
+                _LOGGER.info("Loaded learned habit patterns for %d people", len(self.habits))
         except Exception as err:
             _LOGGER.debug("No learned patterns loaded: %s", err)
-    
+
     def save_learned_patterns(self) -> None:
         """Save current patterns to file."""
         try:
@@ -73,13 +63,13 @@ class HabitPredictor:
                     if isinstance(time_range, tuple):
                         time_key = f"{time_range[0]}-{time_range[1]}"
                         data["patterns"][person][time_key] = list(pattern)
-            
+
             with open(self._learned_patterns_path, "w") as f:
                 json.dump(data, f, indent=2)
             _LOGGER.info("Saved learned habit patterns")
         except Exception as err:
             _LOGGER.warning("Could not save learned patterns: %s", err)
-    
+
     def learn_from_event(
         self,
         entity_name: str,
@@ -88,29 +78,29 @@ class HabitPredictor:
         timestamp: datetime | None = None,
     ) -> None:
         """Learn from an observed presence event.
-        
+
         Call this when a presence is confirmed (high confidence or user correction).
         Over time, patterns will emerge.
         """
         if confidence < 0.7:
             # Only learn from confident observations
             return
-        
+
         ts = timestamp or datetime.now()
         hour = ts.hour
-        is_weekend = ts.weekday() >= 5
-        
+        # Weekend detection removed - unused
+
         # Find or create time slot (2-hour windows)
         slot_start = (hour // 2) * 2
         slot_end = slot_start + 2
         time_range = (slot_start, slot_end)
-        
+
         if entity_name not in self.habits:
             self.habits[entity_name] = {}
-        
+
         # Get existing pattern or create new
         existing = self.habits[entity_name].get(time_range)
-        
+
         if existing:
             # Update existing pattern with weighted average
             old_room, old_conf, old_count = existing[0], existing[1], existing[2] if len(existing) > 2 else 1
@@ -125,28 +115,25 @@ class HabitPredictor:
         else:
             # New pattern
             self.habits[entity_name][time_range] = (room, confidence, 1)
-        
-        _LOGGER.debug(
-            "Learned pattern: %s at %02d:00 -> %s (conf: %.2f)",
-            entity_name, hour, room, confidence
-        )
-    
+
+        _LOGGER.debug("Learned pattern: %s at %02d:00 -> %s (conf: %.2f)", entity_name, hour, room, confidence)
+
     def get_habit_hint(
         self,
         entity_name: str,
         entity_type: str = "person",
     ) -> dict[str, Any]:
         """Get habit-based prediction for current time.
-        
+
         Returns:
             Dict with predicted_room, confidence, reason, and hint_text
         """
         now = datetime.now()
         hour = now.hour
-        
+
         # Get habits for this entity
         person_habits = self.habits.get(entity_name, {})
-        
+
         if not person_habits:
             return {
                 "predicted_room": "unknown",
@@ -155,7 +142,7 @@ class HabitPredictor:
                 "hint_text": f"No learned patterns for {entity_name} yet. Patterns will emerge over time.",
                 "source": "none",
             }
-        
+
         # Find matching time slot
         for time_range, pattern in person_habits.items():
             if isinstance(time_range, tuple) and len(time_range) == 2:
@@ -170,7 +157,7 @@ class HabitPredictor:
                         "hint_text": f"Based on learned patterns, {entity_name} is usually in {room} at this time.",
                         "source": "learned_habit",
                     }
-        
+
         return {
             "predicted_room": "unknown",
             "confidence": 0.0,
@@ -178,37 +165,39 @@ class HabitPredictor:
             "hint_text": f"No learned pattern for {entity_name} at this hour.",
             "source": "none",
         }
-    
+
     def get_habit_context_for_prompt(self, entity_name: str, entity_type: str = "person") -> str:
         """Get habit hint formatted for LLM prompt."""
         hint = self.get_habit_hint(entity_name, entity_type)
-        
+
         if hint["confidence"] > 0:
             return f"""
 LEARNED PATTERN HINT (use as context, not absolute truth):
-{hint['hint_text']}
-Confidence: {int(hint['confidence'] * 100)}%
+{hint["hint_text"]}
+Confidence: {int(hint["confidence"] * 100)}%
 Note: This is a learned pattern - actual sensor data should override if contradictory.
 """
         return ""
-    
+
     def get_daily_schedule(self, entity_name: str) -> list[dict]:
         """Get the full daily schedule for a person."""
         schedule = []
         person_habits = self.habits.get(entity_name, {})
-        
+
         for time_range, pattern in sorted(person_habits.items()):
             if isinstance(time_range, tuple) and len(time_range) == 2:
-                schedule.append({
-                    "start_hour": time_range[0],
-                    "end_hour": time_range[1],
-                    "room": pattern[0],
-                    "confidence": pattern[1],
-                    "observations": pattern[2] if len(pattern) > 2 else 1,
-                })
-        
+                schedule.append(
+                    {
+                        "start_hour": time_range[0],
+                        "end_hour": time_range[1],
+                        "room": pattern[0],
+                        "confidence": pattern[1],
+                        "observations": pattern[2] if len(pattern) > 2 else 1,
+                    }
+                )
+
         return schedule
-    
+
     def clear_patterns(self, entity_name: str | None = None) -> None:
         """Clear learned patterns for a person or all patterns."""
         if entity_name:
@@ -222,15 +211,15 @@ Note: This is a learned pattern - actual sensor data should override if contradi
 
 class ConfidenceCombiner:
     """Combine confidence scores from multiple sources using configured weights."""
-    
+
     def __init__(self, weights: dict[str, float] | None = None):
         """Initialize with optional custom weights."""
         self.weights = weights or DEFAULT_CONFIDENCE_WEIGHTS.copy()
-    
+
     def update_weights(self, new_weights: dict[str, float]) -> None:
         """Update confidence weights."""
         self.weights.update(new_weights)
-    
+
     def combine(
         self,
         llm_room: str,
@@ -243,7 +232,7 @@ class ConfidenceCombiner:
         active_entities: dict[str, str] | None = None,
     ) -> tuple[str, float, str]:
         """Combine multiple signals into final prediction.
-        
+
         Args:
             llm_room: Room predicted by LLM
             llm_confidence: LLM's confidence
@@ -253,13 +242,13 @@ class ConfidenceCombiner:
             entity_name: Name of person (for person-specific device logic)
             room_entities: Configured room-to-entity mappings
             active_entities: Currently active entities {entity_id: state}
-            
+
         Returns:
             Tuple of (room, confidence, explanation)
         """
         candidates: dict[str, float] = {}
         explanations: list[str] = []
-        
+
         # Process sensor indicators
         if sensor_indicators:
             for indicator in sensor_indicators:
@@ -267,13 +256,13 @@ class ConfidenceCombiner:
                 hint_type = indicator.get("hint_type", "motion")
                 entity_id = indicator.get("entity_id", "")
                 state = indicator.get("state", "on")
-                
+
                 if not room or room == "unknown":
                     continue
-                
+
                 # Get weight for this hint type
                 weight = self.weights.get(hint_type, 0.3)
-                
+
                 # Adjust weight based on state
                 if hint_type == ENTITY_HINT_MEDIA:
                     if state == "playing":
@@ -282,45 +271,45 @@ class ConfidenceCombiner:
                         weight = self.weights.get(ENTITY_HINT_MEDIA, 0.8) * 0.7
                     else:
                         weight = 0.1
-                
+
                 candidates[room] = candidates.get(room, 0) + weight
-                
+
                 # Build explanation
                 if weight >= 0.5:
                     short_entity = entity_id.split(".")[-1] if "." in entity_id else entity_id
                     explanations.append(f"{hint_type}: {short_entity}")
-        
+
         # LLM reasoning
         if llm_room and llm_room != "unknown":
             weighted = llm_confidence * self.weights.get("llm_reasoning", 0.5)
             candidates[llm_room] = candidates.get(llm_room, 0) + weighted
             if llm_confidence >= 0.5:
                 explanations.append(f"LLM: {llm_room}")
-        
+
         # Habit prediction
         if habit_room and habit_room != "unknown" and habit_confidence > 0:
             weighted = habit_confidence * self.weights.get("habit", 0.35)
             candidates[habit_room] = candidates.get(habit_room, 0) + weighted
-        
+
         if not candidates:
             return "unknown", 0.0, "No signals available"
-        
+
         # Find the room with highest combined score
         best_room = max(candidates, key=candidates.get)
         best_score = candidates[best_room]
-        
+
         # Normalize confidence (cap at 1.0)
         # Use sum of top weights as max possible
         max_possible = sum(sorted(self.weights.values(), reverse=True)[:3])
         final_confidence = min(1.0, best_score / max_possible)
-        
+
         # Boost confidence if multiple strong sources agree
         if len([r for r, s in candidates.items() if r == best_room and s >= 0.5]) >= 2:
             final_confidence = min(1.0, final_confidence + 0.1)
             explanations.append("Multiple signals agree")
-        
+
         explanation = " | ".join(explanations[:4])  # Limit explanation length
-        
+
         return best_room, final_confidence, explanation
 
 

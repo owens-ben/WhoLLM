@@ -1,4 +1,5 @@
 """Integration tests for WhoLLM end-to-end flows."""
+
 from __future__ import annotations
 
 import pytest
@@ -37,13 +38,13 @@ def mock_hass():
     """Create a comprehensive mock Home Assistant instance."""
     hass = MagicMock()
     hass.data = {}
-    
+
     # Mock states
     mock_states = {}
-    
+
     def get_state(entity_id):
         return mock_states.get(entity_id)
-    
+
     def set_state(entity_id, state, attributes=None):
         mock_state = MagicMock()
         mock_state.state = state
@@ -52,17 +53,17 @@ def mock_hass():
         mock_state.last_changed = None
         mock_states[entity_id] = mock_state
         return mock_state
-    
+
     hass.states = MagicMock()
     hass.states.get = get_state
     hass.states.async_all = MagicMock(return_value=list(mock_states.values()))
     hass._mock_states = mock_states
     hass._set_state = set_state
-    
+
     # Mock bus
     hass.bus = MagicMock()
     hass.bus.async_fire = MagicMock()
-    
+
     return hass
 
 
@@ -109,15 +110,15 @@ class TestEndToEndCoordinatorFlow:
     @pytest.mark.asyncio
     async def test_full_update_cycle(self, mock_hass, full_config_entry):
         """Test a complete coordinator update with all components.
-        
+
         Note: This test requires full Home Assistant setup.
         It's primarily run in CI with pytest-homeassistant-custom-component.
         """
         # This test validates the coordinator flow conceptually
         # Full integration testing requires HA test fixtures
-        
+
         from custom_components.whollm.providers.base import PresenceGuess
-        
+
         # Test that PresenceGuess can be created and used
         guess = PresenceGuess(
             room="office",
@@ -125,26 +126,26 @@ class TestEndToEndCoordinatorFlow:
             raw_response="office",
             indicators=["PC is active"],
         )
-        
+
         assert guess.room == "office"
         assert guess.confidence == 0.85
 
     @pytest.mark.asyncio
     async def test_learning_from_confident_predictions(self, mock_hass, full_config_entry):
         """Test that habit predictor learns from confident predictions.
-        
+
         Note: This test validates learning logic without full HA setup.
         """
         from custom_components.whollm.habits import HabitPredictor
         from pathlib import Path
         from tempfile import TemporaryDirectory
-        
+
         with TemporaryDirectory() as tmpdir:
             predictor = HabitPredictor(config_path=Path(tmpdir))
-            
+
             # Learn from high-confidence prediction
             predictor.learn_from_event("Alice", "office", 0.9)
-            
+
             # Verify learning occurred
             assert "Alice" in predictor.habits
 
@@ -154,16 +155,16 @@ class TestRoomTransitionDetection:
 
     def test_room_transition_detected(self, mock_hass, full_config_entry):
         """Test that room transitions are detected and logged.
-        
+
         Tests the transition detection logic in isolation.
         """
         from custom_components.whollm.event_logger import EventLogger
         from tempfile import TemporaryDirectory
         from pathlib import Path
-        
+
         with TemporaryDirectory() as tmpdir:
             logger = EventLogger(str(Path(tmpdir) / "events.jsonl"))
-            
+
             # Log a transition
             logger.log_room_transition(
                 entity_name="Alice",
@@ -171,7 +172,7 @@ class TestRoomTransitionDetection:
                 to_room="bedroom",
                 confidence=0.8,
             )
-            
+
             # Verify it was logged
             events = logger.get_recent_events(10)
             assert len(events) == 1
@@ -187,9 +188,9 @@ class TestProviderFallback:
     async def test_fallback_on_provider_error(self, mock_hass, full_config_entry):
         """Test that Ollama provider returns fallback on error."""
         from custom_components.whollm.providers.ollama import OllamaProvider
-        
+
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
-        
+
         context = {
             "lights": {},
             "motion": {},
@@ -199,12 +200,10 @@ class TestProviderFallback:
             "ai_detection": {},
             "time_context": {"current_time": "14:00", "day_of_week": "Monday"},
         }
-        
+
         # Test fallback guess creation
-        guess = provider._create_fallback_guess(
-            context, "Alice", "person", ["office", "bedroom"], "Test error"
-        )
-        
+        guess = provider._create_fallback_guess(context, "Alice", "person", ["office", "bedroom"], "Test error")
+
         # Should return office because PC is on
         assert guess.room == "office"
         assert guess.confidence < 0.9  # Fallback has lower confidence
@@ -216,7 +215,7 @@ class TestSensorEntityIntegration:
     def test_sensor_receives_coordinator_data(self, mock_hass, full_config_entry):
         """Test that sensors receive data from coordinator updates."""
         from custom_components.whollm.sensor import LLMPresenceSensor
-        
+
         mock_coordinator = MagicMock()
         mock_coordinator.data = {
             "persons": {
@@ -229,13 +228,13 @@ class TestSensorEntityIntegration:
             },
             "pets": {},
         }
-        
+
         sensor = LLMPresenceSensor(
             coordinator=mock_coordinator,
             entity_name="Alice",
             entity_type="person",
         )
-        
+
         # Verify sensor reflects coordinator data
         assert sensor.native_value == "office"
         assert sensor.extra_state_attributes["confidence"] == 0.85
@@ -243,7 +242,7 @@ class TestSensorEntityIntegration:
     def test_binary_sensor_reflects_room_state(self, mock_hass, full_config_entry):
         """Test that binary sensors reflect correct room state."""
         from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
-        
+
         mock_coordinator = MagicMock()
         mock_coordinator.data = {
             "persons": {
@@ -256,7 +255,7 @@ class TestSensorEntityIntegration:
             },
             "pets": {},
         }
-        
+
         # Sensor for office (where Alice is)
         sensor_office = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -264,7 +263,7 @@ class TestSensorEntityIntegration:
             entity_type="person",
             room="office",
         )
-        
+
         # Sensor for bedroom (where Alice is NOT)
         sensor_bedroom = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -272,7 +271,7 @@ class TestSensorEntityIntegration:
             entity_type="person",
             room="bedroom",
         )
-        
+
         assert sensor_office.is_on is True
         assert sensor_bedroom.is_on is False
 
@@ -284,30 +283,26 @@ class TestHabitLearningIntegration:
         """Test the full habit learning flow."""
         from custom_components.whollm.habits import HabitPredictor
         from datetime import datetime
-        
+
         with TemporaryDirectory() as tmpdir:
             predictor = HabitPredictor(config_path=Path(tmpdir))
-            
+
             # Learn several patterns
             for day in range(5):
                 # Morning - bedroom
-                predictor.learn_from_event("Alice", "bedroom", 0.9, 
-                    datetime(2024, 1, day + 1, 7, 0))
+                predictor.learn_from_event("Alice", "bedroom", 0.9, datetime(2024, 1, day + 1, 7, 0))
                 # Work hours - office
-                predictor.learn_from_event("Alice", "office", 0.85,
-                    datetime(2024, 1, day + 1, 10, 0))
-                predictor.learn_from_event("Alice", "office", 0.9,
-                    datetime(2024, 1, day + 1, 14, 0))
+                predictor.learn_from_event("Alice", "office", 0.85, datetime(2024, 1, day + 1, 10, 0))
+                predictor.learn_from_event("Alice", "office", 0.9, datetime(2024, 1, day + 1, 14, 0))
                 # Evening - living room
-                predictor.learn_from_event("Alice", "living_room", 0.8,
-                    datetime(2024, 1, day + 1, 20, 0))
-            
+                predictor.learn_from_event("Alice", "living_room", 0.8, datetime(2024, 1, day + 1, 20, 0))
+
             # Save patterns
             predictor.save_learned_patterns()
-            
+
             # Load in new predictor
             predictor2 = HabitPredictor(config_path=Path(tmpdir))
-            
+
             # Verify patterns were learned
             schedule = predictor2.get_daily_schedule("Alice")
             assert len(schedule) >= 3  # At least morning, work, evening
@@ -319,18 +314,16 @@ class TestConfidenceCombiningIntegration:
     def test_multiple_signals_boost_confidence(self):
         """Test that multiple agreeing signals boost confidence."""
         from custom_components.whollm.habits import ConfidenceCombiner
-        
+
         combiner = ConfidenceCombiner()
-        
+
         # Single weak signal
         room1, conf1, _ = combiner.combine(
             llm_room="office",
             llm_confidence=0.5,
-            sensor_indicators=[
-                {"entity_id": "light.office", "hint_type": "light", "room": "office", "state": "on"}
-            ]
+            sensor_indicators=[{"entity_id": "light.office", "hint_type": "light", "room": "office", "state": "on"}],
         )
-        
+
         # Multiple strong signals
         room2, conf2, _ = combiner.combine(
             llm_room="office",
@@ -343,7 +336,7 @@ class TestConfidenceCombiningIntegration:
             habit_room="office",
             habit_confidence=0.8,
         )
-        
+
         # Multiple signals should give higher confidence
         assert conf2 > conf1
         assert room2 == "office"

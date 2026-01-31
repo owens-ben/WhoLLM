@@ -1,19 +1,19 @@
 """Config flow for WhoLLM integration."""
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
-from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 
 from .const import (
     CONF_CONFIDENCE_WEIGHTS,
+    CONF_LEARNING_ENABLED,
     CONF_MODEL,
     CONF_PERSON_DEVICES,
     CONF_PERSONS,
@@ -23,7 +23,6 @@ from .const import (
     CONF_ROOM_ENTITIES,
     CONF_ROOMS,
     CONF_URL,
-    CONF_LEARNING_ENABLED,
     DEFAULT_CONFIDENCE_WEIGHTS,
     DEFAULT_LEARNING_ENABLED,
     DEFAULT_MODEL,
@@ -31,7 +30,6 @@ from .const import (
     DEFAULT_PROVIDER,
     DEFAULT_URL,
     DOMAIN,
-    ENTITY_HINTS,
     SUPPORTED_PROVIDERS,
     VALID_ROOMS,
 )
@@ -50,9 +48,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         self._available_models: list[str] = []
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle the initial step - provider configuration."""
         errors: dict[str, str] = {}
 
@@ -63,7 +59,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 url=user_input[CONF_URL],
                 model=user_input.get(CONF_MODEL, DEFAULT_MODEL),
             )
-            
+
             if await provider.test_connection():
                 self._data.update(user_input)
                 self._available_models = await provider.get_available_models()
@@ -96,9 +92,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_model(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_model(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle model selection step."""
         if user_input is not None:
             self._data.update(user_input)
@@ -111,7 +105,9 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="model",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_MODEL, default=model_options[0] if model_options else DEFAULT_MODEL): selector.SelectSelector(
+                    vol.Required(
+                        CONF_MODEL, default=model_options[0] if model_options else DEFAULT_MODEL
+                    ): selector.SelectSelector(
                         selector.SelectSelectorConfig(
                             options=model_options,
                             mode=selector.SelectSelectorMode.DROPDOWN,
@@ -122,23 +118,21 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
         )
 
-    async def async_step_rooms(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_rooms(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle room configuration step."""
         errors: dict[str, str] = {}
-        
+
         if user_input is not None:
             rooms = user_input.get(CONF_ROOMS, [])
             custom_rooms = user_input.get("custom_rooms", "")
-            
+
             # Add custom rooms
             if custom_rooms:
                 for room in custom_rooms.split(","):
                     room = room.strip().lower().replace(" ", "_")
                     if room and room not in rooms:
                         rooms.append(room)
-            
+
             if not rooms or len(rooms) == 0:
                 errors["base"] = "at_least_one_room"
             else:
@@ -165,31 +159,29 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_persons(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_persons(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle person/pet configuration step."""
         errors: dict[str, str] = {}
-        
+
         if user_input is not None:
             # Parse persons and pets from input
             persons = []
             pets = []
-            
+
             persons_input = user_input.get(CONF_PERSONS, "")
             if persons_input:
                 for name in persons_input.split(","):
                     name = name.strip()
                     if name:
                         persons.append({"name": name})
-            
+
             pets_input = user_input.get(CONF_PETS, "")
             if pets_input:
                 for name in pets_input.split(","):
                     name = name.strip()
                     if name:
                         pets.append({"name": name})
-            
+
             # Validate that at least one person or pet is configured
             if not persons and not pets:
                 errors["base"] = "at_least_one_entity"
@@ -213,9 +205,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_room_entities(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_room_entities(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle room-entity mapping configuration."""
         if user_input is not None:
             # Process room entity mappings
@@ -224,17 +214,14 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 key = f"entities_{room}"
                 entities = user_input.get(key, [])
                 if entities:
-                    room_entities[room] = [
-                        {"entity_id": e, "hint_type": self._guess_entity_hint(e)}
-                        for e in entities
-                    ]
-            
+                    room_entities[room] = [{"entity_id": e, "hint_type": self._guess_entity_hint(e)} for e in entities]
+
             self._data[CONF_ROOM_ENTITIES] = room_entities
-            
+
             # Initialize empty person devices (can be configured in options later)
             self._data[CONF_PERSON_DEVICES] = {}
             self._data[CONF_LEARNING_ENABLED] = True
-            
+
             # Create the config entry
             return self.async_create_entry(
                 title=f"WhoLLM ({self._data[CONF_PROVIDER]})",
@@ -244,14 +231,22 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Build dynamic schema based on selected rooms
         rooms = self._data.get(CONF_ROOMS, [])
         schema_dict = {}
-        
+
         for room in rooms:
             # Create entity selector for each room
             schema_dict[vol.Optional(f"entities_{room}", default=[])] = selector.EntitySelector(
                 selector.EntitySelectorConfig(
                     multiple=True,
                     filter=selector.EntityFilterSelectorConfig(
-                        domain=["binary_sensor", "sensor", "light", "switch", "media_player", "device_tracker", "camera"]
+                        domain=[
+                            "binary_sensor",
+                            "sensor",
+                            "light",
+                            "switch",
+                            "media_player",
+                            "device_tracker",
+                            "camera",
+                        ]
                     ),
                 )
             )
@@ -267,7 +262,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def _guess_entity_hint(self, entity_id: str) -> str:
         """Guess the entity hint type from the entity ID."""
         entity_lower = entity_id.lower()
-        
+
         if "motion" in entity_lower or "occupancy" in entity_lower:
             return "motion"
         elif "media_player" in entity_lower or "tv" in entity_lower:
@@ -303,18 +298,14 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
         """Initialize options flow."""
         self.config_entry = config_entry
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage the options - show menu."""
         return self.async_show_menu(
             step_id="init",
             menu_options=["general", "room_entities", "person_devices", "confidence_weights"],
         )
 
-    async def async_step_general(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_general(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """General options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
@@ -343,40 +334,43 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
             ),
         )
 
-    async def async_step_room_entities(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_room_entities(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Configure room-entity mappings."""
         if user_input is not None:
             # Process and save room entity mappings
             room_entities = self.config_entry.data.get(CONF_ROOM_ENTITIES, {}).copy()
             rooms = self.config_entry.data.get(CONF_ROOMS, [])
-            
+
             for room in rooms:
                 key = f"entities_{room}"
                 entities = user_input.get(key, [])
                 if entities:
-                    room_entities[room] = [
-                        {"entity_id": e, "hint_type": self._guess_entity_hint(e)}
-                        for e in entities
-                    ]
+                    room_entities[room] = [{"entity_id": e, "hint_type": self._guess_entity_hint(e)} for e in entities]
                 elif room in room_entities:
                     del room_entities[room]
-            
+
             return self.async_create_entry(title="", data={CONF_ROOM_ENTITIES: room_entities})
 
         # Build dynamic schema
         rooms = self.config_entry.data.get(CONF_ROOMS, [])
         current_mappings = self.config_entry.data.get(CONF_ROOM_ENTITIES, {})
         schema_dict = {}
-        
+
         for room in rooms:
             current_entities = [e["entity_id"] for e in current_mappings.get(room, [])]
             schema_dict[vol.Optional(f"entities_{room}", default=current_entities)] = selector.EntitySelector(
                 selector.EntitySelectorConfig(
                     multiple=True,
                     filter=selector.EntityFilterSelectorConfig(
-                        domain=["binary_sensor", "sensor", "light", "switch", "media_player", "device_tracker", "camera"]
+                        domain=[
+                            "binary_sensor",
+                            "sensor",
+                            "light",
+                            "switch",
+                            "media_player",
+                            "device_tracker",
+                            "camera",
+                        ]
                     ),
                 )
             )
@@ -386,23 +380,21 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
             data_schema=vol.Schema(schema_dict),
         )
 
-    async def async_step_person_devices(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_person_devices(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Configure person-device ownership mappings."""
         if user_input is not None:
             # Process and save person device mappings
             person_devices = {}
             persons = self.config_entry.data.get(CONF_PERSONS, [])
             pets = self.config_entry.data.get(CONF_PETS, [])
-            
+
             for person in persons + pets:
                 name = person.get("name", "")
                 key = f"devices_{name}"
                 devices = user_input.get(key, [])
                 if devices:
                     person_devices[name] = devices
-            
+
             return self.async_create_entry(title="", data={CONF_PERSON_DEVICES: person_devices})
 
         # Build dynamic schema
@@ -410,7 +402,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
         pets = self.config_entry.data.get(CONF_PETS, [])
         current_mappings = self.config_entry.data.get(CONF_PERSON_DEVICES, {})
         schema_dict = {}
-        
+
         for entity in persons + pets:
             name = entity.get("name", "")
             current_devices = current_mappings.get(name, [])
@@ -431,9 +423,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
             },
         )
 
-    async def async_step_confidence_weights(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_confidence_weights(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Configure confidence weights for different signal types."""
         if user_input is not None:
             weights = {}
@@ -441,12 +431,12 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                 if key.startswith("weight_"):
                     hint_type = key.replace("weight_", "")
                     weights[hint_type] = value / 100  # Convert from percentage
-            
+
             return self.async_create_entry(title="", data={CONF_CONFIDENCE_WEIGHTS: weights})
 
         current_weights = self.config_entry.data.get(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
         schema_dict = {}
-        
+
         weight_descriptions = {
             "camera": "Camera AI Detection",
             "computer": "PC/Computer Active",
@@ -459,8 +449,8 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
             "llm_reasoning": "LLM Reasoning",
             "habit": "Learned Patterns",
         }
-        
-        for hint_type, description in weight_descriptions.items():
+
+        for hint_type, _description in weight_descriptions.items():
             default_value = int(current_weights.get(hint_type, 0.5) * 100)
             schema_dict[vol.Optional(f"weight_{hint_type}", default=default_value)] = selector.NumberSelector(
                 selector.NumberSelectorConfig(
@@ -483,7 +473,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
     def _guess_entity_hint(self, entity_id: str) -> str:
         """Guess the entity hint type from the entity ID."""
         entity_lower = entity_id.lower()
-        
+
         if "motion" in entity_lower or "occupancy" in entity_lower:
             return "motion"
         elif "media_player" in entity_lower or "tv" in entity_lower:

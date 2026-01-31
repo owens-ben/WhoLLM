@@ -1,4 +1,5 @@
 """Binary sensor platform for WhoLLM."""
+
 from __future__ import annotations
 
 import logging
@@ -26,9 +27,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up WhoLLM binary sensors from a config entry."""
     coordinator: LLMPresenceCoordinator = hass.data[DOMAIN][entry.entry_id]
-    
+
     entities: list[BinarySensorEntity] = []
-    
+
     # Create binary sensors for each person x room combination
     for person in coordinator.persons:
         person_name = person.get("name", "unknown")
@@ -41,7 +42,7 @@ async def async_setup_entry(
                     room=room,
                 )
             )
-    
+
     # Create binary sensors for each pet x room combination
     for pet in coordinator.pets:
         pet_name = pet.get("name", "unknown")
@@ -54,13 +55,11 @@ async def async_setup_entry(
                     room=room,
                 )
             )
-    
+
     async_add_entities(entities)
 
 
-class LLMPresenceRoomBinarySensor(
-    CoordinatorEntity[LLMPresenceCoordinator], BinarySensorEntity
-):
+class LLMPresenceRoomBinarySensor(CoordinatorEntity[LLMPresenceCoordinator], BinarySensorEntity):
     """Binary sensor for presence in a specific room."""
 
     _attr_has_entity_name = True
@@ -78,13 +77,13 @@ class LLMPresenceRoomBinarySensor(
         self._entity_name = entity_name
         self._entity_type = entity_type
         self._room = room
-        
+
         # Set unique ID and name
         name_slug = entity_name.lower().replace(" ", "_")
         room_slug = room.lower().replace(" ", "_")
         self._attr_unique_id = f"{DOMAIN}_{entity_type}_{name_slug}_{room_slug}"
         self._attr_name = f"{entity_name} in {room.replace('_', ' ').title()}"
-        
+
         # Set icon based on type
         self._attr_icon = "mdi:account-check" if entity_type == "person" else "mdi:paw"
 
@@ -93,10 +92,10 @@ class LLMPresenceRoomBinarySensor(
         """Return True if the entity is in this room."""
         if not self.coordinator.data:
             return None
-        
+
         data_key = "persons" if self._entity_type == "person" else "pets"
         entity_data = self.coordinator.data.get(data_key, {}).get(self._entity_name)
-        
+
         if entity_data:
             return entity_data.room == self._room
         return None
@@ -106,10 +105,10 @@ class LLMPresenceRoomBinarySensor(
         """Return additional attributes."""
         if not self.coordinator.data:
             return {}
-        
+
         data_key = "persons" if self._entity_type == "person" else "pets"
         entity_data = self.coordinator.data.get(data_key, {}).get(self._entity_name)
-        
+
         if entity_data:
             return {
                 ATTR_CONFIDENCE: entity_data.confidence if entity_data.room == self._room else 0.0,
@@ -122,5 +121,3 @@ class LLMPresenceRoomBinarySensor(
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         self.async_write_ha_state()
-
-
