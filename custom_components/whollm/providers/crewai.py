@@ -26,11 +26,11 @@ class CrewAIProvider(BaseLLMProvider):
     for homelab-specific tasks.
     """
     
-    def __init__(self, url: str = "http://192.168.1.100:8502", model: str = "llama3.2", **kwargs) -> None:
+    def __init__(self, url: str = "http://localhost:8502", model: str = "llama3.2", **kwargs) -> None:
         """Initialize the CrewAI provider.
         
         Args:
-            url: CrewAI API URL (default: http://192.168.1.100:8502)
+            url: CrewAI API URL (default: http://localhost:8502)
             model: Model to use - for Ollama: "llama3.2", for Claude: "sonnet", "haiku", or "opus"
         """
         super().__init__(url, model, **kwargs)
