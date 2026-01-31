@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-asyncio pytest-cov aiohttp
+          pip install pytest pytest-asyncio pytest-cov aiohttp voluptuous pillow homeassistant
 
       - name: Run tests
         run: |
