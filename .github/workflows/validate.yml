@@ -36,3 +36,5 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+          # Ignore brands check until we submit to home-assistant/brands
+          ignore: brands

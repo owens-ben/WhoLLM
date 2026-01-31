@@ -136,10 +136,11 @@ class TestAsyncSetupEntry:
 
                 with patch("custom_components.whollm.VisionIdentifier"):
                     with patch("custom_components.whollm.CameraTrackingController"):
-                        await async_setup_entry(mock_hass, mock_config_entry)
+                        with patch("custom_components.whollm.async_track_time_interval") as mock_track:
+                            await async_setup_entry(mock_hass, mock_config_entry)
 
-        # Should schedule daily cleanup
-        mock_hass.helpers.event.async_track_time_interval.assert_called()
+                            # Should schedule daily cleanup
+                            mock_track.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_setup_entry_initializes_vision(self, mock_hass, mock_config_entry):
