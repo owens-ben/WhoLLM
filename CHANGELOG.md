@@ -12,9 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI workflow for running tests on Python 3.11 and 3.12
 - pyproject.toml for modern Python project configuration
 - Ruff linting configuration
+- Comprehensive README with badges, troubleshooting, and examples
 
 ### Changed
 - Removed emojis from indicator strings in provider code
+
+### Fixed
+- Home Assistant 2025.x compatibility: use direct import for `async_track_time_interval` instead of deprecated `hass.helpers.event` access
 
 ## [0.1.0-alpha] - 2025-01-29
 

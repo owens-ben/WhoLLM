@@ -15,6 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
     CONF_MAX_FILE_SIZE_MB,
@@ -116,7 +117,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
     # Schedule daily cleanup (runs every 24 hours)
-    hass.helpers.event.async_track_time_interval(
+    async_track_time_interval(
+        hass,
         periodic_cleanup,
         timedelta(hours=24),
     )
