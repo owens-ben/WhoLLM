@@ -20,6 +20,62 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+def calculate_time_decay(seconds_ago: int, sensor_type: str = "motion") -> float:
+    """Calculate time decay factor for sensor readings.
+    
+    Motion sensors decay over time - recent motion is more indicative.
+    Lights don't decay - if on, they're on.
+    
+    Args:
+        seconds_ago: How many seconds ago the event occurred
+        sensor_type: Type of sensor ("motion", "light", "media", etc.)
+        
+    Returns:
+        Decay factor from 0.0 to 1.0
+    """
+    # Lights and appliances don't decay - their state is current
+    non_decaying = ["light", "appliance", "computer", "media"]
+    if sensor_type in non_decaying:
+        return 1.0
+    
+    # Motion sensors decay over time
+    if sensor_type == "motion":
+        if seconds_ago < 60:
+            # Recent motion (< 1 min) - very high confidence
+            return 1.0
+        elif seconds_ago < 300:
+            # Motion in last 5 minutes - high confidence
+            return 0.95 - (seconds_ago - 60) / 4800  # Linear decay from 0.95 to 0.9
+        elif seconds_ago < 600:
+            # Motion in last 10 minutes - decaying confidence
+            return 0.7 - (seconds_ago - 300) / 1500  # Linear decay from 0.7 to 0.5
+        elif seconds_ago < 1800:
+            # Motion in last 30 minutes - lower confidence
+            return 0.4 - (seconds_ago - 600) / 4000  # Linear decay from 0.4 to 0.1
+        else:
+            # Old motion - very low confidence
+            return max(0.1, 0.1 - (seconds_ago - 1800) / 36000)
+    
+    # Doors decay faster - door opening is momentary
+    if sensor_type == "door":
+        if seconds_ago < 30:
+            return 1.0
+        elif seconds_ago < 120:
+            return 0.8
+        elif seconds_ago < 300:
+            return 0.5
+        else:
+            return 0.2
+    
+    # Default: moderate decay
+    if seconds_ago < 300:
+        return 1.0
+    elif seconds_ago < 900:
+        return 0.7
+    else:
+        return 0.4
+
+
 class HabitPredictor:
     """Predict presence based on learned habits and patterns.
 
