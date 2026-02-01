@@ -1,53 +1,92 @@
-identify_person:
-  name: Identify Person
-  description: Use camera vision to identify who is in view
+refresh:
+  name: Refresh Presence
+  description: Force an immediate presence detection update
   fields:
-    camera_entity_id:
-      name: Camera
-      description: The camera entity to capture from
-      required: true
-      example: "camera.e1_zoom_fluent"
+    entity_id:
+      name: Entity ID
+      description: Optional entity to refresh (refreshes all if not specified)
+      required: false
+      example: sensor.ben_room
       selector:
         entity:
-          domain: camera
-    detection_type:
-      name: Detection Type
-      description: What to look for (person or animal)
+          domain: sensor
+          integration: whollm
+
+correct_room:
+  name: Correct Room
+  description: Manually correct a person's room location (helps the system learn)
+  fields:
+    entity_id:
+      name: Entity ID
+      description: The room sensor to correct
+      required: true
+      example: sensor.ben_room
+      selector:
+        entity:
+          domain: sensor
+          integration: whollm
+    room:
+      name: Room
+      description: The correct room name
+      required: true
+      example: office
+      selector:
+        text:
+    confidence:
+      name: Confidence
+      description: Confidence level (0.0 to 1.0)
       required: false
-      default: "person"
+      default: 1.0
+      example: 1.0
       selector:
-        select:
-          options:
-            - "person"
-            - "animal"
+        number:
+          min: 0
+          max: 1
+          step: 0.1
 
-enable_tracking:
-  name: Enable Camera Tracking
-  description: Enable auto-tracking on a camera
+get_history:
+  name: Get History
+  description: Get recent room transitions for a person
   fields:
-    camera_name:
-      name: Camera Name
-      description: The camera name (without domain prefix)
+    entity_name:
+      name: Entity Name
+      description: Name of the person (e.g., "Ben")
       required: true
-      example: "e1_zoom"
+      example: Ben
+      selector:
+        text:
+    limit:
+      name: Limit
+      description: Maximum number of transitions to return
+      required: false
+      default: 20
+      example: 20
+      selector:
+        number:
+          min: 1
+          max: 100
+          step: 1
+
+clear_history:
+  name: Clear History
+  description: Clear room transition history
+  fields:
+    entity_name:
+      name: Entity Name
+      description: Name of the person (clears all if not specified)
+      required: false
+      example: Ben
       selector:
         text:
 
-disable_tracking:
-  name: Disable Camera Tracking
-  description: Disable auto-tracking on a camera
+get_patterns:
+  name: Get Patterns
+  description: Get detected movement patterns for a person
   fields:
-    camera_name:
-      name: Camera Name
-      description: The camera name (without domain prefix)
+    entity_name:
+      name: Entity Name
+      description: Name of the person
       required: true
-      example: "e1_zoom"
+      example: Ben
       selector:
         text:
-
-request_vision_update:
-  name: Request Vision Update
-  description: Manually trigger a vision-based identification for all configured cameras
-
-
-
