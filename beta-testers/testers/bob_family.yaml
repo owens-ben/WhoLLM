@@ -1,0 +1,132 @@
+# Beta Tester: Bob
+# Setup: Family home, 4 people + dog
+# Focus: Multi-person tracking
+
+profile:
+  name: "Bob"
+  description: "Family of 4 with a dog in a multi-room home"
+  focus: "multi_person_tracking"
+
+home_config:
+  rooms:
+    - living_room
+    - kitchen
+    - master_bedroom
+    - kids_room
+    - office
+    - bathroom
+    - garage
+  
+  persons:
+    - name: "Bob"
+    - name: "Sarah"
+    - name: "Emma"
+    - name: "Jake"
+  
+  pets:
+    - name: "Max"
+      type: "dog"
+  
+  entities:
+    living_room:
+      - entity_id: "light.living_room"
+        hint_type: "light"
+      - entity_id: "binary_sensor.living_room_motion"
+        hint_type: "motion"
+      - entity_id: "media_player.living_room_tv"
+        hint_type: "media"
+    kitchen:
+      - entity_id: "light.kitchen"
+        hint_type: "light"
+      - entity_id: "binary_sensor.kitchen_motion"
+        hint_type: "motion"
+    master_bedroom:
+      - entity_id: "light.master_bedroom"
+        hint_type: "light"
+      - entity_id: "binary_sensor.master_motion"
+        hint_type: "motion"
+    kids_room:
+      - entity_id: "light.kids_room"
+        hint_type: "light"
+      - entity_id: "media_player.kids_tv"
+        hint_type: "media"
+    office:
+      - entity_id: "light.office"
+        hint_type: "light"
+      - entity_id: "switch.bob_pc"
+        hint_type: "computer"
+      - entity_id: "binary_sensor.office_motion"
+        hint_type: "motion"
+    bathroom:
+      - entity_id: "light.bathroom"
+        hint_type: "light"
+    garage:
+      - entity_id: "light.garage"
+        hint_type: "light"
+  
+  person_devices:
+    Bob:
+      - "device_tracker.bob_phone"
+      - "switch.bob_pc"
+    Sarah:
+      - "device_tracker.sarah_phone"
+    Emma:
+      - "device_tracker.emma_phone"
+    Jake:
+      - "device_tracker.jake_phone"
+
+whollm_config:
+  provider: "ollama"
+  model: "qwen2.5:3b"
+  poll_interval: 20
+
+test_scenarios:
+  - name: "Family movie night"
+    description: "Everyone watching TV in living room"
+    steps:
+      - set: "media_player.living_room_tv=playing, light.living_room=off, binary_sensor.living_room_motion=on"
+        wait: 20
+    expected:
+      all_in_living_room: true
+      min_confidence: 0.5
+
+  - name: "Bob working from home"
+    description: "Bob in office, others elsewhere"
+    steps:
+      - set: "switch.bob_pc=on, light.office=on, binary_sensor.office_motion=on"
+      - set: "light.kitchen=on, binary_sensor.kitchen_motion=on"
+        wait: 20
+    expected:
+      bob_room: "office"
+      min_confidence: 0.7
+
+  - name: "Kids playing"
+    description: "Emma and Jake in kids room"
+    steps:
+      - set: "light.kids_room=on, media_player.kids_tv=playing"
+        wait: 20
+    expected:
+      emma_room: "kids_room"
+      jake_room: "kids_room"
+
+  - name: "Bedtime"
+    description: "Parents in master bedroom"
+    steps:
+      - set: "all_lights=off, light.master_bedroom=on, binary_sensor.master_motion=on"
+        wait: 20
+    expected:
+      bob_room: "master_bedroom"
+      sarah_room: "master_bedroom"
+
+  - name: "Dog follows family"
+    description: "Max typically near active family members"
+    steps:
+      - set: "light.living_room=on, binary_sensor.living_room_motion=on"
+        wait: 20
+    expected:
+      max_room: "living_room"
+      max_confidence: 0.5  # Lower for pets
+
+success_criteria:
+  pass_rate: 0.6  # Multi-person is harder
+  avg_confidence: 0.4

@@ -1,0 +1,90 @@
+# Beta Tester: Alice
+# Setup: Studio apartment, single person, basic sensors
+# Focus: Basic functionality validation
+
+profile:
+  name: "Alice"
+  description: "Single person in a studio apartment with basic smart home setup"
+  focus: "basic_functionality"
+
+home_config:
+  rooms:
+    - living_room
+    - bedroom
+    - bathroom
+    - kitchen
+  
+  persons:
+    - name: "Alice"
+  
+  pets: []
+  
+  entities:
+    living_room:
+      - entity_id: "light.living_room"
+        hint_type: "light"
+      - entity_id: "binary_sensor.living_room_motion"
+        hint_type: "motion"
+      - entity_id: "media_player.tv"
+        hint_type: "media"
+    bedroom:
+      - entity_id: "light.bedroom"
+        hint_type: "light"
+    bathroom:
+      - entity_id: "light.bathroom"
+        hint_type: "light"
+    kitchen:
+      - entity_id: "light.kitchen"
+        hint_type: "light"
+  
+  person_devices:
+    Alice:
+      - "device_tracker.alice_phone"
+
+whollm_config:
+  provider: "ollama"
+  model: "qwen2.5:3b"
+  poll_interval: 15
+
+test_scenarios:
+  - name: "Morning routine"
+    description: "Alice wakes up and goes to kitchen"
+    steps:
+      - set: "light.bedroom=on"
+        wait: 5
+      - set: "light.bedroom=off, light.kitchen=on"
+        wait: 10
+    expected:
+      alice_room: "kitchen"
+      min_confidence: 0.3
+
+  - name: "Watching TV"
+    description: "Alice watching TV in living room"
+    steps:
+      - set: "light.living_room=on, media_player.tv=playing, binary_sensor.living_room_motion=on"
+        wait: 15
+    expected:
+      alice_room: "living_room"
+      min_confidence: 0.6
+
+  - name: "Away from home"
+    description: "Alice leaves for work"
+    steps:
+      - set: "all_lights=off, device_tracker.alice_phone=not_home"
+        wait: 15
+    expected:
+      alice_room: "away"
+      min_confidence: 0.9
+
+  - name: "Night time"
+    description: "Alice goes to bed"
+    steps:
+      - set: "light.bedroom=on, all_other_lights=off"
+        wait: 15
+    expected:
+      alice_room: "bedroom"
+      min_confidence: 0.3
+
+success_criteria:
+  pass_rate: 0.75  # 75% of scenarios must pass
+  avg_confidence: 0.4  # Average confidence across scenarios

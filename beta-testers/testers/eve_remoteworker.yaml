@@ -1,0 +1,135 @@
+# Beta Tester: Eve
+# Setup: Remote worker with multiple device trackers
+# Focus: Device tracker integration, away detection, work-from-home patterns
+
+profile:
+  name: "Eve"
+  description: "Remote worker with multiple devices and frequent home/away transitions"
+  focus: "device_tracker_away_detection"
+
+home_config:
+  rooms:
+    - living_room
+    - office
+    - bedroom
+    - kitchen
+  
+  persons:
+    - name: "Eve"
+    - name: "Partner"
+  
+  pets: []
+  
+  entities:
+    living_room:
+      - entity_id: "light.living_room"
+        hint_type: "light"
+      - entity_id: "binary_sensor.living_room_motion"
+        hint_type: "motion"
+      - entity_id: "media_player.tv"
+        hint_type: "media"
+    office:
+      - entity_id: "light.office"
+        hint_type: "light"
+      - entity_id: "binary_sensor.office_motion"
+        hint_type: "motion"
+      - entity_id: "switch.work_laptop"
+        hint_type: "computer"
+      - entity_id: "switch.monitor"
+        hint_type: "computer"
+    bedroom:
+      - entity_id: "light.bedroom"
+        hint_type: "light"
+    kitchen:
+      - entity_id: "light.kitchen"
+        hint_type: "light"
+  
+  person_devices:
+    Eve:
+      - "device_tracker.eve_phone"
+      - "device_tracker.eve_watch"
+      - "device_tracker.eve_laptop_wifi"
+      - "switch.work_laptop"
+    Partner:
+      - "device_tracker.partner_phone"
+
+whollm_config:
+  provider: "ollama"
+  model: "qwen2.5:3b"
+  poll_interval: 15
+
+test_scenarios:
+  - name: "All trackers home - working"
+    description: "All device trackers show home, laptop on"
+    steps:
+      - set: "device_tracker.eve_phone=home, device_tracker.eve_watch=home, device_tracker.eve_laptop_wifi=home"
+      - set: "switch.work_laptop=on, switch.monitor=on, binary_sensor.office_motion=on"
+        wait: 15
+    expected:
+      eve_room: "office"
+      min_confidence: 0.8
+
+  - name: "Phone away, laptop home"
+    description: "Phone left at gym, but laptop at home = still home"
+    steps:
+      - set: "device_tracker.eve_phone=not_home, device_tracker.eve_watch=home, device_tracker.eve_laptop_wifi=home"
+      - set: "switch.work_laptop=on"
+        wait: 15
+    expected:
+      # ANY tracker home = person is home
+      eve_room: "office"
+
+  - name: "All trackers away"
+    description: "All devices show not_home"
+    steps:
+      - set: "device_tracker.eve_phone=not_home, device_tracker.eve_watch=not_home, device_tracker.eve_laptop_wifi=not_home"
+        wait: 15
+    expected:
+      eve_room: "away"
+      min_confidence: 0.9
+
+  - name: "Coming home transition"
+    description: "Transition from away to home"
+    steps:
+      - set: "device_tracker.eve_phone=not_home"
+        wait: 15
+      - set: "device_tracker.eve_phone=home, light.living_room=on"
+        wait: 15
+    expected:
+      eve_room: "living_room"
+
+  - name: "Partner home while Eve away"
+    description: "Partner's sensors active, Eve away"
+    steps:
+      - set: "device_tracker.eve_phone=not_home, device_tracker.partner_phone=home"
+      - set: "light.kitchen=on, binary_sensor.living_room_motion=on"
+        wait: 15
+    expected:
+      eve_room: "away"
+      partner_room: "living_room"
+
+  - name: "Work hours pattern"
+    description: "During work hours, default to office if home"
+    steps:
+      - set: "device_tracker.eve_phone=home"
+      - set: "switch.work_laptop=on"
+        # Assume 9 AM on weekday
+        wait: 15
+    expected:
+      eve_room: "office"
+      min_confidence: 0.7
+
+  - name: "Tracker unavailable fallback"
+    description: "When trackers are unavailable, use other sensors"
+    steps:
+      - set: "device_tracker.eve_phone=unavailable, device_tracker.eve_watch=unavailable"
+      - set: "switch.work_laptop=on, binary_sensor.office_motion=on"
+        wait: 15
+    expected:
+      # Should fall back to sensor-based detection
+      eve_room: "office"
+
+success_criteria:
+  pass_rate: 0.7
+  away_detection_accuracy: 0.95  # Away detection should be very reliable
+  avg_confidence: 0.6

@@ -1,0 +1,124 @@
+# Beta Tester: Carol
+# Setup: Smart home enthusiast with dense sensor coverage
+# Focus: Camera AI detection, multiple sensors per room
+
+profile:
+  name: "Carol"
+  description: "Tech enthusiast with extensive smart home including cameras with AI detection"
+  focus: "dense_sensors_camera_ai"
+
+home_config:
+  rooms:
+    - living_room
+    - bedroom
+    - office
+    - kitchen
+    - bathroom
+  
+  persons:
+    - name: "Carol"
+  
+  pets:
+    - name: "Luna"
+      type: "cat"
+  
+  entities:
+    living_room:
+      - entity_id: "light.living_room_main"
+        hint_type: "light"
+      - entity_id: "light.living_room_accent"
+        hint_type: "light"
+      - entity_id: "binary_sensor.living_room_motion"
+        hint_type: "motion"
+      - entity_id: "binary_sensor.living_room_camera_person"
+        hint_type: "camera"
+      - entity_id: "media_player.sonos_living"
+        hint_type: "media"
+      - entity_id: "media_player.apple_tv"
+        hint_type: "media"
+    bedroom:
+      - entity_id: "light.bedroom_main"
+        hint_type: "light"
+      - entity_id: "light.bedroom_lamp"
+        hint_type: "light"
+      - entity_id: "binary_sensor.bedroom_motion"
+        hint_type: "motion"
+    office:
+      - entity_id: "light.office_main"
+        hint_type: "light"
+      - entity_id: "light.desk_lamp"
+        hint_type: "light"
+      - entity_id: "binary_sensor.office_motion"
+        hint_type: "motion"
+      - entity_id: "binary_sensor.office_camera_person"
+        hint_type: "camera"
+      - entity_id: "switch.workstation"
+        hint_type: "computer"
+      - entity_id: "sensor.desk_occupancy"
+        hint_type: "presence"
+    kitchen:
+      - entity_id: "light.kitchen"
+        hint_type: "light"
+      - entity_id: "light.under_cabinet"
+        hint_type: "light"
+      - entity_id: "binary_sensor.kitchen_motion"
+        hint_type: "motion"
+    bathroom:
+      - entity_id: "light.bathroom"
+        hint_type: "light"
+      - entity_id: "binary_sensor.bathroom_motion"
+        hint_type: "motion"
+  
+  person_devices:
+    Carol:
+      - "device_tracker.carol_iphone"
+      - "device_tracker.carol_watch"
+      - "switch.workstation"
+
+whollm_config:
+  provider: "ollama"
+  model: "qwen2.5:3b"
+  poll_interval: 10
+  vision_enabled: true
+  vision_model: "moondream"
+
+test_scenarios:
+  - name: "Camera AI detection priority"
+    description: "Camera person detection should have highest confidence"
+    steps:
+      - set: "binary_sensor.office_camera_person=on, binary_sensor.office_motion=on"
+        wait: 15
+    expected:
+      carol_room: "office"
+      min_confidence: 0.85
+
+  - name: "Multiple media devices"
+    description: "Both Sonos and Apple TV active"
+    steps:
+      - set: "media_player.sonos_living=playing, media_player.apple_tv=playing, light.living_room_main=off"
+        wait: 15
+    expected:
+      carol_room: "living_room"
+      min_confidence: 0.7
+
+  - name: "Dense office setup"
+    description: "All office indicators active"
+    steps:
+      - set: "switch.workstation=on, sensor.desk_occupancy=on, binary_sensor.office_motion=on, light.desk_lamp=on"
+        wait: 15
+    expected:
+      carol_room: "office"
+      min_confidence: 0.9
+
+  - name: "Cat detection"
+    description: "Luna in living room (camera detection)"
+    steps:
+      - set: "binary_sensor.living_room_camera_person=off"  # No person
+      # Cat would be detected by a separate sensor
+        wait: 15
+    expected:
+      luna_confidence: 0.4  # Lower for pets without dedicated sensors
+
+success_criteria:
+  pass_rate: 0.75
+  avg_confidence: 0.6
