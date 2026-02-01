@@ -18,6 +18,7 @@ class PresenceGuess:
     confidence: float  # 0.0 to 1.0
     raw_response: str
     indicators: list[str]  # What signals led to this guess
+    source: str = "llm"  # Source of prediction: llm, device_tracker, habit, sensor
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -26,6 +27,7 @@ class PresenceGuess:
             "confidence": self.confidence,
             "raw_response": self.raw_response,
             "indicators": self.indicators,
+            "source": self.source,
         }
 
 

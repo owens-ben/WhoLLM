@@ -1,9 +1,13 @@
+[build-system]
+requires = ["setuptools>=77.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "whollm"
 version = "0.1.0"
 description = "Home Assistant integration for LLM-based person presence detection"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.11"
 authors = [
     {name = "Ben Owens", email = "ben@bsowens.com"}
@@ -12,9 +16,9 @@ keywords = ["home-assistant", "llm", "presence-detection", "ollama"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 dependencies = [
@@ -28,6 +32,9 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+    # Home Assistant dependencies for testing
+    "homeassistant>=2024.1.0",
+    "voluptuous>=0.13.1",
 ]
 
 [project.urls]
@@ -79,3 +86,8 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["custom_components*"]
+exclude = ["tests*", "automations*", "blueprints*", "dashboard*", "packages*", "scripts*", "docs*", "examples*"]
