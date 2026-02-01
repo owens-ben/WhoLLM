@@ -44,11 +44,11 @@ DEFAULT_CONFIDENCE_WEIGHTS = {
     ENTITY_HINT_CAMERA: 0.95,  # Camera AI detection is very reliable
     ENTITY_HINT_COMPUTER: 0.85,  # PC actively in use - very strong for office
     ENTITY_HINT_MEDIA: 0.80,  # Media playing is strong
-    ENTITY_HINT_MOTION: 0.60,  # Motion sensor
     ENTITY_HINT_PRESENCE: 0.70,  # BLE/WiFi presence
+    ENTITY_HINT_MOTION: 0.60,  # Motion sensor
     ENTITY_HINT_APPLIANCE: 0.50,  # Appliance in use
-    ENTITY_HINT_LIGHT: 0.25,  # Light on - weak indicator alone
     ENTITY_HINT_DOOR: 0.40,  # Door recently opened
+    ENTITY_HINT_LIGHT: 0.35,  # Light on - moderate indicator (increased from 0.25)
     ENTITY_HINT_CLIMATE: 0.20,  # Climate change - very weak
     "llm_reasoning": 0.50,  # LLM text reasoning
     "habit": 0.35,  # Habit-based prediction
