@@ -303,3 +303,68 @@ If camera sees a person in living room at 2am, trust the camera!
 
 OUTPUT: Respond with ONLY ONE word from this list: {rooms_str}
 No explanation, no punctuation, just the room name."""
+
+
+def parse_llm_response(
+    response: str,
+    valid_rooms: list[str],
+) -> tuple[str, float, str]:
+    """Parse LLM response to extract room, confidence, and reason.
+    
+    Handles multiple response formats:
+    - "ROOM: office\nCONFIDENCE: 0.8\nREASON: Light is on"
+    - JSON: {"room": "office", "confidence": 0.8, "reason": "..."}
+    - Plain room name: "office"
+    
+    Args:
+        response: Raw LLM response text
+        valid_rooms: List of valid room names
+        
+    Returns:
+        Tuple of (room, confidence, reason)
+    """
+    import json
+    import re
+    
+    response = response.strip()
+    
+    # Try JSON format first
+    try:
+        data = json.loads(response)
+        room = data.get("room", "unknown")
+        confidence = float(data.get("confidence", 0.5))
+        reason = data.get("reason", "")
+        
+        if room.lower() in [r.lower() for r in valid_rooms]:
+            return room.lower(), confidence, reason
+    except (json.JSONDecodeError, ValueError, TypeError):
+        pass
+    
+    # Try structured format: ROOM: xxx\nCONFIDENCE: xxx
+    room_match = re.search(r"ROOM:\s*(\w+)", response, re.IGNORECASE)
+    conf_match = re.search(r"CONFIDENCE:\s*([\d.]+)", response, re.IGNORECASE)
+    reason_match = re.search(r"REASON:\s*(.+?)(?:\n|$)", response, re.IGNORECASE)
+    
+    if room_match:
+        room = room_match.group(1).lower()
+        confidence = float(conf_match.group(1)) if conf_match else 0.5
+        reason = reason_match.group(1).strip() if reason_match else ""
+        
+        # Validate room
+        if room in [r.lower() for r in valid_rooms]:
+            return room, min(1.0, max(0.0, confidence)), reason
+    
+    # Try plain room name
+    response_lower = response.lower()
+    for room in valid_rooms:
+        if room.lower() in response_lower:
+            # Found a room name, extract confidence if mentioned
+            conf_match = re.search(r"(\d+(?:\.\d+)?)\s*%", response)
+            if conf_match:
+                confidence = float(conf_match.group(1)) / 100
+            else:
+                confidence = 0.5  # Default medium confidence
+            return room.lower(), confidence, ""
+    
+    # No valid room found
+    return "unknown", 0.0, "Could not parse response"
