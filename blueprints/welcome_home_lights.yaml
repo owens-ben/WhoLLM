@@ -1,0 +1,65 @@
+blueprint:
+  name: WhoLLM - Welcome Home Lights
+  description: >-
+    Turn on lights when someone arrives home. Uses WhoLLM's arrival
+    detection to trigger lights in the room they arrive to.
+  domain: automation
+  author: WhoLLM
+  source_url: https://github.com/owens-ben/WhoLLM/blob/main/blueprints/welcome_home_lights.yaml
+  input:
+    person_sensor:
+      name: Person Room Sensor
+      description: The WhoLLM room sensor for the person
+      selector:
+        entity:
+          domain: sensor
+          integration: whollm
+    lights:
+      name: Welcome Lights
+      description: Lights to turn on when arriving home
+      selector:
+        target:
+          entity:
+            domain: light
+    brightness:
+      name: Brightness
+      description: Brightness level (1-100)
+      default: 80
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+    only_after_dark:
+      name: Only After Dark
+      description: Only turn on lights after sunset
+      default: true
+      selector:
+        boolean:
+
+trigger:
+  - platform: event
+    event_type: whollm_person_arrived
+
+condition:
+  - condition: template
+    value_template: >
+      {{ trigger.event.data.entity_name | lower == 
+         state_attr(person_sensor, 'friendly_name') | lower | replace('_room', '') | replace(' room', '') }}
+  - condition: or
+    conditions:
+      - condition: template
+        value_template: "{{ not only_after_dark }}"
+      - condition: sun
+        after: sunset
+        before: sunrise
+
+action:
+  - service: light.turn_on
+    target: !input lights
+    data:
+      brightness_pct: !input brightness
+  - delay:
+      minutes: 5
+  - service: light.turn_off
+    target: !input lights

@@ -1,0 +1,64 @@
+blueprint:
+  name: WhoLLM - Follow Me Music
+  description: >-
+    Transfer music playback to follow a person as they move between rooms.
+    When they enter a new room, pause the old speaker and resume on the new one.
+  domain: automation
+  author: WhoLLM
+  source_url: https://github.com/owens-ben/WhoLLM/blob/main/blueprints/follow_me_music.yaml
+  input:
+    person_sensor:
+      name: Person Room Sensor
+      description: The WhoLLM room sensor to follow
+      selector:
+        entity:
+          domain: sensor
+          integration: whollm
+    room_speaker_map:
+      name: Room to Speaker Mapping
+      description: >-
+        YAML mapping of room names to speaker entity IDs.
+        Example: {"living_room": "media_player.living_room_speaker", "office": "media_player.office_speaker"}
+      selector:
+        object:
+    min_confidence:
+      name: Minimum Confidence
+      description: Minimum confidence level to trigger transfer (0.0-1.0)
+      default: 0.6
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.1
+
+trigger:
+  - platform: state
+    entity_id: !input person_sensor
+
+condition:
+  - condition: template
+    value_template: >
+      {{ trigger.to_state.state != trigger.from_state.state and
+         trigger.to_state.attributes.confidence | default(0) >= min_confidence }}
+
+action:
+  - variables:
+      room_map: !input room_speaker_map
+      new_room: "{{ trigger.to_state.state }}"
+      old_room: "{{ trigger.from_state.state }}"
+      new_speaker: "{{ room_map.get(new_room, '') }}"
+      old_speaker: "{{ room_map.get(old_room, '') }}"
+  
+  - condition: template
+    value_template: "{{ new_speaker != '' and old_speaker != '' }}"
+  
+  - service: media_player.media_pause
+    target:
+      entity_id: "{{ old_speaker }}"
+  
+  - delay:
+      seconds: 1
+  
+  - service: media_player.media_play
+    target:
+      entity_id: "{{ new_speaker }}"
