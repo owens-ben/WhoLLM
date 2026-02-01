@@ -7,7 +7,7 @@
 
 **A Home Assistant integration that uses local LLMs to determine *who* is in which room.**
 
-> **Status: Alpha** — Running in production, but expect rough edges.
+> **Status: Alpha** — Running, but expect rough edges.
 
 ---
 
