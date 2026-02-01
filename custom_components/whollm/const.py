@@ -124,3 +124,7 @@ DEFAULT_MAX_FILE_SIZE_MB = 100
 # Learning configuration
 CONF_LEARNING_ENABLED = "learning_enabled"
 DEFAULT_LEARNING_ENABLED = True
+
+# Notification configuration
+CONF_NOTIFICATIONS_ENABLED = "notifications_enabled"
+DEFAULT_NOTIFICATIONS_ENABLED = True
