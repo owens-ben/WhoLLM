@@ -29,9 +29,14 @@ from .const import (
     DEFAULT_POLL_INTERVAL,
     DEFAULT_PROVIDER,
     DEFAULT_URL,
+    DEVICE_TRACKER_AWAY_CONFIDENCE,
+    DEVICE_TRACKER_HOME,
+    DEVICE_TRACKER_NOT_HOME,
+    DEVICE_TRACKER_UNAVAILABLE,
     DOMAIN,
     ENTITY_HINT_COMPUTER,
     ENTITY_HINT_MEDIA,
+    ROOM_AWAY,
     VALID_ROOMS,
 )
 from .event_logger import get_event_logger
@@ -39,6 +44,90 @@ from .habits import get_confidence_combiner, get_habit_predictor
 from .providers import get_provider
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class DeviceTrackerHelper:
+    """Helper class for device tracker integration."""
+
+    def is_person_home(self, hass: HomeAssistant, device_tracker_id: str) -> bool | None:
+        """Check if a single device tracker indicates person is home.
+        
+        Returns:
+            True if home, False if away, None if unavailable/unknown
+        """
+        state = hass.states.get(device_tracker_id)
+        if not state:
+            return None
+        
+        state_value = state.state.lower()
+        
+        if state_value in (DEVICE_TRACKER_UNAVAILABLE, "unknown"):
+            return None
+        
+        # "home" or zone names indicate presence
+        if state_value == DEVICE_TRACKER_HOME:
+            return True
+        
+        # "not_home" indicates away
+        if state_value == DEVICE_TRACKER_NOT_HOME:
+            return False
+        
+        # Any other zone name (e.g., "work", "school") means not at home
+        # but we return True only for "home"
+        return False
+
+    def is_person_home_any(self, hass: HomeAssistant, device_tracker_ids: list[str]) -> bool | None:
+        """Check if any device tracker indicates person is home.
+        
+        Returns True if ANY tracker shows home.
+        Returns False if ALL trackers show away.
+        Returns None if all trackers are unavailable.
+        """
+        if not device_tracker_ids:
+            return None
+        
+        has_valid_state = False
+        
+        for tracker_id in device_tracker_ids:
+            result = self.is_person_home(hass, tracker_id)
+            if result is True:
+                return True
+            if result is False:
+                has_valid_state = True
+        
+        # If we had at least one valid "not_home", return False
+        if has_valid_state:
+            return False
+        
+        # All trackers unavailable
+        return None
+
+    def get_away_confidence(self) -> float:
+        """Get confidence level for device tracker based away detection."""
+        return DEVICE_TRACKER_AWAY_CONFIDENCE
+
+    def check_person_device_trackers(
+        self, 
+        hass: HomeAssistant, 
+        person_name: str, 
+        person_devices: dict[str, list[str]]
+    ) -> tuple[bool | None, list[str]]:
+        """Check all device trackers for a person.
+        
+        Returns:
+            (is_home, list_of_tracker_ids_checked)
+        """
+        # Get device trackers from person_devices config
+        devices = person_devices.get(person_name, [])
+        
+        # Filter to only device_tracker entities
+        trackers = [d for d in devices if d.startswith("device_tracker.")]
+        
+        if not trackers:
+            return None, []
+        
+        is_home = self.is_person_home_any(hass, trackers)
+        return is_home, trackers
 
 
 class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -80,6 +169,9 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.habit_predictor = get_habit_predictor()
         self.confidence_combiner = get_confidence_combiner(self.confidence_weights)
 
+        # Device tracker helper for away detection
+        self.device_tracker_helper = DeviceTrackerHelper()
+
         # Track previous rooms for transition detection
         self._previous_rooms: dict[str, str] = {}
 
@@ -119,6 +211,34 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
             for person in self.persons:
                 person_name = person.get("name", "unknown")
+
+                # Check device trackers first for away detection
+                is_home, trackers_checked = self.device_tracker_helper.check_person_device_trackers(
+                    self.hass, person_name, self.person_devices
+                )
+
+                # If device tracker shows person is away, skip LLM and return away
+                if is_home is False:
+                    from .providers.base import PresenceGuess
+                    
+                    guess = PresenceGuess(
+                        room=ROOM_AWAY,
+                        confidence=self.device_tracker_helper.get_away_confidence(),
+                        raw_response="Device tracker indicates not home",
+                        indicators=[f"device_tracker: {t}" for t in trackers_checked],
+                        source="device_tracker",
+                    )
+                    _LOGGER.debug(
+                        "%s is away (device tracker: %s)",
+                        person_name,
+                        trackers_checked,
+                    )
+                    
+                    # Log and track transition
+                    self._log_presence_event(person_name, "person", guess, context)
+                    self._check_room_transition(person_name, guess.room, guess.confidence)
+                    results["persons"][person_name] = guess
+                    continue
 
                 # Get habit hint for this person (learned patterns)
                 habit_hint = self.habit_predictor.get_habit_hint(person_name, "person")

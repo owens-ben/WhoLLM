@@ -94,6 +94,18 @@ ENTITY_TYPE_PET = "pet"
 # Valid room states (defaults, users can add custom rooms)
 VALID_ROOMS = ["office", "living_room", "bedroom", "kitchen", "bathroom", "entry", "away", "unknown"]
 
+# Special room values
+ROOM_AWAY = "away"
+ROOM_UNKNOWN = "unknown"
+
+# Device tracker states
+DEVICE_TRACKER_HOME = "home"
+DEVICE_TRACKER_NOT_HOME = "not_home"
+DEVICE_TRACKER_UNAVAILABLE = "unavailable"
+
+# Confidence for device tracker based away detection
+DEVICE_TRACKER_AWAY_CONFIDENCE = 0.95
+
 # Attributes
 ATTR_CONFIDENCE = "confidence"
 ATTR_LAST_SEEN = "last_seen"
