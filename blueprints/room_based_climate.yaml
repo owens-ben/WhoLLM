@@ -1,0 +1,70 @@
+blueprint:
+  name: WhoLLM - Room-Based Climate Control
+  description: >-
+    Adjust climate based on room occupancy. When someone enters a room,
+    set the temperature. When they leave, set it back to eco mode.
+  domain: automation
+  author: WhoLLM
+  source_url: https://github.com/owens-ben/WhoLLM/blob/main/blueprints/room_based_climate.yaml
+  input:
+    person_sensor:
+      name: Person Room Sensor
+      description: The WhoLLM room sensor to monitor
+      selector:
+        entity:
+          domain: sensor
+          integration: whollm
+    target_room:
+      name: Target Room
+      description: Room name to trigger on (e.g., office, bedroom)
+      selector:
+        text:
+    climate_entity:
+      name: Climate Device
+      description: The thermostat or climate device to control
+      selector:
+        entity:
+          domain: climate
+    occupied_temp:
+      name: Occupied Temperature
+      description: Temperature when room is occupied
+      default: 72
+      selector:
+        number:
+          min: 60
+          max: 85
+          unit_of_measurement: "°F"
+    away_temp:
+      name: Away Temperature
+      description: Temperature when room is empty
+      default: 68
+      selector:
+        number:
+          min: 55
+          max: 80
+          unit_of_measurement: "°F"
+
+trigger:
+  - platform: state
+    entity_id: !input person_sensor
+
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.to_state.state | lower == target_room | lower }}"
+        sequence:
+          - service: climate.set_temperature
+            target:
+              entity_id: !input climate_entity
+            data:
+              temperature: !input occupied_temp
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.from_state.state | lower == target_room | lower }}"
+        sequence:
+          - service: climate.set_temperature
+            target:
+              entity_id: !input climate_entity
+            data:
+              temperature: !input away_temp

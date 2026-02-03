@@ -1,0 +1,93 @@
+blueprint:
+  name: WhoLLM - Goodbye Routine
+  description: >-
+    Run actions when someone leaves home. Turn off lights, lock doors,
+    set thermostat to away mode, etc.
+  domain: automation
+  author: WhoLLM
+  source_url: https://github.com/owens-ben/WhoLLM/blob/main/blueprints/goodbye_routine.yaml
+  input:
+    turn_off_lights:
+      name: Turn Off Lights
+      description: Lights to turn off when leaving
+      default: []
+      selector:
+        target:
+          entity:
+            domain: light
+    lock_doors:
+      name: Lock Doors
+      description: Locks to engage when leaving
+      default: []
+      selector:
+        target:
+          entity:
+            domain: lock
+    arm_alarm:
+      name: Arm Alarm
+      description: Alarm panel to arm (optional)
+      default: ""
+      selector:
+        entity:
+          domain: alarm_control_panel
+    set_climate_away:
+      name: Set Climate Away
+      description: Climate device to set to away mode
+      default: ""
+      selector:
+        entity:
+          domain: climate
+    away_temperature:
+      name: Away Temperature
+      description: Temperature to set when leaving
+      default: 65
+      selector:
+        number:
+          min: 55
+          max: 75
+          unit_of_measurement: "°F"
+    delay_minutes:
+      name: Delay
+      description: Wait this many minutes before running (in case of return)
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 30
+          unit_of_measurement: "minutes"
+
+trigger:
+  - platform: event
+    event_type: whollm_person_left
+
+action:
+  - delay:
+      minutes: !input delay_minutes
+  
+  # Turn off lights
+  - condition: template
+    value_template: "{{ turn_off_lights | length > 0 }}"
+  - service: light.turn_off
+    target: !input turn_off_lights
+  
+  # Lock doors
+  - condition: template
+    value_template: "{{ lock_doors | length > 0 }}"
+  - service: lock.lock
+    target: !input lock_doors
+  
+  # Set climate away
+  - condition: template
+    value_template: "{{ set_climate_away != '' }}"
+  - service: climate.set_temperature
+    target:
+      entity_id: !input set_climate_away
+    data:
+      temperature: !input away_temperature
+  
+  # Arm alarm (if configured)
+  - condition: template
+    value_template: "{{ arm_alarm != '' }}"
+  - service: alarm_control_panel.alarm_arm_away
+    target:
+      entity_id: !input arm_alarm
