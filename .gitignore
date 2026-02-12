@@ -70,6 +70,11 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
+# Node / Playwright
+node_modules/
+test-results/
+playwright-report/
+
 # Home Assistant
 .HA_VERSION
 home-assistant.log

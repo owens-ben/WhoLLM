@@ -646,6 +646,12 @@
         <section class="auth-section" id="auth-section">
             <h2>Sign in to Home Assistant</h2>
             <p>Connect using your Home Assistant account. No tokens to copy — just sign in once and stay connected.</p>
+            <div class="manual-toggle" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 1.5rem;">
+                <div class="form-group" style="text-align: left; max-width: 500px; margin: 0 auto;">
+                    <label for="ha-url">Home Assistant URL</label>
+                    <input type="text" id="ha-url" value="" placeholder="http://192.168.0.233:8123">
+                </div>
+            </div>
             <button type="button" class="btn btn-large" id="signin-btn">
                 Sign in with Home Assistant
             </button>
@@ -772,14 +778,21 @@
     <script>
         // ========== OAuth2 Auth Module ==========
         const Auth = {
+            // The dashboard's own origin — used as client_id and redirect target
             clientId: window.location.origin + '/',
             redirectUri: window.location.origin + '/',
+            // HA URL for direct browser redirects (authorize endpoint)
+            haUrl: localStorage.getItem('ha_url') || 'http://192.168.0.233:8123',
             accessToken: null,
             refreshToken: localStorage.getItem('ha_refresh_token'),
             tokenExpiry: 0,
             method: null, // 'oauth' or 'token'
 
             async init() {
+                // Populate the HA URL input
+                const urlInput = document.getElementById('ha-url');
+                if (urlInput) urlInput.value = this.haUrl;
+
                 // Check for OAuth callback (code in URL)
                 const params = new URLSearchParams(window.location.search);
                 const code = params.get('code');
@@ -813,7 +826,7 @@
                 const manualToken = localStorage.getItem('ha_manual_token');
                 if (manualToken) {
                     this.accessToken = manualToken;
-                    this.tokenExpiry = Infinity; // Long-lived tokens don't expire
+                    this.tokenExpiry = Infinity;
                     this.method = 'token';
                     return true;
                 }
@@ -822,17 +835,37 @@
             },
 
             login() {
-                const state = crypto.randomUUID();
-                sessionStorage.setItem('oauth_state', state);
-                const params = new URLSearchParams({
-                    client_id: this.clientId,
-                    redirect_uri: this.redirectUri,
-                    state: state,
-                });
-                window.location.href = '/auth/authorize?' + params;
+                try {
+                    // Read HA URL from input and save it
+                    const urlInput = document.getElementById('ha-url');
+                    if (urlInput && urlInput.value.trim()) {
+                        this.haUrl = urlInput.value.trim().replace(/\/+$/, '');
+                        localStorage.setItem('ha_url', this.haUrl);
+                    }
+
+                    // Generate state param (crypto.randomUUID needs secure context)
+                    let state;
+                    try { state = crypto.randomUUID(); } catch {
+                        const buf = new Uint8Array(16);
+                        crypto.getRandomValues(buf);
+                        state = Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
+                    }
+                    sessionStorage.setItem('oauth_state', state);
+                    const params = new URLSearchParams({
+                        client_id: this.clientId,
+                        redirect_uri: this.redirectUri,
+                        state: state,
+                    });
+                    // Redirect browser directly to HA (not through proxy)
+                    window.location.href = this.haUrl + '/auth/authorize?' + params;
+                } catch (err) {
+                    console.error('Auth.login() error:', err);
+                    this.showError('Login failed: ' + err.message);
+                }
             },
 
             async exchangeCode(code) {
+                // Token exchange goes through our nginx proxy
                 const resp = await fetch('/auth/token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
