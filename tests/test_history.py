@@ -201,20 +201,3 @@ class TestDailyTimeline:
             assert len(timeline) == 2
 
 
-class TestGlobalInstance:
-    """Test global instance function."""
-
-    def test_get_history_tracker(self):
-        """Global instance should be created."""
-        from custom_components.whollm.history import get_history_tracker
-        
-        tracker = get_history_tracker()
-        assert tracker is not None
-
-    def test_get_history_tracker_singleton(self):
-        """Should return same instance."""
-        from custom_components.whollm.history import get_history_tracker
-        
-        tracker1 = get_history_tracker()
-        tracker2 = get_history_tracker()
-        assert tracker1 is tracker2

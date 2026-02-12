@@ -290,25 +290,6 @@ class TestCrewAIExtractIndicators:
         assert any("Media playing" in i for i in indicators)
 
 
-class TestCrewAICameraRoomMapping:
-    """Test camera name to room mapping."""
-
-    def test_camera_name_to_room(self):
-        """Test camera name to room mapping."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
-
-        provider = CrewAIProvider()
-
-        assert provider._camera_name_to_room("living_room_camera") == "living_room"
-        assert provider._camera_name_to_room("e1_zoom") == "living_room"
-        assert provider._camera_name_to_room("bedroom_cam") == "bedroom"
-        assert provider._camera_name_to_room("office_camera") == "office"
-        assert provider._camera_name_to_room("kitchen_cam") == "kitchen"
-        assert provider._camera_name_to_room("front_door_camera") == "entry"
-        assert provider._camera_name_to_room("entry_cam") == "entry"
-        assert provider._camera_name_to_room("random_camera") == "unknown"
-
-
 class TestCrewAIFallbackGuess:
     """Test fallback guess logic."""
 

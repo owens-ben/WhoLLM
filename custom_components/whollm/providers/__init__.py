@@ -5,15 +5,13 @@ from __future__ import annotations
 from .base import BaseLLMProvider
 from .crewai import CrewAIProvider
 from .ollama import OllamaProvider
-from .openai import OpenAIProvider
-from .anthropic import AnthropicProvider
 
-# Provider registry
+# Provider registry - only providers that are fully implemented and tested.
+# OpenAI and Anthropic providers exist in their files but have mismatched
+# fallback signatures and no config_flow API key step, so they are not exposed.
 _PROVIDERS: dict[str, type[BaseLLMProvider]] = {
     "ollama": OllamaProvider,
     "crewai": CrewAIProvider,
-    "openai": OpenAIProvider,
-    "anthropic": AnthropicProvider,
 }
 
 
@@ -25,7 +23,7 @@ def get_provider(
 ) -> BaseLLMProvider:
     """Get an LLM provider instance by type."""
     if provider_type not in _PROVIDERS:
-        raise ValueError(f"Unknown provider type: {provider_type}. Available providers: {list(_PROVIDERS.keys())}")
+        raise ValueError(f"Unknown provider type: {provider_type}. Available: {list(_PROVIDERS.keys())}")
 
     provider_class = _PROVIDERS[provider_type]
     return provider_class(url=url, model=model, **kwargs)
@@ -40,8 +38,6 @@ __all__ = [
     "BaseLLMProvider",
     "OllamaProvider",
     "CrewAIProvider",
-    "OpenAIProvider",
-    "AnthropicProvider",
     "get_provider",
     "get_available_providers",
 ]

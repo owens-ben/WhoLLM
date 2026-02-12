@@ -65,6 +65,7 @@
         "title": "General Settings",
         "data": {
           "poll_interval": "Poll Interval (seconds)",
+          "llm_timeout": "LLM Request Timeout (seconds)",
           "learning_enabled": "Enable Pattern Learning"
         }
       },

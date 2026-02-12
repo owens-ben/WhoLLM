@@ -153,7 +153,8 @@ class TestEndToEndCoordinatorFlow:
 class TestRoomTransitionDetection:
     """Test room transition detection and logging."""
 
-    def test_room_transition_detected(self, mock_hass, full_config_entry):
+    @pytest.mark.asyncio
+    async def test_room_transition_detected(self, mock_hass, full_config_entry):
         """Test that room transitions are detected and logged.
 
         Tests the transition detection logic in isolation.
@@ -166,7 +167,7 @@ class TestRoomTransitionDetection:
             logger = EventLogger(str(Path(tmpdir) / "events.jsonl"))
 
             # Log a transition
-            logger.log_room_transition(
+            await logger.async_log_room_transition(
                 entity_name="Alice",
                 from_room="office",
                 to_room="bedroom",

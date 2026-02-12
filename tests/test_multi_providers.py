@@ -20,26 +20,24 @@ class TestProviderFactory:
         provider = get_provider("ollama", "http://localhost:11434", "llama3.2")
         assert isinstance(provider, OllamaProvider)
 
-    def test_get_provider_openai(self):
-        """Factory should return OpenAI provider."""
+    def test_get_provider_openai_not_registered(self):
+        """OpenAI provider should not be in the registry (disabled)."""
         from custom_components.whollm.providers import get_provider
-        from custom_components.whollm.providers.openai import OpenAIProvider
-        
-        provider = get_provider("openai", "https://api.openai.com/v1", "gpt-4o-mini", api_key="test-key")
-        assert isinstance(provider, OpenAIProvider)
 
-    def test_get_provider_anthropic(self):
-        """Factory should return Anthropic provider."""
+        with pytest.raises(ValueError):
+            get_provider("openai", "https://api.openai.com/v1", "gpt-4o-mini", api_key="test-key")
+
+    def test_get_provider_anthropic_not_registered(self):
+        """Anthropic provider should not be in the registry (disabled)."""
         from custom_components.whollm.providers import get_provider
-        from custom_components.whollm.providers.anthropic import AnthropicProvider
-        
-        provider = get_provider("anthropic", "https://api.anthropic.com", "claude-3-haiku-20240307", api_key="test-key")
-        assert isinstance(provider, AnthropicProvider)
+
+        with pytest.raises(ValueError):
+            get_provider("anthropic", "https://api.anthropic.com", "claude-3-haiku-20240307", api_key="test-key")
 
     def test_get_provider_unknown(self):
         """Factory should raise for unknown provider."""
         from custom_components.whollm.providers import get_provider
-        
+
         with pytest.raises(ValueError):
             get_provider("unknown_provider", "http://example.com", "model")
 
@@ -166,17 +164,19 @@ class TestAnthropicProvider:
 class TestProviderConstants:
     """Test provider-related constants."""
 
-    def test_openai_in_supported_providers(self):
-        """OpenAI should be in supported providers."""
-        from custom_components.whollm.const import SUPPORTED_PROVIDERS, PROVIDER_OPENAI
-        
-        assert PROVIDER_OPENAI in SUPPORTED_PROVIDERS
+    def test_openai_not_in_supported_providers(self):
+        """OpenAI should NOT be in active supported providers (disabled)."""
+        from custom_components.whollm.const import SUPPORTED_PROVIDERS, PROVIDER_OPENAI, ALL_PROVIDERS
 
-    def test_anthropic_in_supported_providers(self):
-        """Anthropic should be in supported providers."""
-        from custom_components.whollm.const import SUPPORTED_PROVIDERS, PROVIDER_ANTHROPIC
-        
-        assert PROVIDER_ANTHROPIC in SUPPORTED_PROVIDERS
+        assert PROVIDER_OPENAI not in SUPPORTED_PROVIDERS
+        assert PROVIDER_OPENAI in ALL_PROVIDERS
+
+    def test_anthropic_not_in_supported_providers(self):
+        """Anthropic should NOT be in active supported providers (disabled)."""
+        from custom_components.whollm.const import SUPPORTED_PROVIDERS, PROVIDER_ANTHROPIC, ALL_PROVIDERS
+
+        assert PROVIDER_ANTHROPIC not in SUPPORTED_PROVIDERS
+        assert PROVIDER_ANTHROPIC in ALL_PROVIDERS
 
     def test_api_key_config(self):
         """Config should support API keys."""

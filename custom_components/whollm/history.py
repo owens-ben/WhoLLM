@@ -316,15 +316,3 @@ class HistoryTracker:
             self._entity_history.clear()
         
         self._save_history()
-
-
-# Global instance
-_history_tracker: HistoryTracker | None = None
-
-
-def get_history_tracker(config_path: Path | None = None) -> HistoryTracker:
-    """Get or create the global history tracker."""
-    global _history_tracker
-    if _history_tracker is None:
-        _history_tracker = HistoryTracker(config_path)
-    return _history_tracker

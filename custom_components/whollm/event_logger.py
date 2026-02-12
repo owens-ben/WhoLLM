@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
+
+from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,8 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_LOG_PATH = "/config/whollm_events.jsonl"
 
 # Storage management defaults
-DEFAULT_RETENTION_DAYS = 30  # Keep events for 30 days
-DEFAULT_MAX_FILE_SIZE_MB = 100  # Max file size in MB before cleanup
+from .const import DEFAULT_RETENTION_DAYS, DEFAULT_MAX_FILE_SIZE_MB
+
 DEFAULT_MAX_FILE_SIZE_BYTES = DEFAULT_MAX_FILE_SIZE_MB * 1024 * 1024
 
 
@@ -52,34 +55,23 @@ class EventLogger:
             self.log_path.parent.mkdir(parents=True, exist_ok=True)
             if not self.log_path.exists():
                 self.log_path.touch()
-        except Exception as err:
+        except OSError as err:
             _LOGGER.error("Failed to create log file: %s", err)
 
-    def log_presence_event(
+    async def async_log_presence_event(
         self,
         entity_name: str,
-        entity_type: str,  # "person" or "pet"
+        entity_type: str,
         room: str,
         confidence: float,
         raw_response: str,
         indicators: list[str],
         sensor_context: dict[str, Any],
-        detection_method: str = "llm",  # "llm", "vision", "face", "sensor"
+        detection_method: str = "llm",
     ) -> None:
-        """Log a presence detection event.
-
-        Args:
-            entity_name: Name of person/pet
-            entity_type: "person" or "pet"
-            room: Detected room
-            confidence: Confidence score 0.0-1.0
-            raw_response: Raw LLM response
-            indicators: List of evidence used
-            sensor_context: Full sensor state at detection time
-            detection_method: How presence was detected
-        """
+        """Log a presence detection event (non-blocking)."""
         event = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": dt_util.now().isoformat(),
             "entity_name": entity_name,
             "entity_type": entity_type,
             "room": room,
@@ -91,14 +83,10 @@ class EventLogger:
             "sensor_summary": self._summarize_sensors(sensor_context),
         }
 
-        try:
-            with open(self.log_path, "a") as f:
-                f.write(json.dumps(event) + "\n")
-            _LOGGER.debug("Logged presence event: %s -> %s", entity_name, room)
-        except Exception as err:
-            _LOGGER.error("Failed to log event: %s", err)
+        await self._async_write_event(event)
+        _LOGGER.debug("Logged presence event: %s -> %s", entity_name, room)
 
-    def log_vision_event(
+    async def async_log_vision_event(
         self,
         camera_entity: str,
         identified: str,
@@ -106,9 +94,9 @@ class EventLogger:
         description: str,
         detection_type: str,
     ) -> None:
-        """Log a vision identification event."""
+        """Log a vision identification event (non-blocking)."""
         event = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": dt_util.now().isoformat(),
             "event_type": "vision_identification",
             "camera_entity": camera_entity,
             "identified": identified,
@@ -118,23 +106,19 @@ class EventLogger:
             "time_features": self._extract_time_features(),
         }
 
-        try:
-            with open(self.log_path, "a") as f:
-                f.write(json.dumps(event) + "\n")
-            _LOGGER.debug("Logged vision event: %s identified %s", camera_entity, identified)
-        except Exception as err:
-            _LOGGER.error("Failed to log vision event: %s", err)
+        await self._async_write_event(event)
+        _LOGGER.debug("Logged vision event: %s identified %s", camera_entity, identified)
 
-    def log_room_transition(
+    async def async_log_room_transition(
         self,
         entity_name: str,
         from_room: str,
         to_room: str,
         confidence: float,
     ) -> None:
-        """Log when someone moves between rooms."""
+        """Log when someone moves between rooms (non-blocking)."""
         event = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": dt_util.now().isoformat(),
             "event_type": "room_transition",
             "entity_name": entity_name,
             "from_room": from_room,
@@ -143,16 +127,25 @@ class EventLogger:
             "time_features": self._extract_time_features(),
         }
 
+        await self._async_write_event(event)
+        _LOGGER.debug("Logged transition: %s %s -> %s", entity_name, from_room, to_room)
+
+    async def _async_write_event(self, event: dict[str, Any]) -> None:
+        """Write a single event to the log file without blocking the event loop."""
+        line = json.dumps(event) + "\n"
         try:
-            with open(self.log_path, "a") as f:
-                f.write(json.dumps(event) + "\n")
-            _LOGGER.debug("Logged transition: %s %s -> %s", entity_name, from_room, to_room)
-        except Exception as err:
-            _LOGGER.error("Failed to log transition: %s", err)
+            await asyncio.to_thread(self._write_line, line)
+        except OSError as err:
+            _LOGGER.error("Failed to write event: %s", err)
+
+    def _write_line(self, line: str) -> None:
+        """Synchronous helper for file write (called via to_thread)."""
+        with open(self.log_path, "a") as f:
+            f.write(line)
 
     def _extract_time_features(self) -> dict[str, Any]:
         """Extract time-based features for ML training."""
-        now = datetime.now()
+        now = dt_util.now()
         return {
             "hour": now.hour,
             "minute": now.minute,
@@ -233,7 +226,7 @@ class EventLogger:
         try:
             with open(self.log_path) as f:
                 return sum(1 for _ in f)
-        except Exception:
+        except OSError:
             return 0
 
     def get_recent_events(self, count: int = 100) -> list[dict]:
@@ -247,14 +240,14 @@ class EventLogger:
                     except json.JSONDecodeError:
                         continue
             return events[-count:]
-        except Exception:
+        except OSError:
             return []
 
     def get_file_size(self) -> int:
         """Get current file size in bytes."""
         try:
             return self.log_path.stat().st_size if self.log_path.exists() else 0
-        except Exception:
+        except OSError:
             return 0
 
     def get_file_size_mb(self) -> float:
@@ -296,7 +289,7 @@ class EventLogger:
             return {"deleted": 0, "kept": 0, "error": None}
 
         retention_days = days if days is not None else self.retention_days
-        cutoff_date = datetime.now() - timedelta(days=retention_days)
+        cutoff_date = dt_util.now() - timedelta(days=retention_days)
         cutoff_iso = cutoff_date.isoformat()
 
         deleted_count = 0
@@ -336,7 +329,7 @@ class EventLogger:
             else:
                 _LOGGER.debug("No old events to clean up")
 
-        except Exception as err:
+        except OSError as err:
             error = str(err)
             _LOGGER.error("Failed to cleanup old events: %s", err)
 
@@ -381,7 +374,7 @@ class EventLogger:
                     try:
                         line_size = len(line.encode("utf-8"))
                         all_events.append((line.rstrip(), line_size))
-                    except Exception:
+                    except (ValueError, UnicodeDecodeError):
                         deleted_count += 1
                         continue
 
@@ -415,7 +408,7 @@ class EventLogger:
             else:
                 _LOGGER.debug("No events to clean up by size")
 
-        except Exception as err:
+        except OSError as err:
             error = str(err)
             _LOGGER.error("Failed to cleanup events by size: %s", err)
 
@@ -464,32 +457,3 @@ class EventLogger:
         )
 
         return result
-
-
-# Global instance for easy access
-_event_logger: EventLogger | None = None
-
-
-def get_event_logger(
-    retention_days: int | None = None,
-    max_file_size_mb: int | None = None,
-) -> EventLogger:
-    """Get or create the global event logger instance.
-
-    Args:
-        retention_days: Override retention days (only used on first creation)
-        max_file_size_mb: Override max file size in MB (only used on first creation)
-    """
-    global _event_logger
-    if _event_logger is None:
-        _event_logger = EventLogger(
-            retention_days=retention_days or DEFAULT_RETENTION_DAYS,
-            max_file_size_mb=max_file_size_mb or DEFAULT_MAX_FILE_SIZE_MB,
-        )
-    return _event_logger
-
-
-def reset_event_logger() -> None:
-    """Reset the global event logger instance (for testing/reconfiguration)."""
-    global _event_logger
-    _event_logger = None

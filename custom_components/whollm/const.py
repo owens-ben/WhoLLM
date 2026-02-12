@@ -22,10 +22,7 @@ ENTITY_HINT_MEDIA = "media"  # Media players (TV, speakers)
 ENTITY_HINT_LIGHT = "light"  # Lights
 ENTITY_HINT_COMPUTER = "computer"  # PC/workstation indicators
 ENTITY_HINT_CAMERA = "camera"  # Camera with AI detection
-ENTITY_HINT_CLIMATE = "climate"  # Temperature/humidity sensors
-ENTITY_HINT_DOOR = "door"  # Door/window sensors
 ENTITY_HINT_APPLIANCE = "appliance"  # Other appliances
-ENTITY_HINT_PRESENCE = "presence"  # BLE/WiFi presence sensors
 
 ENTITY_HINTS = [
     ENTITY_HINT_MOTION,
@@ -33,10 +30,7 @@ ENTITY_HINTS = [
     ENTITY_HINT_LIGHT,
     ENTITY_HINT_COMPUTER,
     ENTITY_HINT_CAMERA,
-    ENTITY_HINT_CLIMATE,
-    ENTITY_HINT_DOOR,
     ENTITY_HINT_APPLIANCE,
-    ENTITY_HINT_PRESENCE,
 ]
 
 # Confidence weights for different entity types (can be overridden in options)
@@ -45,12 +39,12 @@ DEFAULT_CONFIDENCE_WEIGHTS = {
     ENTITY_HINT_CAMERA: 0.95,  # Camera AI detection is very reliable
     ENTITY_HINT_COMPUTER: 0.85,  # PC actively in use - very strong for office
     ENTITY_HINT_MEDIA: 0.80,  # Media playing is strong
-    ENTITY_HINT_PRESENCE: 0.70,  # BLE/WiFi presence
     ENTITY_HINT_MOTION: 0.60,  # Motion sensor
     ENTITY_HINT_APPLIANCE: 0.50,  # Appliance in use
-    ENTITY_HINT_DOOR: 0.40,  # Door recently opened
     ENTITY_HINT_LIGHT: 0.35,  # Light on - moderate indicator (increased from 0.25)
-    ENTITY_HINT_CLIMATE: 0.20,  # Climate change - very weak
+    "presence": 0.70,  # BLE/WiFi presence
+    "door": 0.40,  # Door recently opened
+    "climate": 0.20,  # Climate change - very weak
     "llm_reasoning": 0.50,  # LLM text reasoning
     "habit": 0.35,  # Habit-based prediction
 }
@@ -60,21 +54,16 @@ DEFAULT_CONFIDENCE_WEIGHTS = {
 CONF_PERSON_DEVICES = "person_devices"  # Dict[person_name, List[entity_id]]
 
 # Vision configuration keys
-CONF_VISION_ENABLED = "vision_enabled"
 CONF_VISION_MODEL = "vision_model"
-CONF_VISION_CAMERAS = "vision_cameras"  # List of camera entity IDs to use
-CONF_VISION_ON_DETECTION = "vision_on_detection"  # Trigger vision on AI detection
-CONF_AUTO_TRACKING = "auto_tracking"  # Enable/disable camera tracking control
 
 # Provider types
 PROVIDER_OLLAMA = "ollama"
 PROVIDER_CREWAI = "crewai"  # Uses CrewAI API with Claude/Ollama
 PROVIDER_OPENAI = "openai"  # Stubbed
 PROVIDER_ANTHROPIC = "anthropic"  # Stubbed
-PROVIDER_LOCAL = "local"  # Stubbed
 
-SUPPORTED_PROVIDERS = [PROVIDER_OLLAMA, PROVIDER_CREWAI, PROVIDER_OPENAI, PROVIDER_ANTHROPIC]
-ALL_PROVIDERS = [PROVIDER_OLLAMA, PROVIDER_CREWAI, PROVIDER_OPENAI, PROVIDER_ANTHROPIC, PROVIDER_LOCAL]
+SUPPORTED_PROVIDERS = [PROVIDER_OLLAMA, PROVIDER_CREWAI]
+ALL_PROVIDERS = [PROVIDER_OLLAMA, PROVIDER_CREWAI, PROVIDER_OPENAI, PROVIDER_ANTHROPIC]
 
 # CrewAI defaults
 DEFAULT_CREWAI_URL = "http://localhost:8502"
@@ -128,3 +117,7 @@ DEFAULT_LEARNING_ENABLED = True
 # Notification configuration
 CONF_NOTIFICATIONS_ENABLED = "notifications_enabled"
 DEFAULT_NOTIFICATIONS_ENABLED = True
+
+# LLM request timeout
+CONF_TIMEOUT = "llm_timeout"
+DEFAULT_TIMEOUT = 30  # seconds

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -22,12 +23,14 @@ from .const import (
     CONF_PROVIDER,
     CONF_ROOM_ENTITIES,
     CONF_ROOMS,
+    CONF_TIMEOUT,
     CONF_URL,
     DEFAULT_CONFIDENCE_WEIGHTS,
     DEFAULT_LEARNING_ENABLED,
     DEFAULT_MODEL,
     DEFAULT_POLL_INTERVAL,
     DEFAULT_PROVIDER,
+    DEFAULT_TIMEOUT,
     DEFAULT_URL,
     DOMAIN,
     SUPPORTED_PROVIDERS,
@@ -36,6 +39,29 @@ from .const import (
 from .providers import get_provider
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _guess_entity_hint(entity_id: str) -> str:
+    """Guess the entity hint type from the entity ID."""
+    entity_lower = entity_id.lower()
+
+    if "motion" in entity_lower or "occupancy" in entity_lower:
+        return "motion"
+    if "media_player" in entity_lower or "tv" in entity_lower:
+        return "media"
+    if "light." in entity_lower:
+        return "light"
+    if "pc" in entity_lower or "computer" in entity_lower or "desktop" in entity_lower:
+        return "computer"
+    if "camera" in entity_lower or "person" in entity_lower or "animal" in entity_lower:
+        return "camera"
+    if "door" in entity_lower or "window" in entity_lower or "contact" in entity_lower:
+        return "door"
+    if "temperature" in entity_lower or "humidity" in entity_lower:
+        return "climate"
+    if "device_tracker" in entity_lower:
+        return "presence"
+    return "appliance"
 
 
 class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -120,20 +146,32 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_rooms(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle room configuration step."""
+
         errors: dict[str, str] = {}
 
         if user_input is not None:
             rooms = user_input.get(CONF_ROOMS, [])
             custom_rooms = user_input.get("custom_rooms", "")
 
-            # Add custom rooms
+            # Add custom rooms with sanitization
             if custom_rooms:
                 for room in custom_rooms.split(","):
                     room = room.strip().lower().replace(" ", "_")
+                    # Remove any characters that aren't alphanumeric, underscore, or hyphen
+                    room = re.sub(r"[^\w-]", "", room)
                     if room and room not in rooms:
                         rooms.append(room)
 
-            if not rooms or len(rooms) == 0:
+            # Sanitize all room names (including predefined ones)
+            sanitized = []
+            for room in rooms:
+                room = room.strip().lower().replace(" ", "_")
+                room = re.sub(r"[^\w-]", "", room)
+                if room and room not in sanitized:
+                    sanitized.append(room)
+            rooms = sanitized
+
+            if not rooms:
                 errors["base"] = "at_least_one_room"
             else:
                 self._data[CONF_ROOMS] = rooms
@@ -207,14 +245,30 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_room_entities(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle room-entity mapping configuration."""
+        errors: dict[str, str] = {}
+
         if user_input is not None:
-            # Process room entity mappings
+            # Process room entity mappings, validating entities exist
             room_entities = {}
+            invalid_entities = []
             for room in self._data.get(CONF_ROOMS, []):
                 key = f"entities_{room}"
                 entities = user_input.get(key, [])
                 if entities:
-                    room_entities[room] = [{"entity_id": e, "hint_type": self._guess_entity_hint(e)} for e in entities]
+                    valid = []
+                    for e in entities:
+                        if self.hass.states.get(e) is not None:
+                            valid.append({"entity_id": e, "hint_type": _guess_entity_hint(e)})
+                        else:
+                            invalid_entities.append(e)
+                    if valid:
+                        room_entities[room] = valid
+
+            if invalid_entities:
+                _LOGGER.warning(
+                    "Skipped non-existent entities during config: %s",
+                    ", ".join(invalid_entities),
+                )
 
             self._data[CONF_ROOM_ENTITIES] = room_entities
 
@@ -258,29 +312,6 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "room_hint": "Select entities that indicate activity in each room. This helps WhoLLM understand which sensors/devices belong to which room.",
             },
         )
-
-    def _guess_entity_hint(self, entity_id: str) -> str:
-        """Guess the entity hint type from the entity ID."""
-        entity_lower = entity_id.lower()
-
-        if "motion" in entity_lower or "occupancy" in entity_lower:
-            return "motion"
-        elif "media_player" in entity_lower or "tv" in entity_lower:
-            return "media"
-        elif "light." in entity_lower:
-            return "light"
-        elif "pc" in entity_lower or "computer" in entity_lower or "desktop" in entity_lower:
-            return "computer"
-        elif "camera" in entity_lower or "person" in entity_lower or "animal" in entity_lower:
-            return "camera"
-        elif "door" in entity_lower or "window" in entity_lower or "contact" in entity_lower:
-            return "door"
-        elif "temperature" in entity_lower or "humidity" in entity_lower:
-            return "climate"
-        elif "device_tracker" in entity_lower:
-            return "presence"
-        else:
-            return "appliance"
 
     @staticmethod
     @callback
@@ -327,6 +358,20 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                         )
                     ),
                     vol.Optional(
+                        CONF_TIMEOUT,
+                        default=self.config_entry.options.get(
+                            CONF_TIMEOUT, self.config_entry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+                        ),
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(
+                            min=5,
+                            max=120,
+                            step=5,
+                            unit_of_measurement="seconds",
+                            mode=selector.NumberSelectorMode.SLIDER,
+                        )
+                    ),
+                    vol.Optional(
                         CONF_LEARNING_ENABLED,
                         default=self.config_entry.data.get(CONF_LEARNING_ENABLED, DEFAULT_LEARNING_ENABLED),
                     ): bool,
@@ -337,17 +382,33 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
     async def async_step_room_entities(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Configure room-entity mappings."""
         if user_input is not None:
-            # Process and save room entity mappings
+            # Process and save room entity mappings, validating entities exist
             room_entities = self.config_entry.data.get(CONF_ROOM_ENTITIES, {}).copy()
             rooms = self.config_entry.data.get(CONF_ROOMS, [])
+            invalid_entities = []
 
             for room in rooms:
                 key = f"entities_{room}"
                 entities = user_input.get(key, [])
                 if entities:
-                    room_entities[room] = [{"entity_id": e, "hint_type": self._guess_entity_hint(e)} for e in entities]
+                    valid = []
+                    for e in entities:
+                        if self.hass.states.get(e) is not None:
+                            valid.append({"entity_id": e, "hint_type": _guess_entity_hint(e)})
+                        else:
+                            invalid_entities.append(e)
+                    if valid:
+                        room_entities[room] = valid
+                    elif room in room_entities:
+                        del room_entities[room]
                 elif room in room_entities:
                     del room_entities[room]
+
+            if invalid_entities:
+                _LOGGER.warning(
+                    "Skipped non-existent entities during options update: %s",
+                    ", ".join(invalid_entities),
+                )
 
             return self.async_create_entry(title="", data={CONF_ROOM_ENTITIES: room_entities})
 
@@ -470,25 +531,3 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
             },
         )
 
-    def _guess_entity_hint(self, entity_id: str) -> str:
-        """Guess the entity hint type from the entity ID."""
-        entity_lower = entity_id.lower()
-
-        if "motion" in entity_lower or "occupancy" in entity_lower:
-            return "motion"
-        elif "media_player" in entity_lower or "tv" in entity_lower:
-            return "media"
-        elif "light." in entity_lower:
-            return "light"
-        elif "pc" in entity_lower or "computer" in entity_lower or "desktop" in entity_lower:
-            return "computer"
-        elif "camera" in entity_lower or "person" in entity_lower or "animal" in entity_lower:
-            return "camera"
-        elif "door" in entity_lower or "window" in entity_lower or "contact" in entity_lower:
-            return "door"
-        elif "temperature" in entity_lower or "humidity" in entity_lower:
-            return "climate"
-        elif "device_tracker" in entity_lower:
-            return "presence"
-        else:
-            return "appliance"

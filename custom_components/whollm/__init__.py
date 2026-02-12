@@ -18,17 +18,20 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
+    CONF_CONFIDENCE_WEIGHTS,
     CONF_MAX_FILE_SIZE_MB,
     CONF_RETENTION_DAYS,
     CONF_URL,
     CONF_VISION_MODEL,
+    DEFAULT_CONFIDENCE_WEIGHTS,
     DEFAULT_MAX_FILE_SIZE_MB,
     DEFAULT_RETENTION_DAYS,
     DEFAULT_VISION_MODEL,
     DOMAIN,
 )
 from .coordinator import LLMPresenceCoordinator
-from .event_logger import get_event_logger
+from .event_logger import EventLogger
+from .habits import ConfidenceCombiner, HabitPredictor
 from .vision import CameraTrackingController, VisionIdentifier
 
 if TYPE_CHECKING:
@@ -42,7 +45,6 @@ PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 SERVICE_IDENTIFY_PERSON = "identify_person"
 SERVICE_ENABLE_TRACKING = "enable_tracking"
 SERVICE_DISABLE_TRACKING = "disable_tracking"
-SERVICE_REQUEST_VISION_UPDATE = "request_vision_update"
 SERVICE_CLEANUP_STORAGE = "cleanup_storage"
 
 IDENTIFY_PERSON_SCHEMA = vol.Schema(
@@ -76,18 +78,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up WhoLLM from a config entry."""
     _LOGGER.info("Setting up WhoLLM integration")
 
-    coordinator = LLMPresenceCoordinator(hass, entry)
-    await coordinator.async_config_entry_first_refresh()
-
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = coordinator
-
-    # Initialize event logger with config
+    # Instantiate shared components (no global singletons)
     retention_days = entry.options.get(CONF_RETENTION_DAYS, entry.data.get(CONF_RETENTION_DAYS, DEFAULT_RETENTION_DAYS))
     max_file_size_mb = entry.options.get(
         CONF_MAX_FILE_SIZE_MB, entry.data.get(CONF_MAX_FILE_SIZE_MB, DEFAULT_MAX_FILE_SIZE_MB)
     )
-    event_logger = get_event_logger(retention_days=retention_days, max_file_size_mb=max_file_size_mb)
+    event_logger = EventLogger(retention_days=retention_days, max_file_size_mb=max_file_size_mb)
+    habit_predictor = HabitPredictor()
+    confidence_weights = entry.options.get(
+        CONF_CONFIDENCE_WEIGHTS, entry.data.get(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
+    )
+    confidence_combiner = ConfidenceCombiner(confidence_weights)
+
+    coordinator = LLMPresenceCoordinator(
+        hass, entry,
+        event_logger=event_logger,
+        habit_predictor=habit_predictor,
+        confidence_combiner=confidence_combiner,
+    )
+    await coordinator.async_config_entry_first_refresh()
+
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = coordinator
     hass.data[DOMAIN]["event_logger"] = event_logger
 
     # Perform initial cleanup on startup
@@ -199,12 +211,6 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         if tracking_controller:
             await tracking_controller.disable_tracking(camera_name)
 
-    async def handle_request_vision_update(call: ServiceCall) -> None:
-        """Handle manual vision update request."""
-        _LOGGER.info("Manual vision update requested")
-        # This could trigger vision identification on all configured cameras
-        # For now, just log it - can be expanded later
-
     async def handle_cleanup_storage(call: ServiceCall) -> dict[str, Any]:
         """Handle the cleanup_storage service call."""
         event_logger = hass.data[DOMAIN].get("event_logger")
@@ -270,12 +276,6 @@ async def _async_register_services(hass: HomeAssistant) -> None:
 
         hass.services.async_register(
             DOMAIN,
-            SERVICE_REQUEST_VISION_UPDATE,
-            handle_request_vision_update,
-        )
-
-        hass.services.async_register(
-            DOMAIN,
             SERVICE_CLEANUP_STORAGE,
             handle_cleanup_storage,
             schema=CLEANUP_STORAGE_SCHEMA,
@@ -291,6 +291,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
+        coordinator = hass.data[DOMAIN].get(entry.entry_id)
+        if coordinator and hasattr(coordinator, "provider"):
+            await coordinator.provider.async_close()
         hass.data[DOMAIN].pop(entry.entry_id, None)
 
     return unload_ok

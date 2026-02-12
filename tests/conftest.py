@@ -9,7 +9,24 @@ from unittest.mock import MagicMock, AsyncMock
 
 from custom_components.whollm.habits import HabitPredictor, ConfidenceCombiner
 from custom_components.whollm.providers.base import PresenceGuess
-from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS
+from custom_components.whollm.const import (
+    CONF_MODEL,
+    CONF_PERSON_DEVICES,
+    CONF_PERSONS,
+    CONF_PETS,
+    CONF_POLL_INTERVAL,
+    CONF_PROVIDER,
+    CONF_ROOM_ENTITIES,
+    CONF_ROOMS,
+    CONF_URL,
+    DEFAULT_CONFIDENCE_WEIGHTS,
+    DEFAULT_MODEL,
+    DEFAULT_PROVIDER,
+    DEFAULT_URL,
+    ENTITY_HINT_COMPUTER,
+    ENTITY_HINT_MEDIA,
+    ENTITY_HINT_MOTION,
+)
 
 
 @pytest.fixture
@@ -96,3 +113,67 @@ def mock_hass():
     hass.bus = MagicMock()
     hass.bus.async_fire = MagicMock()
     return hass
+
+
+@pytest.fixture
+def mock_coordinator():
+    """Create a mock coordinator with sample data."""
+    coordinator = MagicMock()
+    coordinator.persons = [{"name": "Alice"}, {"name": "Bob"}]
+    coordinator.pets = [{"name": "Whiskers"}]
+    coordinator.rooms = ["office", "bedroom", "living_room"]
+    coordinator.data = {
+        "persons": {
+            "Alice": PresenceGuess(
+                room="office",
+                confidence=0.85,
+                raw_response="office",
+                indicators=["PC is active"],
+            ),
+            "Bob": PresenceGuess(
+                room="living_room",
+                confidence=0.7,
+                raw_response="living_room",
+                indicators=["TV playing"],
+            ),
+        },
+        "pets": {
+            "Whiskers": PresenceGuess(
+                room="bedroom",
+                confidence=0.6,
+                raw_response="bedroom",
+                indicators=["Motion"],
+            ),
+        },
+    }
+    return coordinator
+
+
+@pytest.fixture
+def mock_config_entry():
+    """Create a mock config entry."""
+    entry = MagicMock()
+    entry.data = {
+        CONF_PROVIDER: DEFAULT_PROVIDER,
+        CONF_URL: DEFAULT_URL,
+        CONF_MODEL: DEFAULT_MODEL,
+        CONF_POLL_INTERVAL: 30,
+        CONF_PERSONS: [{"name": "Alice"}, {"name": "Bob"}],
+        CONF_PETS: [{"name": "Whiskers"}],
+        CONF_ROOMS: ["office", "bedroom", "living_room"],
+        CONF_ROOM_ENTITIES: {
+            "office": [
+                {"entity_id": "switch.office_pc", "hint_type": ENTITY_HINT_COMPUTER},
+                {"entity_id": "binary_sensor.office_motion", "hint_type": ENTITY_HINT_MOTION},
+            ],
+            "living_room": [
+                {"entity_id": "media_player.living_room_tv", "hint_type": ENTITY_HINT_MEDIA},
+            ],
+        },
+        CONF_PERSON_DEVICES: {
+            "Alice": ["switch.alice_pc"],
+        },
+    }
+    entry.entry_id = "test_entry_id"
+    entry.options = {}
+    return entry

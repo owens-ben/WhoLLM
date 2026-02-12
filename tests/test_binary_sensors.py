@@ -9,46 +9,6 @@ from custom_components.whollm.const import ATTR_CONFIDENCE, DOMAIN
 from custom_components.whollm.providers.base import PresenceGuess
 
 
-@pytest.fixture
-def mock_coordinator():
-    """Create a mock coordinator with sample data."""
-    coordinator = MagicMock()
-    coordinator.persons = [{"name": "Alice"}, {"name": "Bob"}]
-    coordinator.pets = [{"name": "Whiskers"}]
-    coordinator.rooms = ["office", "bedroom", "living_room"]
-
-    alice_guess = PresenceGuess(
-        room="office",
-        confidence=0.85,
-        raw_response="office",
-        indicators=["PC is active"],
-    )
-    bob_guess = PresenceGuess(
-        room="living_room",
-        confidence=0.7,
-        raw_response="living_room",
-        indicators=["TV playing"],
-    )
-    whiskers_guess = PresenceGuess(
-        room="bedroom",
-        confidence=0.6,
-        raw_response="bedroom",
-        indicators=["Motion"],
-    )
-
-    coordinator.data = {
-        "persons": {
-            "Alice": alice_guess,
-            "Bob": bob_guess,
-        },
-        "pets": {
-            "Whiskers": whiskers_guess,
-        },
-    }
-
-    return coordinator
-
-
 class TestLLMPresenceRoomBinarySensor:
     """Tests for LLMPresenceRoomBinarySensor class."""
 
