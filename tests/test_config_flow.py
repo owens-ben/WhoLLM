@@ -303,73 +303,57 @@ class TestGuessEntityHint:
 
     def test_guess_motion_sensor(self):
         """Test guessing motion sensor hint type."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.whollm.config_flow import _guess_entity_hint
 
-        flow = LLMPresenceConfigFlow()
-
-        assert flow._guess_entity_hint("binary_sensor.office_motion") == "motion"
-        assert flow._guess_entity_hint("binary_sensor.living_room_occupancy") == "motion"
+        assert _guess_entity_hint("binary_sensor.office_motion") == "motion"
+        assert _guess_entity_hint("binary_sensor.living_room_occupancy") == "motion"
 
     def test_guess_media_player(self):
         """Test guessing media player hint type."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.whollm.config_flow import _guess_entity_hint
 
-        flow = LLMPresenceConfigFlow()
-
-        assert flow._guess_entity_hint("media_player.living_room_tv") == "media"
+        assert _guess_entity_hint("media_player.living_room_tv") == "media"
 
     def test_guess_light(self):
         """Test guessing light hint type."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.whollm.config_flow import _guess_entity_hint
 
-        flow = LLMPresenceConfigFlow()
-
-        assert flow._guess_entity_hint("light.office_light") == "light"
+        assert _guess_entity_hint("light.office_light") == "light"
 
     def test_guess_computer(self):
         """Test guessing computer hint type."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.whollm.config_flow import _guess_entity_hint
 
-        flow = LLMPresenceConfigFlow()
-
-        assert flow._guess_entity_hint("switch.office_pc") == "computer"
-        assert flow._guess_entity_hint("switch.desktop_computer") == "computer"
+        assert _guess_entity_hint("switch.office_pc") == "computer"
+        assert _guess_entity_hint("switch.desktop_computer") == "computer"
 
     def test_guess_camera(self):
         """Test guessing camera hint type."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.whollm.config_flow import _guess_entity_hint
 
-        flow = LLMPresenceConfigFlow()
-
-        assert flow._guess_entity_hint("camera.living_room_camera") == "camera"
-        assert flow._guess_entity_hint("binary_sensor.person_detected") == "camera"
+        assert _guess_entity_hint("camera.living_room_camera") == "camera"
+        assert _guess_entity_hint("binary_sensor.person_detected") == "camera"
 
     def test_guess_door_sensor(self):
         """Test guessing door/window sensor hint type."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.whollm.config_flow import _guess_entity_hint
 
-        flow = LLMPresenceConfigFlow()
-
-        assert flow._guess_entity_hint("binary_sensor.front_door") == "door"
-        assert flow._guess_entity_hint("binary_sensor.bedroom_window") == "door"
-        assert flow._guess_entity_hint("binary_sensor.contact_sensor") == "door"
+        assert _guess_entity_hint("binary_sensor.front_door") == "door"
+        assert _guess_entity_hint("binary_sensor.bedroom_window") == "door"
+        assert _guess_entity_hint("binary_sensor.contact_sensor") == "door"
 
     def test_guess_device_tracker(self):
         """Test guessing device tracker hint type."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.whollm.config_flow import _guess_entity_hint
 
-        flow = LLMPresenceConfigFlow()
-
-        assert flow._guess_entity_hint("device_tracker.alice_phone") == "presence"
+        assert _guess_entity_hint("device_tracker.alice_phone") == "presence"
 
     def test_guess_unknown_defaults_to_appliance(self):
         """Test that unknown entities default to appliance hint type."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.whollm.config_flow import _guess_entity_hint
 
-        flow = LLMPresenceConfigFlow()
-
-        assert flow._guess_entity_hint("switch.random_switch") == "appliance"
-        assert flow._guess_entity_hint("sensor.unknown_sensor") == "appliance"
+        assert _guess_entity_hint("switch.random_switch") == "appliance"
+        assert _guess_entity_hint("sensor.unknown_sensor") == "appliance"
 
 
 class TestOptionsFlow:

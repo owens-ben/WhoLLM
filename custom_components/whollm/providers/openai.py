@@ -62,19 +62,21 @@ class OpenAIProvider(BaseLLMProvider):
             "max_tokens": 150,  # Short response needed
         }
         
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.endpoint,
-                headers=headers,
-                json=payload,
-                timeout=aiohttp.ClientTimeout(total=30),
-            ) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    _LOGGER.error("OpenAI API error %d: %s", response.status, error_text)
-                    raise Exception(f"OpenAI API error: {response.status}")
-                
-                return await response.json()
+        session = self._get_session()
+        async with session.post(
+            self.endpoint,
+            headers=headers,
+            json=payload,
+            timeout=aiohttp.ClientTimeout(total=30),
+        ) as response:
+            if response.status != 200:
+                error_text = await response.text()
+                _LOGGER.error("OpenAI API error %d: %s", response.status, error_text)
+                raise aiohttp.ClientResponseError(
+                    response.request_info, response.history, status=response.status,
+                )
+
+            return await response.json()
 
     async def deduce_presence(
         self,
@@ -124,17 +126,7 @@ Only use room names from the provided list. If uncertain, use "unknown" with low
             
         except Exception as err:
             _LOGGER.warning("OpenAI API error for %s: %s", entity_name, err)
-            return self._create_fallback_guess(entity_name, str(err))
-
-    def _create_fallback_guess(self, entity_name: str, error: str) -> PresenceGuess:
-        """Create a fallback guess when API fails."""
-        return PresenceGuess(
-            room="unknown",
-            confidence=0.0,
-            raw_response=f"API error: {error}",
-            indicators=["OpenAI API unavailable"],
-            source="openai_fallback",
-        )
+            return self._create_fallback_guess(context, entity_name, entity_type, rooms, str(err))
 
     async def test_connection(self) -> bool:
         """Test if the OpenAI API is reachable."""

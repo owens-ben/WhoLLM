@@ -105,7 +105,7 @@ class HabitPredictor:
                                 start, end = map(int, time_key.split("-"))
                                 self.habits[person][(start, end)] = tuple(pattern)
                 _LOGGER.info("Loaded learned habit patterns for %d people", len(self.habits))
-        except Exception as err:
+        except (OSError, json.JSONDecodeError, KeyError, ValueError) as err:
             _LOGGER.debug("No learned patterns loaded: %s", err)
 
     def save_learned_patterns(self) -> None:
@@ -123,7 +123,7 @@ class HabitPredictor:
             with open(self._learned_patterns_path, "w") as f:
                 json.dump(data, f, indent=2)
             _LOGGER.info("Saved learned habit patterns")
-        except Exception as err:
+        except OSError as err:
             _LOGGER.warning("Could not save learned patterns: %s", err)
 
     def learn_from_event(
@@ -367,26 +367,3 @@ class ConfidenceCombiner:
         explanation = " | ".join(explanations[:4])  # Limit explanation length
 
         return best_room, final_confidence, explanation
-
-
-# Global instances
-_habit_predictor: HabitPredictor | None = None
-_confidence_combiner: ConfidenceCombiner | None = None
-
-
-def get_habit_predictor(config_path: Path | None = None) -> HabitPredictor:
-    """Get or create the global habit predictor."""
-    global _habit_predictor
-    if _habit_predictor is None:
-        _habit_predictor = HabitPredictor(config_path)
-    return _habit_predictor
-
-
-def get_confidence_combiner(weights: dict[str, float] | None = None) -> ConfidenceCombiner:
-    """Get or create the confidence combiner."""
-    global _confidence_combiner
-    if _confidence_combiner is None:
-        _confidence_combiner = ConfidenceCombiner(weights)
-    elif weights:
-        _confidence_combiner.update_weights(weights)
-    return _confidence_combiner

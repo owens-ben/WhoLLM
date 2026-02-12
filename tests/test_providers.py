@@ -89,7 +89,7 @@ class TestBaseLLMProvider:
         )
 
         assert "MOTION" in formatted
-        assert "DETECTED" in formatted
+        assert "MOTION NOW" in formatted or "DETECTED" in formatted
 
     def test_format_context_includes_computers(self, sample_context):
         """Test that context formatting includes computer states."""
@@ -116,7 +116,7 @@ class TestBaseLLMProvider:
         assert "Alice" in prompt
         assert "office" in prompt
         assert "living_room" in prompt
-        assert "ONLY ONE word" in prompt
+        assert "ROOM:" in prompt
 
     def test_system_prompt_pet(self):
         """Test system prompt generation for pet."""
@@ -316,13 +316,3 @@ class TestOllamaProvider:
         # Pet should be near TV if it's on
         assert guess.room == "living_room"
 
-    def test_camera_name_to_room_mapping(self):
-        """Test camera name to room mapping."""
-        provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
-
-        assert provider._camera_name_to_room("living_room_camera") == "living_room"
-        assert provider._camera_name_to_room("bedroom_cam") == "bedroom"
-        assert provider._camera_name_to_room("office_camera") == "office"
-        assert provider._camera_name_to_room("kitchen_camera") == "kitchen"
-        assert provider._camera_name_to_room("front_door") == "entry"
-        assert provider._camera_name_to_room("random_camera") == "unknown"

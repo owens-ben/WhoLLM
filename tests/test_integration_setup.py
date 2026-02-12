@@ -52,6 +52,19 @@ def mock_config_entry():
     return entry
 
 
+def _make_mock_event_logger(cleanup_return=None):
+    """Create a mock EventLogger with standard defaults."""
+    mock = MagicMock()
+    mock.cleanup = MagicMock(
+        return_value=cleanup_return or {
+            "total_deleted": 0,
+            "total_kept": 100,
+            "final_size_mb": 5.0,
+        }
+    )
+    return mock
+
+
 class TestAsyncSetup:
     """Test async_setup function."""
 
@@ -79,16 +92,8 @@ class TestAsyncSetupEntry:
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.get_event_logger") as mock_logger:
-                mock_event_logger = MagicMock()
-                mock_event_logger.cleanup = MagicMock(
-                    return_value={
-                        "total_deleted": 0,
-                        "total_kept": 100,
-                        "final_size_mb": 5.0,
-                    }
-                )
-                mock_logger.return_value = mock_event_logger
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
 
                 with patch("custom_components.whollm.VisionIdentifier"):
                     with patch("custom_components.whollm.CameraTrackingController"):
@@ -107,10 +112,8 @@ class TestAsyncSetupEntry:
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.get_event_logger") as mock_logger:
-                mock_event_logger = MagicMock()
-                mock_event_logger.cleanup = MagicMock(return_value={})
-                mock_logger.return_value = mock_event_logger
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
 
                 with patch("custom_components.whollm.VisionIdentifier"):
                     with patch("custom_components.whollm.CameraTrackingController"):
@@ -129,10 +132,8 @@ class TestAsyncSetupEntry:
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.get_event_logger") as mock_logger:
-                mock_event_logger = MagicMock()
-                mock_event_logger.cleanup = MagicMock(return_value={})
-                mock_logger.return_value = mock_event_logger
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
 
                 with patch("custom_components.whollm.VisionIdentifier"):
                     with patch("custom_components.whollm.CameraTrackingController"):
@@ -152,10 +153,8 @@ class TestAsyncSetupEntry:
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.get_event_logger") as mock_logger:
-                mock_event_logger = MagicMock()
-                mock_event_logger.cleanup = MagicMock(return_value={})
-                mock_logger.return_value = mock_event_logger
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
 
                 with patch("custom_components.whollm.VisionIdentifier") as mock_vision:
                     with patch("custom_components.whollm.CameraTrackingController") as mock_tracking:
@@ -176,8 +175,11 @@ class TestAsyncUnloadEntry:
         """Test successful unload."""
         from custom_components.whollm import async_unload_entry
 
-        # Setup data first
-        mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
+        # Setup data first - coordinator mock needs provider.async_close as AsyncMock
+        mock_coordinator = MagicMock()
+        mock_coordinator.provider = MagicMock()
+        mock_coordinator.provider.async_close = AsyncMock()
+        mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: mock_coordinator}
 
         result = await async_unload_entry(mock_hass, mock_config_entry)
 
@@ -189,7 +191,10 @@ class TestAsyncUnloadEntry:
         """Test that platforms are unloaded."""
         from custom_components.whollm import async_unload_entry, PLATFORMS
 
-        mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
+        mock_coordinator = MagicMock()
+        mock_coordinator.provider = MagicMock()
+        mock_coordinator.provider.async_close = AsyncMock()
+        mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: mock_coordinator}
 
         await async_unload_entry(mock_hass, mock_config_entry)
 
@@ -234,10 +239,8 @@ class TestServiceHandlers:
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.get_event_logger") as mock_logger:
-                mock_event_logger = MagicMock()
-                mock_event_logger.cleanup = MagicMock(return_value={})
-                mock_logger.return_value = mock_event_logger
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
 
                 with patch("custom_components.whollm.VisionIdentifier") as mock_vision_class:
                     mock_vision = MagicMock()
@@ -270,23 +273,21 @@ class TestServiceHandlers:
         mock_hass.bus = MagicMock()
         mock_hass.bus.async_fire = MagicMock()
 
+        mock_event_logger = _make_mock_event_logger({
+            "deleted_by_time": 5,
+            "deleted_by_size": 0,
+            "total_deleted": 5,
+            "total_kept": 95,
+            "final_size_mb": 4.5,
+        })
+
         with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
             mock_coordinator = MagicMock()
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.get_event_logger") as mock_logger:
-                mock_event_logger = MagicMock()
-                mock_event_logger.cleanup = MagicMock(
-                    return_value={
-                        "deleted_by_time": 5,
-                        "deleted_by_size": 0,
-                        "total_deleted": 5,
-                        "total_kept": 95,
-                        "final_size_mb": 4.5,
-                    }
-                )
-                mock_logger.return_value = mock_event_logger
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = mock_event_logger
 
                 with patch("custom_components.whollm.VisionIdentifier"):
                     with patch("custom_components.whollm.CameraTrackingController"):

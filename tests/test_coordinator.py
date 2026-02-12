@@ -7,53 +7,12 @@ from unittest.mock import MagicMock, AsyncMock, patch
 from datetime import timedelta
 
 from custom_components.whollm.const import (
-    CONF_MODEL,
-    CONF_PERSONS,
-    CONF_PETS,
-    CONF_POLL_INTERVAL,
-    CONF_PROVIDER,
-    CONF_ROOMS,
-    CONF_URL,
     CONF_ROOM_ENTITIES,
     CONF_PERSON_DEVICES,
-    DEFAULT_MODEL,
-    DEFAULT_PROVIDER,
-    DEFAULT_URL,
     ENTITY_HINT_COMPUTER,
     ENTITY_HINT_MEDIA,
     ENTITY_HINT_MOTION,
-    VALID_ROOMS,
 )
-
-
-@pytest.fixture
-def mock_config_entry():
-    """Create a mock config entry."""
-    entry = MagicMock()
-    entry.data = {
-        CONF_PROVIDER: DEFAULT_PROVIDER,
-        CONF_URL: DEFAULT_URL,
-        CONF_MODEL: DEFAULT_MODEL,
-        CONF_POLL_INTERVAL: 30,
-        CONF_PERSONS: [{"name": "Alice"}, {"name": "Bob"}],
-        CONF_PETS: [{"name": "Whiskers"}],
-        CONF_ROOMS: ["office", "bedroom", "living_room"],
-        CONF_ROOM_ENTITIES: {
-            "office": [
-                {"entity_id": "switch.office_pc", "hint_type": ENTITY_HINT_COMPUTER},
-                {"entity_id": "binary_sensor.office_motion", "hint_type": ENTITY_HINT_MOTION},
-            ],
-            "living_room": [
-                {"entity_id": "media_player.living_room_tv", "hint_type": ENTITY_HINT_MEDIA},
-            ],
-        },
-        CONF_PERSON_DEVICES: {
-            "Alice": ["switch.alice_pc"],
-        },
-    }
-    entry.entry_id = "test_entry_id"
-    entry.options = {}
-    return entry
 
 
 class TestCoordinatorHelpers:
@@ -210,7 +169,8 @@ class TestCoordinatorPersonDevices:
 class TestCoordinatorRoomTransition:
     """Test room transition detection."""
 
-    def test_check_room_transition_logs_movement(self, mock_hass, mock_config_entry):
+    @pytest.mark.asyncio
+    async def test_check_room_transition_logs_movement(self, mock_hass, mock_config_entry):
         """Test that room transitions are detected."""
         from custom_components.whollm.coordinator import LLMPresenceCoordinator
 
@@ -218,12 +178,13 @@ class TestCoordinatorRoomTransition:
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
             coordinator._previous_rooms = {"Alice": "bedroom"}
             coordinator.event_logger = MagicMock()
+            coordinator.event_logger.async_log_room_transition = AsyncMock()
 
             # Move Alice to office
-            coordinator._check_room_transition("Alice", "office", 0.9)
+            await coordinator._check_room_transition("Alice", "office", 0.9)
 
             # Should have logged the transition
-            coordinator.event_logger.log_room_transition.assert_called_once_with(
+            coordinator.event_logger.async_log_room_transition.assert_called_once_with(
                 entity_name="Alice",
                 from_room="bedroom",
                 to_room="office",
@@ -233,7 +194,8 @@ class TestCoordinatorRoomTransition:
             # Previous room should be updated
             assert coordinator._previous_rooms["Alice"] == "office"
 
-    def test_check_room_transition_same_room_no_log(self, mock_hass, mock_config_entry):
+    @pytest.mark.asyncio
+    async def test_check_room_transition_same_room_no_log(self, mock_hass, mock_config_entry):
         """Test that staying in same room doesn't log transition."""
         from custom_components.whollm.coordinator import LLMPresenceCoordinator
 
@@ -241,14 +203,16 @@ class TestCoordinatorRoomTransition:
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
             coordinator._previous_rooms = {"Alice": "office"}
             coordinator.event_logger = MagicMock()
+            coordinator.event_logger.async_log_room_transition = AsyncMock()
 
             # Alice stays in office
-            coordinator._check_room_transition("Alice", "office", 0.9)
+            await coordinator._check_room_transition("Alice", "office", 0.9)
 
             # Should NOT have logged a transition
-            coordinator.event_logger.log_room_transition.assert_not_called()
+            coordinator.event_logger.async_log_room_transition.assert_not_called()
 
-    def test_check_room_transition_to_unknown_no_log(self, mock_hass, mock_config_entry):
+    @pytest.mark.asyncio
+    async def test_check_room_transition_to_unknown_no_log(self, mock_hass, mock_config_entry):
         """Test that transition to 'unknown' doesn't log."""
         from custom_components.whollm.coordinator import LLMPresenceCoordinator
 
@@ -256,9 +220,10 @@ class TestCoordinatorRoomTransition:
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
             coordinator._previous_rooms = {"Alice": "office"}
             coordinator.event_logger = MagicMock()
+            coordinator.event_logger.async_log_room_transition = AsyncMock()
 
             # Unknown room result
-            coordinator._check_room_transition("Alice", "unknown", 0.3)
+            await coordinator._check_room_transition("Alice", "unknown", 0.3)
 
             # Should NOT log transition to unknown
-            coordinator.event_logger.log_room_transition.assert_not_called()
+            coordinator.event_logger.async_log_room_transition.assert_not_called()

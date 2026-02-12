@@ -10,8 +10,6 @@ from tempfile import TemporaryDirectory
 
 from custom_components.whollm.event_logger import (
     EventLogger,
-    get_event_logger,
-    reset_event_logger,
     DEFAULT_RETENTION_DAYS,
     DEFAULT_MAX_FILE_SIZE_MB,
 )
@@ -35,12 +33,37 @@ def event_logger(temp_log_file):
     )
 
 
-@pytest.fixture(autouse=True)
-def reset_global_logger():
-    """Reset global logger between tests."""
-    reset_event_logger()
-    yield
-    reset_event_logger()
+def _sync_write_presence(logger, entity_name="Alice", entity_type="person",
+                          room="office", confidence=0.8, raw_response="office",
+                          indicators=None, sensor_context=None, detection_method="llm"):
+    """Synchronous helper to write a presence event for tests."""
+    event = {
+        "timestamp": datetime.now().isoformat(),
+        "entity_name": entity_name,
+        "entity_type": entity_type,
+        "room": room,
+        "confidence": confidence,
+        "raw_response": raw_response,
+        "indicators": indicators or [],
+        "detection_method": detection_method,
+        "time_features": logger._extract_time_features(),
+        "sensor_summary": logger._summarize_sensors(sensor_context or {}),
+    }
+    logger._write_line(json.dumps(event) + "\n")
+
+
+def _sync_write_transition(logger, entity_name, from_room, to_room, confidence):
+    """Synchronous helper to write a transition event for tests."""
+    event = {
+        "timestamp": datetime.now().isoformat(),
+        "event_type": "room_transition",
+        "entity_name": entity_name,
+        "from_room": from_room,
+        "to_room": to_room,
+        "confidence": confidence,
+        "time_features": logger._extract_time_features(),
+    }
+    logger._write_line(json.dumps(event) + "\n")
 
 
 class TestEventLoggerInitialization:
@@ -86,9 +109,10 @@ class TestEventLoggerInitialization:
 class TestLogPresenceEvent:
     """Test presence event logging."""
 
-    def test_log_presence_event(self, event_logger, temp_log_file):
+    @pytest.mark.asyncio
+    async def test_log_presence_event(self, event_logger, temp_log_file):
         """Test logging a presence event."""
-        event_logger.log_presence_event(
+        await event_logger.async_log_presence_event(
             entity_name="Alice",
             entity_type="person",
             room="office",
@@ -120,10 +144,11 @@ class TestLogPresenceEvent:
         assert "time_features" in event
         assert "sensor_summary" in event
 
-    def test_log_multiple_events(self, event_logger, temp_log_file):
+    @pytest.mark.asyncio
+    async def test_log_multiple_events(self, event_logger, temp_log_file):
         """Test logging multiple events."""
         for i in range(5):
-            event_logger.log_presence_event(
+            await event_logger.async_log_presence_event(
                 entity_name=f"Person{i}",
                 entity_type="person",
                 room="office",
@@ -139,9 +164,10 @@ class TestLogPresenceEvent:
 class TestLogVisionEvent:
     """Test vision event logging."""
 
-    def test_log_vision_event(self, event_logger, temp_log_file):
+    @pytest.mark.asyncio
+    async def test_log_vision_event(self, event_logger, temp_log_file):
         """Test logging a vision identification event."""
-        event_logger.log_vision_event(
+        await event_logger.async_log_vision_event(
             camera_entity="camera.living_room",
             identified="Alice",
             confidence="high",
@@ -162,9 +188,10 @@ class TestLogVisionEvent:
 class TestLogRoomTransition:
     """Test room transition logging."""
 
-    def test_log_room_transition(self, event_logger, temp_log_file):
+    @pytest.mark.asyncio
+    async def test_log_room_transition(self, event_logger, temp_log_file):
         """Test logging a room transition."""
-        event_logger.log_room_transition(
+        await event_logger.async_log_room_transition(
             entity_name="Alice",
             from_room="office",
             to_room="kitchen",
@@ -253,8 +280,8 @@ class TestStorageStats:
         """Test getting event count."""
         assert event_logger.get_event_count() == 0
 
-        event_logger.log_room_transition("Alice", "office", "bedroom", 0.9)
-        event_logger.log_room_transition("Bob", "bedroom", "office", 0.8)
+        _sync_write_transition(event_logger, "Alice", "office", "bedroom", 0.9)
+        _sync_write_transition(event_logger, "Bob", "bedroom", "office", 0.8)
 
         assert event_logger.get_event_count() == 2
 
@@ -262,14 +289,14 @@ class TestStorageStats:
         """Test getting file size."""
         assert event_logger.get_file_size() == 0
 
-        event_logger.log_room_transition("Alice", "office", "bedroom", 0.9)
+        _sync_write_transition(event_logger, "Alice", "office", "bedroom", 0.9)
 
         assert event_logger.get_file_size() > 0
         assert event_logger.get_file_size() == temp_log_file.stat().st_size
 
     def test_get_file_size_mb(self, event_logger):
         """Test getting file size in MB."""
-        event_logger.log_room_transition("Alice", "office", "bedroom", 0.9)
+        _sync_write_transition(event_logger, "Alice", "office", "bedroom", 0.9)
 
         size_bytes = event_logger.get_file_size()
         size_mb = event_logger.get_file_size_mb()
@@ -278,7 +305,7 @@ class TestStorageStats:
 
     def test_get_storage_stats(self, event_logger, temp_log_file):
         """Test getting complete storage stats."""
-        event_logger.log_room_transition("Alice", "office", "bedroom", 0.9)
+        _sync_write_transition(event_logger, "Alice", "office", "bedroom", 0.9)
 
         stats = event_logger.get_storage_stats()
 
@@ -291,7 +318,7 @@ class TestStorageStats:
     def test_get_recent_events(self, event_logger):
         """Test getting recent events."""
         for i in range(10):
-            event_logger.log_room_transition(f"Person{i}", "office", "bedroom", 0.9)
+            _sync_write_transition(event_logger, f"Person{i}", "office", "bedroom", 0.9)
 
         recent = event_logger.get_recent_events(5)
 
@@ -349,7 +376,7 @@ class TestCleanupBySize:
 
     def test_cleanup_by_size_under_limit(self, event_logger, temp_log_file):
         """Test that cleanup does nothing when under size limit."""
-        event_logger.log_room_transition("Alice", "office", "bedroom", 0.9)
+        _sync_write_transition(event_logger, "Alice", "office", "bedroom", 0.9)
 
         result = event_logger.cleanup_by_size()
 
@@ -362,12 +389,10 @@ class TestCleanupBySize:
 
         # Write enough events to exceed limit
         for i in range(100):
-            logger.log_presence_event(
+            _sync_write_presence(
+                logger,
                 entity_name=f"Person{i}",
-                entity_type="person",
-                room="office",
-                confidence=0.8,
-                raw_response="office" * 100,  # Make events larger
+                raw_response="office" * 100,
                 indicators=["indicator" * 50],
                 sensor_context={"data": "x" * 500},
             )
@@ -388,7 +413,7 @@ class TestCleanupBySize:
 
         # Write events in order
         for i in range(50):
-            logger.log_room_transition(f"Person{i}", "office", "bedroom", 0.9)
+            _sync_write_transition(logger, f"Person{i}", "office", "bedroom", 0.9)
 
         # Cleanup
         logger.cleanup_by_size(target_size_mb=0.001)
@@ -427,7 +452,7 @@ class TestCombinedCleanup:
 
         # Write recent events
         for i in range(50):
-            logger.log_room_transition(f"Recent{i}", "office", "bedroom", 0.9)
+            _sync_write_transition(logger, f"Recent{i}", "office", "bedroom", 0.9)
 
         result = logger.cleanup()
 
@@ -437,51 +462,13 @@ class TestCombinedCleanup:
         assert "final_size_mb" in result
 
 
-class TestGlobalLoggerInstance:
-    """Test global logger singleton."""
-
-    def test_get_event_logger_creates_instance(self):
-        """Test that get_event_logger creates an instance."""
-        reset_event_logger()
-
-        logger = get_event_logger()
-
-        assert logger is not None
-        assert isinstance(logger, EventLogger)
-
-    def test_get_event_logger_returns_same_instance(self):
-        """Test that get_event_logger returns same instance."""
-        reset_event_logger()
-
-        logger1 = get_event_logger()
-        logger2 = get_event_logger()
-
-        assert logger1 is logger2
-
-    def test_get_event_logger_with_custom_settings(self):
-        """Test that custom settings are used on first creation."""
-        reset_event_logger()
-
-        logger = get_event_logger(retention_days=14, max_file_size_mb=50)
-
-        assert logger.retention_days == 14
-        assert logger.max_file_size_bytes == 50 * 1024 * 1024
-
-    def test_reset_event_logger(self):
-        """Test that reset_event_logger clears instance."""
-        logger1 = get_event_logger()
-        reset_event_logger()
-        logger2 = get_event_logger()
-
-        assert logger1 is not logger2
-
-
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
-    def test_log_event_handles_missing_context(self, event_logger):
+    @pytest.mark.asyncio
+    async def test_log_event_handles_missing_context(self, event_logger):
         """Test logging with minimal/empty context."""
-        event_logger.log_presence_event(
+        await event_logger.async_log_presence_event(
             entity_name="Alice",
             entity_type="person",
             room="office",

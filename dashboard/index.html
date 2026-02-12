@@ -25,7 +25,7 @@
             --border-color: #2d2d3a;
             --glow-primary: rgba(99, 102, 241, 0.3);
             --glow-success: rgba(16, 185, 129, 0.3);
-            
+
             /* Room colors */
             --room-office: #3b82f6;
             --room-living: #10b981;
@@ -58,7 +58,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: 
+            background:
                 radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
                 radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
                 radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
@@ -78,7 +78,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-image: 
+            background-image:
                 linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
@@ -426,15 +426,15 @@
             .container {
                 padding: 1rem;
             }
-            
+
             h1 {
                 font-size: 1.75rem;
             }
-            
+
             .status-bar {
                 gap: 1rem;
             }
-            
+
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
@@ -472,48 +472,30 @@
             text-align: center;
         }
 
-        /* Config form */
-        .config-section {
+        /* Auth section */
+        .auth-section {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 2rem;
             margin-bottom: 2rem;
+            text-align: center;
         }
 
-        .config-section h2 {
-            margin-bottom: 1.5rem;
+        .auth-section h2 {
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0.75rem;
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
+        .auth-section p {
             color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-            transition: border-color 0.2s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--accent-primary);
+            margin-bottom: 1.5rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .btn {
@@ -545,6 +527,89 @@
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
         }
+
+        .btn-large {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+        }
+
+        .auth-error {
+            color: var(--accent-danger);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Connected section */
+        .connected-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.25rem 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .connected-section .inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .connected-section .status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Manual token fallback */
+        .manual-toggle {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .manual-toggle summary {
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .manual-toggle .form-group {
+            margin-top: 1rem;
+            text-align: left;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .manual-toggle label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .manual-toggle input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .manual-toggle input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .manual-toggle .btn {
+            margin-top: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -560,7 +625,7 @@
                     <p class="subtitle">Intelligent presence detection powered by local AI</p>
                 </div>
             </div>
-            
+
             <div class="status-bar">
                 <div class="status-item">
                     <span class="status-dot" id="ha-status"></span>
@@ -571,43 +636,49 @@
                     <span>Ollama</span>
                 </div>
                 <div class="status-item">
-                    <span>🕐</span>
+                    <span>&#x1f550;</span>
                     <span id="last-update">--:--:--</span>
                 </div>
             </div>
         </header>
 
-        <!-- Configuration Section (shown when not configured) -->
-        <section class="config-section" id="config-section">
-            <h2>⚙️ Configuration</h2>
-            <form id="config-form">
-                <div class="form-group">
+        <!-- Sign-in Section (shown when not authenticated) -->
+        <section class="auth-section" id="auth-section">
+            <h2>Sign in to Home Assistant</h2>
+            <p>Connect using your Home Assistant account. No tokens to copy — just sign in once and stay connected.</p>
+            <div class="manual-toggle" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 1.5rem;">
+                <div class="form-group" style="text-align: left; max-width: 500px; margin: 0 auto;">
                     <label for="ha-url">Home Assistant URL</label>
-                    <input type="text" id="ha-url" placeholder="http://homeassistant.local:8123" value="">
+                    <input type="text" id="ha-url" value="" placeholder="http://192.168.0.233:8123">
                 </div>
-                <div class="form-group">
-                    <label for="ha-token">Long-Lived Access Token</label>
-                    <input type="password" id="ha-token" placeholder="Your HA token">
-                </div>
-                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
-                    <input type="checkbox" id="remember-token" checked style="width: auto;">
-                    <label for="remember-token" style="margin: 0; cursor: pointer;">Remember credentials (stored locally)</label>
-                </div>
-                <button type="submit" class="btn">
-                    🔗 Connect to Home Assistant
-                </button>
-            </form>
+            </div>
+            <button type="button" class="btn btn-large" id="signin-btn">
+                Sign in with Home Assistant
+            </button>
+            <div id="auth-error" class="auth-error" style="display: none;"></div>
+
+            <details class="manual-toggle">
+                <summary>Advanced: use a long-lived access token instead</summary>
+                <form id="manual-token-form">
+                    <div class="form-group">
+                        <label for="manual-token">Long-Lived Access Token</label>
+                        <input type="password" id="manual-token" placeholder="Paste token from HA Profile page">
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Connect with token</button>
+                </form>
+            </details>
         </section>
 
-        <!-- Connected indicator (shown when connected) -->
-        <section class="config-section" id="connected-section" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <!-- Connected indicator (shown when authenticated) -->
+        <section class="connected-section" id="connected-section" style="display: none;">
+            <div class="inner">
+                <div class="status">
                     <span class="status-dot online" style="width: 12px; height: 12px;"></span>
-                    <span>Connected to <strong id="connected-url"></strong></span>
+                    <span>Connected to Home Assistant</span>
+                    <span id="auth-method" style="color: var(--text-muted); font-size: 0.8rem;"></span>
                 </div>
                 <button type="button" class="btn btn-secondary" id="disconnect-btn">
-                    🔌 Disconnect
+                    Sign out
                 </button>
             </div>
         </section>
@@ -623,7 +694,7 @@
             <section class="card" style="margin-bottom: 2rem;">
                 <div class="card-header">
                     <div class="card-title">
-                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.2);">🏠</div>
+                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.2);">&#x1f3e0;</div>
                         <span>Room Overview</span>
                     </div>
                 </div>
@@ -636,11 +707,11 @@
             <section class="card" style="margin-bottom: 2rem;" id="vision-section">
                 <div class="card-header">
                     <div class="card-title">
-                        <div class="card-icon" style="background: rgba(236, 72, 153, 0.2);">📷</div>
+                        <div class="card-icon" style="background: rgba(236, 72, 153, 0.2);">&#x1f4f7;</div>
                         <span>Vision Identification</span>
                     </div>
                     <button class="btn btn-secondary" id="trigger-vision-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                        🔍 Identify Now
+                        Identify Now
                     </button>
                 </div>
                 <div id="vision-result" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -671,7 +742,7 @@
                 <section class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <div class="card-icon" style="background: rgba(139, 92, 246, 0.2);">🤖</div>
+                            <div class="card-icon" style="background: rgba(139, 92, 246, 0.2);">&#x1f916;</div>
                             <span>LLM Analysis</span>
                         </div>
                     </div>
@@ -684,7 +755,7 @@
                 <section class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <div class="card-icon" style="background: rgba(6, 182, 212, 0.2);">📜</div>
+                            <div class="card-icon" style="background: rgba(6, 182, 212, 0.2);">&#x1f4dc;</div>
                             <span>Recent Activity</span>
                         </div>
                     </div>
@@ -697,52 +768,219 @@
 
         <footer>
             <p>
-                LLM Room Presence • 
-                <a href="https://github.com/owens-ben/WhoLLM" target="_blank">GitHub</a> • 
+                LLM Room Presence &bull;
+                <a href="https://github.com/owens-ben/WhoLLM" target="_blank">GitHub</a> &bull;
                 Powered by Ollama
             </p>
         </footer>
     </div>
 
     <script>
-        // Configuration
-        const CONFIG = {
-            haUrl: localStorage.getItem('ha_url') || '',
-            haToken: localStorage.getItem('ha_token') || '',
-            pollInterval: 5000, // 5 seconds
-            rooms: ['office', 'living_room', 'bedroom', 'kitchen', 'bathroom', 'entry', 'away'],
-            roomIcons: {
-                office: '🖥️',
-                living_room: '🛋️',
-                bedroom: '🛏️',
-                kitchen: '🍳',
-                bathroom: '🚿',
-                entry: '🚪',
-                away: '🏃',
-                unknown: '❓'
+        // ========== OAuth2 Auth Module ==========
+        const Auth = {
+            // The dashboard's own origin — used as client_id and redirect target
+            clientId: window.location.origin + '/',
+            redirectUri: window.location.origin + '/',
+            // HA URL for direct browser redirects (authorize endpoint)
+            haUrl: localStorage.getItem('ha_url') || 'http://192.168.0.233:8123',
+            accessToken: null,
+            refreshToken: localStorage.getItem('ha_refresh_token'),
+            tokenExpiry: 0,
+            method: null, // 'oauth' or 'token'
+
+            async init() {
+                // Populate the HA URL input
+                const urlInput = document.getElementById('ha-url');
+                if (urlInput) urlInput.value = this.haUrl;
+
+                // Check for OAuth callback (code in URL)
+                const params = new URLSearchParams(window.location.search);
+                const code = params.get('code');
+
+                if (code) {
+                    // Clean URL immediately
+                    window.history.replaceState({}, '', window.location.pathname);
+                    try {
+                        await this.exchangeCode(code);
+                        return true;
+                    } catch (err) {
+                        console.error('Code exchange failed:', err);
+                        this.showError('Sign-in failed. Please try again.');
+                        return false;
+                    }
+                }
+
+                // Try to restore OAuth session via refresh token
+                if (this.refreshToken) {
+                    try {
+                        await this.refresh();
+                        this.method = 'oauth';
+                        return true;
+                    } catch {
+                        // Refresh token expired/invalid — clear it
+                        this.logout();
+                    }
+                }
+
+                // Try to restore manual token session
+                const manualToken = localStorage.getItem('ha_manual_token');
+                if (manualToken) {
+                    this.accessToken = manualToken;
+                    this.tokenExpiry = Infinity;
+                    this.method = 'token';
+                    return true;
+                }
+
+                return false;
+            },
+
+            login() {
+                try {
+                    // Read HA URL from input and save it
+                    const urlInput = document.getElementById('ha-url');
+                    if (urlInput && urlInput.value.trim()) {
+                        this.haUrl = urlInput.value.trim().replace(/\/+$/, '');
+                        localStorage.setItem('ha_url', this.haUrl);
+                    }
+
+                    // Generate state param (crypto.randomUUID needs secure context)
+                    let state;
+                    try { state = crypto.randomUUID(); } catch {
+                        const buf = new Uint8Array(16);
+                        crypto.getRandomValues(buf);
+                        state = Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
+                    }
+                    sessionStorage.setItem('oauth_state', state);
+                    const params = new URLSearchParams({
+                        client_id: this.clientId,
+                        redirect_uri: this.redirectUri,
+                        state: state,
+                    });
+                    // Redirect browser directly to HA (not through proxy)
+                    window.location.href = this.haUrl + '/auth/authorize?' + params;
+                } catch (err) {
+                    console.error('Auth.login() error:', err);
+                    this.showError('Login failed: ' + err.message);
+                }
+            },
+
+            async exchangeCode(code) {
+                // Token exchange goes through our nginx proxy
+                const resp = await fetch('/auth/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        code: code,
+                        client_id: this.clientId,
+                    }),
+                });
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    throw new Error('Token exchange failed: ' + text);
+                }
+                const data = await resp.json();
+                this.setTokens(data);
+                this.method = 'oauth';
+            },
+
+            async refresh() {
+                const resp = await fetch('/auth/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        grant_type: 'refresh_token',
+                        refresh_token: this.refreshToken,
+                        client_id: this.clientId,
+                    }),
+                });
+                if (!resp.ok) throw new Error('Refresh failed');
+                const data = await resp.json();
+                this.setTokens(data);
+            },
+
+            setTokens(data) {
+                this.accessToken = data.access_token;
+                if (data.refresh_token) {
+                    this.refreshToken = data.refresh_token;
+                    localStorage.setItem('ha_refresh_token', data.refresh_token);
+                }
+                // Refresh 60s before expiry
+                this.tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000;
+            },
+
+            async getToken() {
+                if (this.method === 'oauth' && Date.now() >= this.tokenExpiry) {
+                    try {
+                        await this.refresh();
+                    } catch {
+                        this.logout();
+                        showAuthSection();
+                        stopPolling();
+                        return null;
+                    }
+                }
+                return this.accessToken;
+            },
+
+            loginWithManualToken(token) {
+                this.accessToken = token;
+                this.tokenExpiry = Infinity;
+                this.method = 'token';
+                localStorage.setItem('ha_manual_token', token);
+            },
+
+            logout() {
+                this.accessToken = null;
+                this.refreshToken = null;
+                this.tokenExpiry = 0;
+                this.method = null;
+                localStorage.removeItem('ha_refresh_token');
+                localStorage.removeItem('ha_manual_token');
+            },
+
+            showError(msg) {
+                const el = document.getElementById('auth-error');
+                el.textContent = msg;
+                el.style.display = 'block';
             }
         };
 
-        // State
+        // ========== App Config ==========
+        const CONFIG = {
+            pollInterval: 5000,
+            rooms: ['office', 'living_room', 'bedroom', 'kitchen', 'bathroom', 'entry', 'away'],
+            roomIcons: {
+                office: '\u{1f5a5}\ufe0f',
+                living_room: '\u{1f6cb}\ufe0f',
+                bedroom: '\u{1f6cf}\ufe0f',
+                kitchen: '\u{1f373}',
+                bathroom: '\u{1f6bf}',
+                entry: '\u{1f6aa}',
+                away: '\u{1f3c3}',
+                unknown: '\u2753'
+            }
+        };
+
+        // ========== State ==========
         let state = {
             connected: false,
             persons: {},
             pets: {},
             timeline: [],
-            previousRooms: {}  // Track previous room assignments to detect changes
+            previousRooms: {},
+            lastVisionTime: 0
         };
 
-        // DOM Elements
-        const elements = {
-            configSection: document.getElementById('config-section'),
+        // ========== DOM ==========
+        const el = {
+            authSection: document.getElementById('auth-section'),
             connectedSection: document.getElementById('connected-section'),
-            connectedUrl: document.getElementById('connected-url'),
+            authMethod: document.getElementById('auth-method'),
             disconnectBtn: document.getElementById('disconnect-btn'),
             dashboard: document.getElementById('dashboard'),
-            configForm: document.getElementById('config-form'),
-            haUrl: document.getElementById('ha-url'),
-            haToken: document.getElementById('ha-token'),
-            rememberToken: document.getElementById('remember-token'),
+            signinBtn: document.getElementById('signin-btn'),
+            manualTokenForm: document.getElementById('manual-token-form'),
             haStatus: document.getElementById('ha-status'),
             ollamaStatus: document.getElementById('ollama-status'),
             lastUpdate: document.getElementById('last-update'),
@@ -752,90 +990,64 @@
             timeline: document.getElementById('timeline')
         };
 
-        // Initialize
-        function init() {
-            // Load saved config
-            if (CONFIG.haUrl) {
-                elements.haUrl.value = CONFIG.haUrl;
-            }
-            if (CONFIG.haToken) {
-                elements.haToken.value = CONFIG.haToken;
-            }
+        // ========== Init ==========
+        async function init() {
+            // Wire up buttons
+            el.signinBtn.addEventListener('click', () => Auth.login());
+            el.disconnectBtn.addEventListener('click', handleDisconnect);
+            el.manualTokenForm.addEventListener('submit', handleManualToken);
+            document.getElementById('trigger-vision-btn').addEventListener('click', triggerVisionIdentification);
 
-            // Check if we have credentials - auto-connect if saved
-            if (CONFIG.haUrl && CONFIG.haToken) {
-                console.log('Found saved credentials, auto-connecting...');
+            // Try to restore session
+            const authenticated = await Auth.init();
+            if (authenticated) {
                 showDashboard();
                 startPolling();
+            } else {
+                showAuthSection();
             }
-
-            // Form submission
-            elements.configForm.addEventListener('submit', handleConfigSubmit);
-            
-            // Disconnect button
-            elements.disconnectBtn.addEventListener('click', handleDisconnect);
-            
-            // Vision trigger button
-            document.getElementById('trigger-vision-btn').addEventListener('click', triggerVisionIdentification);
         }
-        
+
+        function showAuthSection() {
+            el.authSection.style.display = 'block';
+            el.connectedSection.style.display = 'none';
+            el.dashboard.style.display = 'none';
+            el.haStatus.classList.remove('online');
+            el.haStatus.classList.add('offline');
+        }
+
+        function showDashboard() {
+            el.authSection.style.display = 'none';
+            el.connectedSection.style.display = 'block';
+            el.authMethod.textContent = Auth.method === 'oauth' ? '(OAuth)' : '(token)';
+            el.dashboard.style.display = 'block';
+            renderRoomsGrid();
+        }
+
         function handleDisconnect() {
-            // Clear credentials
-            localStorage.removeItem('ha_url');
-            localStorage.removeItem('ha_token');
-            CONFIG.haUrl = '';
-            CONFIG.haToken = '';
-            
-            // Stop polling
             stopPolling();
-            
-            // Reset state
+            Auth.logout();
             state.connected = false;
             state.persons = {};
             state.pets = {};
-            
-            // Show config section
-            elements.configSection.style.display = 'block';
-            elements.connectedSection.style.display = 'none';
-            elements.dashboard.style.display = 'none';
-            
-            // Reset form
-            elements.haUrl.value = '';
-            elements.haToken.value = '';
-            
-            // Update status indicators
-            elements.haStatus.classList.remove('online');
-            elements.haStatus.classList.add('offline');
+            state.previousRooms = {};
+            showAuthSection();
         }
 
-        function handleConfigSubmit(e) {
+        function handleManualToken(e) {
             e.preventDefault();
-            CONFIG.haUrl = elements.haUrl.value.trim();
-            CONFIG.haToken = elements.haToken.value.trim();
-            
-            // Save to localStorage if checkbox is checked
-            if (elements.rememberToken.checked) {
-                localStorage.setItem('ha_url', CONFIG.haUrl);
-                localStorage.setItem('ha_token', CONFIG.haToken);
-                console.log('Credentials saved to localStorage');
-            }
-            
+            const token = document.getElementById('manual-token').value.trim();
+            if (!token) return;
+            Auth.loginWithManualToken(token);
             showDashboard();
             startPolling();
         }
 
-        function showDashboard() {
-            elements.configSection.style.display = 'none';
-            elements.connectedSection.style.display = 'block';
-            elements.connectedUrl.textContent = CONFIG.haUrl;
-            elements.dashboard.style.display = 'block';
-            renderRoomsGrid();
-        }
-
+        // ========== Dashboard rendering ==========
         function renderRoomsGrid() {
-            elements.roomsGrid.innerHTML = CONFIG.rooms.map(room => `
+            el.roomsGrid.innerHTML = CONFIG.rooms.map(room => `
                 <div class="room-tile" data-room="${room}" id="room-${room}">
-                    <div class="room-icon">${CONFIG.roomIcons[room] || '🏠'}</div>
+                    <div class="room-icon">${CONFIG.roomIcons[room] || '\u{1f3e0}'}</div>
                     <div class="room-name">${room.replace('_', ' ')}</div>
                     <div class="room-status">Empty</div>
                 </div>
@@ -843,95 +1055,71 @@
         }
 
         async function fetchStates() {
+            const token = await Auth.getToken();
+            if (!token) return;
+
             try {
-                // Use local proxy to avoid CORS issues
-                // The nginx proxy forwards /api/* to Home Assistant
-                const apiUrl = '/api/states';
-                const response = await fetch(apiUrl, {
+                const response = await fetch('/api/states', {
                     headers: {
-                        'Authorization': `Bearer ${CONFIG.haToken}`,
+                        'Authorization': 'Bearer ' + token,
                         'Content-Type': 'application/json'
                     }
                 });
 
                 if (!response.ok) {
-                    // Handle 401 Unauthorized - token is invalid/expired
                     if (response.status === 401) {
-                        console.error('Token invalid or expired (401). Stopping polling and showing config.');
+                        console.error('Token invalid/expired (401).');
+                        if (Auth.method === 'oauth') {
+                            // Try one refresh before giving up
+                            try {
+                                await Auth.refresh();
+                                return fetchStates();
+                            } catch {
+                                // Refresh failed — sign out
+                            }
+                        }
                         stopPolling();
-                        
-                        // Clear stored credentials since they're invalid
-                        localStorage.removeItem('ha_token');
-                        CONFIG.haToken = '';
-                        
-                        // Show config section for user to re-enter token
-                        elements.configSection.style.display = 'block';
-                        elements.connectedSection.style.display = 'none';
-                        elements.dashboard.style.display = 'none';
-                        
-                        // Keep URL but clear token field
-                        elements.haToken.value = '';
-                        elements.haToken.placeholder = 'Token expired - please re-enter';
-                        
-                        // Update status
-                        elements.haStatus.classList.remove('online');
-                        elements.haStatus.classList.add('offline');
-                        state.connected = false;
+                        Auth.logout();
+                        showAuthSection();
+                        Auth.showError('Session expired. Please sign in again.');
                         return;
                     }
-                    throw new Error(`HTTP ${response.status}`);
+                    throw new Error('HTTP ' + response.status);
                 }
 
                 const states = await response.json();
-                
-                // Update connection status
-                elements.haStatus.classList.add('online');
-                elements.haStatus.classList.remove('offline');
+                el.haStatus.classList.add('online');
+                el.haStatus.classList.remove('offline');
                 state.connected = true;
 
-                // Process LLM presence entities
                 processStates(states);
-                
-                // Update last update time
-                elements.lastUpdate.textContent = new Date().toLocaleTimeString();
+                el.lastUpdate.textContent = new Date().toLocaleTimeString();
 
             } catch (error) {
                 console.error('Error fetching states:', error);
-                elements.haStatus.classList.remove('online');
-                elements.haStatus.classList.add('offline');
+                el.haStatus.classList.remove('online');
+                el.haStatus.classList.add('offline');
                 state.connected = false;
             }
         }
 
         function processStates(states) {
-            // Find LLM presence sensors
-            const roomSensors = states.filter(s => 
-                s.entity_id.startsWith('sensor.') && 
+            const roomSensors = states.filter(s =>
+                s.entity_id.startsWith('sensor.') &&
                 s.entity_id.includes('_room') &&
                 (s.attributes.entity_type === 'person' || s.attributes.entity_type === 'pet')
             );
 
-            const binarySensors = states.filter(s =>
-                s.entity_id.startsWith('binary_sensor.') &&
-                s.entity_id.includes('_in_')
-            );
-
-            // Find vision identification sensor
-            const visionSensor = states.find(s => 
+            const visionSensor = states.find(s =>
                 s.entity_id === 'sensor.llm_presence_vision_last_identification'
             );
-            if (visionSensor) {
-                updateVisionDisplay(visionSensor);
-            }
+            if (visionSensor) updateVisionDisplay(visionSensor);
 
-            // Reset room occupancy
             const roomOccupancy = {};
             CONFIG.rooms.forEach(room => roomOccupancy[room] = []);
 
-            // Track if this is first load (no previous rooms tracked)
             const isFirstLoad = Object.keys(state.previousRooms).length === 0;
 
-            // Process room sensors
             roomSensors.forEach(sensor => {
                 const name = sensor.attributes.friendly_name?.replace(' Room', '') || 'Unknown';
                 const room = sensor.state;
@@ -941,19 +1129,10 @@
                 const entityType = sensor.attributes.entity_type || 'person';
                 const lastChanged = sensor.last_changed;
 
-                const data = {
-                    name,
-                    room,
-                    confidence,
-                    indicators,
-                    rawResponse,
-                    entityType,
-                    lastChanged
-                };
+                const data = { name, room, confidence, indicators, rawResponse, entityType, lastChanged };
 
-                // On first load, add initial state to timeline
                 if (isFirstLoad && room && room !== 'unknown') {
-                    const icon = entityType === 'pet' ? '🐾' : '👤';
+                    const icon = entityType === 'pet' ? '\u{1f43e}' : '\u{1f464}';
                     addTimelineEvent({
                         message: `${icon} <strong>${name}</strong> detected in <span style="color: var(--room-${room?.replace('_', '-') || 'unknown'})">${room?.replace('_', ' ')}</span>`,
                         type: 'initial_state',
@@ -961,12 +1140,10 @@
                         from: null,
                         to: room
                     });
-                }
-                // Check if room changed - add to timeline
-                else if (state.previousRooms[name] && state.previousRooms[name] !== room) {
-                    const icon = entityType === 'pet' ? '🐾' : '👤';
+                } else if (state.previousRooms[name] && state.previousRooms[name] !== room) {
+                    const icon = entityType === 'pet' ? '\u{1f43e}' : '\u{1f464}';
                     addTimelineEvent({
-                        message: `${icon} <strong>${name}</strong> moved from <span style="color: var(--room-${state.previousRooms[name]?.replace('_', '-') || 'unknown'})">${state.previousRooms[name]?.replace('_', ' ')}</span> → <span style="color: var(--room-${room?.replace('_', '-') || 'unknown'})">${room?.replace('_', ' ')}</span>`,
+                        message: `${icon} <strong>${name}</strong> moved from <span style="color: var(--room-${state.previousRooms[name]?.replace('_', '-') || 'unknown'})">${state.previousRooms[name]?.replace('_', ' ')}</span> &rarr; <span style="color: var(--room-${room?.replace('_', '-') || 'unknown'})">${room?.replace('_', ' ')}</span>`,
                         type: 'room_change',
                         entity: name,
                         from: state.previousRooms[name],
@@ -981,13 +1158,11 @@
                     state.pets[name] = data;
                 }
 
-                // Add to room occupancy
                 if (roomOccupancy[room]) {
                     roomOccupancy[room].push(name);
                 }
             });
 
-            // Update UI
             renderPersonCards();
             updateRoomTiles(roomOccupancy);
             updateLLMResponse();
@@ -996,9 +1171,9 @@
 
         function renderPersonCards() {
             const allEntities = { ...state.persons, ...state.pets };
-            
+
             if (Object.keys(allEntities).length === 0) {
-                elements.personsGrid.innerHTML = `
+                el.personsGrid.innerHTML = `
                     <div class="card">
                         <div class="loading">
                             <div class="loading-spinner"></div>
@@ -1012,12 +1187,12 @@
                 return;
             }
 
-            elements.personsGrid.innerHTML = Object.entries(allEntities).map(([name, data]) => {
+            el.personsGrid.innerHTML = Object.entries(allEntities).map(([name, data]) => {
                 const isPerson = data.entityType === 'person';
                 const cardClass = isPerson ? 'person-card' : 'pet-card';
-                const icon = isPerson ? '👤' : '🐾';
+                const icon = isPerson ? '\u{1f464}' : '\u{1f43e}';
                 const confidencePercent = Math.round(data.confidence * 100);
-                
+
                 return `
                     <div class="card ${cardClass}">
                         <div class="card-header">
@@ -1030,7 +1205,7 @@
                             </span>
                         </div>
                         <div class="person-location" style="color: var(--room-${data.room?.replace('_', '-') || 'unknown'});">
-                            ${CONFIG.roomIcons[data.room] || '❓'} ${data.room?.replace('_', ' ') || 'Unknown'}
+                            ${CONFIG.roomIcons[data.room] || '\u2753'} ${data.room?.replace('_', ' ') || 'Unknown'}
                         </div>
                         <div class="confidence-bar">
                             <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
@@ -1053,62 +1228,50 @@
 
         function updateRoomTiles(roomOccupancy) {
             CONFIG.rooms.forEach(room => {
-                const tile = document.getElementById(`room-${room}`);
+                const tile = document.getElementById('room-' + room);
                 if (!tile) return;
-
                 const occupants = roomOccupancy[room] || [];
                 const isOccupied = occupants.length > 0;
-
                 tile.classList.toggle('occupied', isOccupied);
-                tile.querySelector('.room-status').textContent = 
+                tile.querySelector('.room-status').textContent =
                     isOccupied ? occupants.join(', ') : 'Empty';
             });
         }
 
         function updateLLMResponse() {
             const allEntities = { ...state.persons, ...state.pets };
-            const responses = Object.values(allEntities)
-                .map(p => {
-                    const icon = p.entityType === 'pet' ? '🐾' : '👤';
-                    const roomIcon = CONFIG.roomIcons[p.room] || '❓';
-                    const rawResp = p.rawResponse || '(no response yet)';
-                    const indicatorList = p.indicators?.length > 0 ? p.indicators.join(', ') : 'none';
-                    return `${icon} ${p.name} → ${roomIcon} ${p.room?.replace('_', ' ') || 'unknown'}\n` +
-                           `   Confidence: ${Math.round(p.confidence * 100)}%\n` +
-                           `   LLM said: "${rawResp}"\n` +
-                           `   Evidence: ${indicatorList}`;
-                });
+            const responses = Object.values(allEntities).map(p => {
+                const icon = p.entityType === 'pet' ? '\u{1f43e}' : '\u{1f464}';
+                const roomIcon = CONFIG.roomIcons[p.room] || '\u2753';
+                const rawResp = p.rawResponse || '(no response yet)';
+                const indicatorList = p.indicators?.length > 0 ? p.indicators.join(', ') : 'none';
+                return `${icon} ${p.name} \u2192 ${roomIcon} ${p.room?.replace('_', ' ') || 'unknown'}\n` +
+                       `   Confidence: ${Math.round(p.confidence * 100)}%\n` +
+                       `   LLM said: "${rawResp}"\n` +
+                       `   Evidence: ${indicatorList}`;
+            });
 
-            if (responses.length > 0) {
-                elements.llmResponse.textContent = responses.join('\n\n');
-            } else {
-                elements.llmResponse.textContent = 'Waiting for LLM Presence data...\n\nMake sure the integration is configured in Home Assistant and Ollama is running.';
-            }
+            el.llmResponse.textContent = responses.length > 0
+                ? responses.join('\n\n')
+                : 'Waiting for LLM Presence data...\n\nMake sure the integration is configured in Home Assistant and Ollama is running.';
         }
 
         function addTimelineEvent(event) {
-            // Check for duplicate events (same entity, same from/to within 5 seconds)
-            const isDuplicate = state.timeline.some(e => 
-                e.entity === event.entity && 
-                e.from === event.from && 
+            const isDuplicate = state.timeline.some(e =>
+                e.entity === event.entity &&
+                e.from === event.from &&
                 e.to === event.to &&
                 (new Date() - e.time) < 5000
             );
-            
             if (isDuplicate) return;
-            
-            state.timeline.unshift({
-                time: new Date(),
-                ...event
-            });
-            
-            // Keep only last 20 events
+
+            state.timeline.unshift({ time: new Date(), ...event });
             state.timeline = state.timeline.slice(0, 20);
         }
 
         function renderTimeline() {
             if (state.timeline.length === 0) {
-                elements.timeline.innerHTML = `
+                el.timeline.innerHTML = `
                     <div style="color: var(--text-muted); text-align: center; padding: 1rem;">
                         <p>No room changes detected yet.</p>
                         <p style="font-size: 0.8rem; margin-top: 0.5rem;">Events will appear here when someone moves between rooms.</p>
@@ -1117,7 +1280,7 @@
                 return;
             }
 
-            elements.timeline.innerHTML = state.timeline.map(event => `
+            el.timeline.innerHTML = state.timeline.map(event => `
                 <div class="timeline-item">
                     <div class="timeline-time">${event.time.toLocaleTimeString()}</div>
                     <div class="timeline-content">${event.message}</div>
@@ -1125,26 +1288,23 @@
             `).join('');
         }
 
-        // Update vision display
         function updateVisionDisplay(sensor) {
             const identified = sensor.state || 'none';
             const attrs = sensor.attributes || {};
-            
-            document.getElementById('vision-identified').textContent = 
+
+            document.getElementById('vision-identified').textContent =
                 identified === 'none' ? '--' : identified;
-            document.getElementById('vision-confidence').textContent = 
-                `Confidence: ${attrs.confidence || '--'}`;
-            document.getElementById('vision-description').textContent = 
+            document.getElementById('vision-confidence').textContent =
+                'Confidence: ' + (attrs.confidence || '--');
+            document.getElementById('vision-description').textContent =
                 attrs.description || 'No description available';
-            
+
             if (attrs.timestamp) {
                 const time = new Date(attrs.timestamp);
-                document.getElementById('vision-time').textContent = 
-                    `Camera: ${attrs.camera?.replace('camera.', '') || '--'} • ${time.toLocaleTimeString()}`;
+                document.getElementById('vision-time').textContent =
+                    'Camera: ' + (attrs.camera?.replace('camera.', '') || '--') + ' \u2022 ' + time.toLocaleTimeString();
             }
-            
-            // Color code based on identification
-            // Colors are assigned dynamically based on person/pet order
+
             const identEl = document.getElementById('vision-identified');
             const personColors = ['var(--room-office)', 'var(--room-bedroom)', 'var(--room-kitchen)', 'var(--room-living)'];
             const personIndex = Object.keys(state.persons).indexOf(identified.toLowerCase());
@@ -1156,15 +1316,13 @@
             } else {
                 identEl.style.color = 'var(--accent-primary)';
             }
-            
-            // Add to timeline if new identification
+
             if (identified !== 'none' && identified !== 'unknown' && attrs.timestamp) {
-                const lastVisionTime = state.lastVisionTime || 0;
                 const newTime = new Date(attrs.timestamp).getTime();
-                if (newTime > lastVisionTime) {
+                if (newTime > state.lastVisionTime) {
                     state.lastVisionTime = newTime;
                     addTimelineEvent({
-                        message: `📷 Vision identified <strong>${identified}</strong> (${attrs.confidence}) - ${attrs.description?.substring(0, 50) || ''}...`,
+                        message: '\u{1f4f7} Vision identified <strong>' + identified + '</strong> (' + attrs.confidence + ') - ' + (attrs.description?.substring(0, 50) || '') + '...',
                         type: 'vision',
                         entity: identified
                     });
@@ -1172,17 +1330,19 @@
             }
         }
 
-        // Trigger vision identification
         async function triggerVisionIdentification() {
             const btn = document.getElementById('trigger-vision-btn');
             btn.disabled = true;
-            btn.textContent = '⏳ Identifying...';
-            
+            btn.textContent = 'Identifying...';
+
+            const token = await Auth.getToken();
+            if (!token) return;
+
             try {
                 const response = await fetch('/api/services/llm_presence/identify_person', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${CONFIG.haToken}`,
+                        'Authorization': 'Bearer ' + token,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -1190,60 +1350,48 @@
                         detection_type: 'person'
                     })
                 });
-                
+
                 if (response.ok) {
-                    btn.textContent = '✓ Request sent';
-                    // Refresh states after a delay to get the result
+                    btn.textContent = 'Request sent';
                     setTimeout(() => {
                         fetchStates();
                         btn.disabled = false;
-                        btn.textContent = '🔍 Identify Now';
-                    }, 15000); // Wait 15s for vision to complete
+                        btn.textContent = 'Identify Now';
+                    }, 15000);
                 } else {
                     throw new Error('Service call failed');
                 }
             } catch (error) {
                 console.error('Vision trigger error:', error);
-                btn.textContent = '❌ Error';
+                btn.textContent = 'Error';
                 setTimeout(() => {
                     btn.disabled = false;
-                    btn.textContent = '🔍 Identify Now';
+                    btn.textContent = 'Identify Now';
                 }, 3000);
             }
         }
 
-        // Check Ollama status
-        async function checkOllamaStatus() {
-            // Note: Direct Ollama checks are blocked by CORS in most setups
-            // We assume Ollama is running if Home Assistant is connected and the integration is working
-            if (state.connected) {
-                elements.ollamaStatus.classList.add('online');
-                elements.ollamaStatus.classList.remove('offline');
-            }
-        }
-
-        // Polling
+        // ========== Polling ==========
         let pollInterval;
 
         function startPolling() {
             fetchStates();
-            checkOllamaStatus();
-            
-            pollInterval = setInterval(() => {
-                fetchStates();
-            }, CONFIG.pollInterval);
+            if (state.connected) {
+                el.ollamaStatus.classList.add('online');
+                el.ollamaStatus.classList.remove('offline');
+            }
+            pollInterval = setInterval(fetchStates, CONFIG.pollInterval);
         }
 
         function stopPolling() {
             if (pollInterval) {
                 clearInterval(pollInterval);
+                pollInterval = null;
             }
         }
 
-        // Start the app
+        // Start
         init();
     </script>
 </body>
 </html>
-
-
