@@ -28,21 +28,21 @@ Access at: `http://YOUR_HOST:3380`
 
 ### Option 2: Home Assistant Dashboard
 
-Import `llm-presence-dashboard.yaml` into Home Assistant:
+Import `whollm-dashboard.yaml` into Home Assistant:
 
-1. Copy `llm-presence-dashboard.yaml` to your HA config directory
+1. Copy `whollm-dashboard.yaml` to your HA config directory
 2. Add to `configuration.yaml`:
 
 ```yaml
 lovelace:
   mode: yaml
   dashboards:
-    llm-presence:
+    whollm:
       mode: yaml
       title: WhoLLM
       icon: mdi:brain
       show_in_sidebar: true
-      filename: llm-presence-dashboard.yaml
+      filename: whollm-dashboard.yaml
 ```
 
 3. Restart Home Assistant
@@ -110,7 +110,7 @@ Modify CSS variables in the `:root` section:
 | File | Description |
 |------|-------------|
 | `index.html` | Standalone web dashboard |
-| `llm-presence-dashboard.yaml` | Home Assistant Lovelace dashboard |
+| `whollm-dashboard.yaml` | Home Assistant Lovelace dashboard |
 | `docker-compose.yml` | Docker deployment |
 | `nginx.conf` | Nginx configuration |
 

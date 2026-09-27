@@ -1,19 +1,18 @@
-version: "3.8"
-
 services:
-  llm-presence-dashboard:
+  whollm-dashboard:
     image: nginx:alpine
-    container_name: llm-presence-dashboard
+    container_name: whollm-dashboard
     restart: unless-stopped
     ports:
       - "${DASHBOARD_PORT:-3380}:80"
     volumes:
-      - ./:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
     environment:
-      - HA_URL=${HA_URL:-http://homeassistant.local:8123}
+      # host:port of your Home Assistant, as seen from the Docker host
+      - HA_HOST=${HA_HOST:-homeassistant.local:8123}
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:80/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -21,7 +20,7 @@ services:
     # Uncomment and customize labels for your dashboard (Homepage, Traefik, etc.)
     # labels:
     #   - "homepage.group=AI"
-    #   - "homepage.name=LLM Presence Dashboard"
+    #   - "homepage.name=WhoLLM Dashboard"
     #   - "homepage.icon=brain"
     #   - "homepage.href=http://YOUR_HOST:3380"
     #   - "homepage.description=LLM-powered room presence visualization"

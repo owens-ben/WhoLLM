@@ -174,7 +174,7 @@ test.describe('Auth section', () => {
 
   test('Auth.login() navigates to HA /auth/authorize with correct params', async ({ page }) => {
     // Set the HA URL field
-    await page.locator('#ha-url').fill('http://192.168.0.233:8123');
+    await page.locator('#ha-url').fill('http://ha.example.test:8123');
 
     // Intercept the navigation that Auth.login() triggers (goes to HA directly)
     const [request] = await Promise.all([
@@ -184,7 +184,7 @@ test.describe('Auth section', () => {
 
     const url = new URL(request.url());
     // Should navigate to HA directly, not through proxy
-    expect(url.origin).toBe('http://192.168.0.233:8123');
+    expect(url.origin).toBe('http://ha.example.test:8123');
     expect(url.pathname).toBe('/auth/authorize');
     expect(url.searchParams.has('client_id')).toBe(true);
     expect(url.searchParams.has('redirect_uri')).toBe(true);
@@ -224,10 +224,10 @@ test.describe('Auth section', () => {
         contentType: 'application/json',
         body: JSON.stringify([
           {
-            entity_id: 'sensor.ben_room',
+            entity_id: 'sensor.alice_room',
             state: 'office',
             attributes: {
-              friendly_name: 'Ben Room',
+              friendly_name: 'Alice Room',
               entity_type: 'person',
               confidence: 0.85,
               indicators: ['PC active', 'Motion detected'],
@@ -272,10 +272,10 @@ test.describe('Dashboard rendering with mocked data', () => {
         contentType: 'application/json',
         body: JSON.stringify([
           {
-            entity_id: 'sensor.ben_room',
+            entity_id: 'sensor.alice_room',
             state: 'office',
             attributes: {
-              friendly_name: 'Ben Room',
+              friendly_name: 'Alice Room',
               entity_type: 'person',
               confidence: 0.85,
               indicators: ['PC active', 'Motion detected'],
@@ -330,27 +330,27 @@ test.describe('Dashboard rendering with mocked data', () => {
   test('person card shows name and room', async ({ page }) => {
     await expect(page.locator('.person-card, .pet-card').first()).toBeVisible();
 
-    // Ben should be in office — use .person-card to avoid matching room/llm cards
-    const benCard = page.locator('.person-card').filter({ hasText: 'Ben' });
-    await expect(benCard).toBeVisible();
-    await expect(benCard.locator('.person-location')).toContainText('office');
+    // Alice should be in office — use .person-card to avoid matching room/llm cards
+    const aliceCard = page.locator('.person-card').filter({ hasText: 'Alice' });
+    await expect(aliceCard).toBeVisible();
+    await expect(aliceCard.locator('.person-location')).toContainText('office');
   });
 
   test('confidence bars render', async ({ page }) => {
     await expect(page.locator('.confidence-fill').first()).toBeVisible();
 
-    // Ben has 85% confidence
-    const benCard = page.locator('.card').filter({ hasText: 'Ben' });
-    const confText = benCard.locator('.confidence-text');
+    // Alice has 85% confidence
+    const aliceCard = page.locator('.card').filter({ hasText: 'Alice' });
+    const confText = aliceCard.locator('.confidence-text');
     await expect(confText).toContainText('85%');
   });
 
   test('indicators render as chips', async ({ page }) => {
     await expect(page.locator('.indicator').first()).toBeVisible();
 
-    // Ben's indicators
-    const benCard = page.locator('.card').filter({ hasText: 'Ben' });
-    const indicators = benCard.locator('.indicator');
+    // Alice's indicators
+    const aliceCard = page.locator('.card').filter({ hasText: 'Alice' });
+    const indicators = aliceCard.locator('.indicator');
     await expect(indicators).toHaveCount(2);
     await expect(indicators.nth(0)).toContainText('PC active');
     await expect(indicators.nth(1)).toContainText('Motion detected');
@@ -371,7 +371,7 @@ test.describe('Dashboard rendering with mocked data', () => {
 
     const officeTile = page.locator('#room-office');
     await expect(officeTile).toHaveClass(/occupied/);
-    await expect(officeTile.locator('.room-status')).toContainText('Ben');
+    await expect(officeTile.locator('.room-status')).toContainText('Alice');
 
     const bedroomTile = page.locator('#room-bedroom');
     await expect(bedroomTile).toHaveClass(/occupied/);
@@ -386,7 +386,7 @@ test.describe('Dashboard rendering with mocked data', () => {
     await page.waitForTimeout(1000);
 
     const llm = page.locator('#llm-response');
-    await expect(llm).toContainText('Ben');
+    await expect(llm).toContainText('Alice');
     await expect(llm).toContainText('office');
     await expect(llm).toContainText('85%');
   });
@@ -395,7 +395,7 @@ test.describe('Dashboard rendering with mocked data', () => {
     await page.waitForTimeout(1000);
 
     const timeline = page.locator('#timeline');
-    await expect(timeline.locator('.timeline-item')).toHaveCount(3); // Ben, Alex, Whiskers
+    await expect(timeline.locator('.timeline-item')).toHaveCount(3); // Alice, Alex, Whiskers
   });
 
   test('HA status dot is online', async ({ page }) => {
