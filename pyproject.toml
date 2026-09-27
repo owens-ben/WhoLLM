@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whollm"
-version = "0.1.0"
+version = "0.2.0"
 description = "Home Assistant integration for LLM-based person presence detection"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [
     {name = "Ben Owens", email = "ben@bsowens.com"}
 ]
@@ -33,7 +33,7 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     # Home Assistant dependencies for testing
-    "homeassistant>=2024.1.0",
+    "homeassistant>=2025.1.0",
     "voluptuous>=0.13.1",
 ]
 

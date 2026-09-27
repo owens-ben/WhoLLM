@@ -7,18 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Test suite with pytest (52 tests covering habits, providers, coordinator)
-- CI workflow for running tests on Python 3.11 and 3.12
-- pyproject.toml for modern Python project configuration
-- Ruff linting configuration
-- Comprehensive README with badges, troubleshooting, and examples
+## [0.2.0] - 2026-09-27
 
-### Changed
-- Removed emojis from indicator strings in provider code
+First release intended for real-home use. Verified end to end against a real
+Home Assistant core (2025.1 and 2026.2) with a stand-in Ollama server.
+
+### Added
+- OpenAI and Anthropic providers alongside Ollama
+- Device-tracker away detection and person-device ownership mapping
+- Multi-zone support (work, gym, school, ...) and arrival/departure events
+- Movement history, pattern detection and manual room corrections
+- Services: `refresh`, `correct_room`, `get_history`, `clear_history`, `get_patterns`
+  (`get_history` / `get_patterns` return data via service responses)
+- Lovelace card (`www/whollm-card.js`), automation blueprints, and a standalone
+  dashboard with Home Assistant OAuth sign-in
+- `scripts/install.sh`: installs into a local or SSH-reachable HA config, with
+  validation, backup and an Ollama reachability check
+- `docs/HOME_SETUP.md`: step-by-step go-live checklist
+- End-to-end tests that drive a real HA core (config flow, options flow,
+  entities, services, unload)
 
 ### Fixed
-- Home Assistant 2025.x compatibility: use direct import for `async_track_time_interval` instead of deprecated `hass.helpers.event` access
+- Integration services were never registered: `services.py` was not loaded and
+  imported a helper removed in an earlier refactor
+- Movement history was never recorded: the history tracker was never created
+- Options flow crashed on current Home Assistant (`config_entry` has no setter),
+  which made Configure unusable
+- Saving one Configure page wiped settings saved on another, and option changes
+  only applied after a restart (no update listener was registered)
+- Config flow leaked an aiohttp session on every connection test
+- `identify_person` / `cleanup_storage` results were discarded (no response support)
+- Daily cleanup timer was never cancelled on reload
+- Blocking file I/O in the event loop during setup and cleanup
+- Storage files were hard-coded to `/config`, which broke HA Core installs
+- Dashboard called the pre-rename `llm_presence` service and vision sensor
+- Training-data sync script looked for the pre-rename events file
+
+### Changed
+- Minimum Home Assistant is now 2025.1 (oldest version tested); Python 3.12+
+- Dashboard proxy target is configured with `HA_HOST` instead of a hard-coded address
+- `setup_local_testing.sh` and `check_integration.sh`, which pointed at the
+  pre-rename folder, are replaced by `scripts/install.sh`
+- Lint (ruff) now fails CI instead of only reporting
 
 ## [0.1.0-alpha] - 2025-01-29
 
@@ -53,5 +83,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `whollm.enable_tracking` / `whollm.disable_tracking` - Camera tracking control
 - `whollm.cleanup_storage` - Manual storage cleanup
 
-[Unreleased]: https://github.com/owens-ben/WhoLLM/compare/v0.1.0-alpha...HEAD
-[0.1.0-alpha]: https://github.com/owens-ben/WhoLLM/releases/tag/v0.1.0-alpha
+[Unreleased]: https://github.com/owens-ben/WhoLLM/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/owens-ben/WhoLLM/compare/v0.1.0...v0.2.0
+[0.1.0-alpha]: https://github.com/owens-ben/WhoLLM/releases/tag/v0.1.0

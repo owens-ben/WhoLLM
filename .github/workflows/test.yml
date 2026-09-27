@@ -10,8 +10,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        # 3.12 resolves an older HA core (back-compat); 3.13 tracks current HA
+        python-version: ["3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -32,12 +34,12 @@ jobs:
           pytest tests/ -v --tb=short
 
       - name: Run tests with coverage
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.13'
         run: |
           pytest tests/ --cov=custom_components/whollm --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.13'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -52,15 +54,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
       - name: Install ruff
         run: pip install ruff
 
       - name: Run ruff check
         run: ruff check custom_components/whollm/ --output-format=github
-        continue-on-error: true  # Don't fail CI yet, just report
 
       - name: Run ruff format check
         run: ruff format --check custom_components/whollm/
-        continue-on-error: true

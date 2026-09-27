@@ -4,7 +4,7 @@ This guide will help you set up the WhoLLM integration for local testing in your
 
 ## Prerequisites
 
-1. **Home Assistant** installed and running (2024.1.0 or later)
+1. **Home Assistant** installed and running (2025.1.0 or later)
 2. **Ollama** installed and running
 3. At least one LLM model installed in Ollama
 
@@ -18,6 +18,16 @@ The location depends on your Home Assistant installation type:
 - **Home Assistant Supervised**: `/usr/share/hassio/homeassistant/` or `/config/`
 
 ## Step 2: Copy Integration to Custom Components
+
+The quickest route is the install script, which validates the target and backs up any
+previous copy:
+
+```bash
+./scripts/install.sh /path/to/your/ha/config            # local
+./scripts/install.sh --ssh root@homeassistant.local     # HA OS via SSH add-on
+```
+
+Or do it by hand:
 
 ### Option A: Symlink (Recommended for Development)
 
@@ -197,4 +207,27 @@ tail -f /path/to/ha/config/home-assistant.log | grep whollm
 - Review integration logs for any issues
 - Test with real sensors and Ollama
 - Consider adding unit tests (see testing documentation)
+
+## Running the Tests
+
+Current Home Assistant needs Python 3.13 (the 3.12 CI leg runs against HA 2025.1).
+
+```bash
+python3.13 -m venv .venv && . .venv/bin/activate
+pip install pytest pytest-asyncio pytest-cov aiohttp voluptuous pillow pytest-homeassistant-custom-component ruff
+pytest tests/
+ruff check custom_components/whollm/ && ruff format --check custom_components/whollm/
+```
+
+`tests/test_e2e_real_hass.py` boots a real Home Assistant core and a fake Ollama
+server, then drives the config flow, options flow, entities, services and unload
+with nothing mocked. Run it first if you change setup or config-flow code.
+
+Dashboard tests (Playwright):
+
+```bash
+npm ci
+npm run serve:dashboard &   # serves dashboard/ on :3380
+npm run test:e2e
+```
 

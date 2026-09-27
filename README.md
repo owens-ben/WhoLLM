@@ -3,7 +3,7 @@
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/v/release/owens-ben/WhoLLM?include_prereleases)](https://github.com/owens-ben/WhoLLM/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-blue.svg)](https://www.home-assistant.io/)
 
 **A Home Assistant integration that uses local LLMs to determine *who* is in which room.**
 
@@ -54,12 +54,12 @@ No single sensor is definitive. Together, they're enough for a good guess.
 
 ### Prerequisites
 
-1. **Home Assistant 2024.1+**
+1. **Home Assistant 2025.1+**
 2. **Ollama** running locally or on your network:
    ```bash
    curl -fsSL https://ollama.com/install.sh | sh
    ollama pull llama3.2        # For text reasoning (~2GB)
-   ollama pull llava:7b        # Optional: for vision identification (~4GB)
+   ollama pull moondream       # Optional: for camera identification (default vision model)
    ```
 
 ### Via HACS (Recommended)
@@ -70,12 +70,29 @@ No single sensor is definitive. Together, they're enough for a good guess.
 4. Restart Home Assistant
 5. Go to Settings → Devices & Services → Add Integration → WhoLLM
 
+### Install Script
+
+From a clone of this repository:
+
+```bash
+# On the HA host (Container / Core / Supervised)
+./scripts/install.sh /path/to/ha/config --card --blueprints
+
+# HA OS, via the "Advanced SSH & Web Terminal" add-on
+./scripts/install.sh --ssh root@homeassistant.local --card --blueprints
+```
+
+Restart Home Assistant afterwards.
+
 ### Manual Installation
 
 1. Download the `custom_components/whollm` folder from this repository
 2. Copy it to your Home Assistant `config/custom_components/` directory
 3. Restart Home Assistant
 4. Add the integration via Settings → Devices & Services
+
+**New to this?** [docs/HOME_SETUP.md](docs/HOME_SETUP.md) is a step-by-step go-live
+checklist, covering where to run Ollama, mapping people to devices, and tuning.
 
 ---
 
@@ -123,10 +140,10 @@ Associate devices with specific people:
 | `sensor.vision_last_identification` | Last camera identification result |
 
 **Attributes:**
-- `confidence` — Prediction confidence (0-100%)
+- `confidence` — Prediction confidence (0.0–1.0)
 - `indicators` — Signals that contributed to the prediction
-- `reasoning` — LLM's explanation (when available)
-- `last_updated` — Timestamp of last update
+- `raw_response` — What the LLM actually answered
+- `entity_type` — `person` or `pet`
 
 ### Binary Sensors
 
@@ -161,13 +178,41 @@ data:
   camera_name: e1_zoom
 ```
 
-### `whollm.request_vision_update`
+### `whollm.refresh`
 
-Manually trigger vision identification for all configured cameras.
+Force an immediate presence update instead of waiting for the next poll.
+
+### `whollm.correct_room`
+
+Tell WhoLLM where someone really is. It updates the sensor and teaches the habit model.
 
 ```yaml
-service: whollm.request_vision_update
+service: whollm.correct_room
+data:
+  entity_id: sensor.alice_room
+  room: office
 ```
+
+### `whollm.get_history` / `whollm.get_patterns`
+
+Return recent room transitions or learned movement patterns for a person.
+Call them with "return response" enabled in Developer Tools, or with `response_variable` in scripts.
+
+```yaml
+service: whollm.get_history
+data:
+  entity_name: Alice
+  limit: 20
+response_variable: history   # -> history.transitions
+```
+
+### `whollm.clear_history`
+
+Clear transition history for one person (`entity_name`), or for everyone if omitted.
+
+### `whollm.cleanup_storage`
+
+Prune the event log now, optionally overriding `retention_days` / `max_file_size_mb`.
 
 ---
 
@@ -280,8 +325,7 @@ Common issues:
 
 ### Vision identification not working
 
-- Ensure you have a vision model: `ollama pull llava:7b`
-- Configure vision model in integration options
+- Ensure the vision model is pulled: `ollama pull moondream`
 - Check camera entity is accessible
 
 ---
@@ -299,11 +343,13 @@ Common issues:
 
 ## Roadmap
 
+- [x] OpenAI / Anthropic providers (in addition to Ollama)
+- [x] Lovelace card (`www/whollm-card.js`) and standalone dashboard
+- [x] Movement history, pattern detection and manual corrections
 - [ ] Event-driven updates (reduce polling)
 - [ ] ML model training from HA history
-- [ ] More LLM providers (OpenAI, Anthropic, local llama.cpp)
+- [ ] Configurable vision model
 - [ ] Better prompt engineering
-- [ ] Dashboard card
 
 ---
 
