@@ -70,14 +70,14 @@ GET_PATTERNS_SCHEMA = vol.Schema(
 
 async def async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
     """Handle the refresh service call.
-    
+
     Forces an immediate presence detection update.
     """
     _LOGGER.debug("Refresh service called with data: %s", call.data)
-    
+
     # Get coordinator from hass.data
     coordinator: LLMPresenceCoordinator | None = None
-    
+
     if DOMAIN in hass.data:
         for entry_data in hass.data[DOMAIN].values():
             if isinstance(entry_data, dict) and "coordinator" in entry_data:
@@ -86,7 +86,7 @@ async def async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
             elif hasattr(entry_data, "async_request_refresh"):
                 coordinator = entry_data
                 break
-    
+
     if coordinator:
         await coordinator.async_request_refresh()
         _LOGGER.info("Presence refresh triggered")
@@ -96,18 +96,18 @@ async def async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
 
 async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> None:
     """Handle the correct_room service call.
-    
+
     Manually corrects a person's room and learns from the correction.
     """
     entity_id = call.data.get("entity_id")
     room = call.data.get("room")
     confidence = call.data.get("confidence", 1.0)
-    
+
     _LOGGER.debug("Correct room service: %s -> %s (confidence: %s)", entity_id, room, confidence)
-    
+
     # Extract entity name from entity_id (e.g., sensor.ben_room -> Ben)
     entity_name = entity_id.split(".")[-1].replace("_room", "").replace("_", " ").title()
-    
+
     # Learn from the correction
     predictor = get_habit_predictor()
     predictor.learn_from_event(
@@ -115,7 +115,7 @@ async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> N
         room=room,
         confidence=confidence,
     )
-    
+
     # Update the state
     current_state = hass.states.get(entity_id)
     if current_state:
@@ -123,7 +123,7 @@ async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> N
         new_attrs["confidence"] = confidence
         new_attrs["source"] = "manual_correction"
         new_attrs["indicators"] = ["User corrected"]
-        
+
         hass.states.async_set(entity_id, room, new_attrs)
         _LOGGER.info("Corrected %s room to %s", entity_name, room)
     else:
@@ -132,30 +132,30 @@ async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> N
 
 async def async_handle_get_history(hass: HomeAssistant, call: ServiceCall) -> list[dict]:
     """Handle the get_history service call.
-    
+
     Returns recent room transitions for an entity.
     """
     entity_name = call.data.get("entity_name")
     limit = call.data.get("limit", 20)
-    
+
     tracker = get_history_tracker()
     history = tracker.get_recent_transitions(entity_name, limit=limit)
-    
+
     _LOGGER.debug("Retrieved %d history entries for %s", len(history), entity_name)
-    
+
     return history
 
 
 async def async_handle_clear_history(hass: HomeAssistant, call: ServiceCall) -> None:
     """Handle the clear_history service call.
-    
+
     Clears history data for an entity or all entities.
     """
     entity_name = call.data.get("entity_name")
-    
+
     tracker = get_history_tracker()
     tracker.clear_history(entity_name)
-    
+
     if entity_name:
         _LOGGER.info("Cleared history for %s", entity_name)
     else:
@@ -164,37 +164,37 @@ async def async_handle_clear_history(hass: HomeAssistant, call: ServiceCall) -> 
 
 async def async_handle_get_patterns(hass: HomeAssistant, call: ServiceCall) -> list[dict]:
     """Handle the get_patterns service call.
-    
+
     Returns detected movement patterns for an entity.
     """
     entity_name = call.data.get("entity_name")
-    
+
     tracker = get_history_tracker()
     patterns = tracker.detect_patterns(entity_name)
-    
+
     _LOGGER.debug("Retrieved %d patterns for %s", len(patterns), entity_name)
-    
+
     return patterns
 
 
 async def async_setup_services(hass: HomeAssistant) -> None:
     """Set up WhoLLM services."""
-    
+
     async def refresh_handler(call: ServiceCall) -> None:
         await async_handle_refresh(hass, call)
-    
+
     async def correct_room_handler(call: ServiceCall) -> None:
         await async_handle_correct_room(hass, call)
-    
+
     async def get_history_handler(call: ServiceCall) -> list[dict]:
         return await async_handle_get_history(hass, call)
-    
+
     async def clear_history_handler(call: ServiceCall) -> None:
         await async_handle_clear_history(hass, call)
-    
+
     async def get_patterns_handler(call: ServiceCall) -> list[dict]:
         return await async_handle_get_patterns(hass, call)
-    
+
     # Register services
     hass.services.async_register(
         DOMAIN,
@@ -202,35 +202,35 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         refresh_handler,
         schema=REFRESH_SCHEMA,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_CORRECT_ROOM,
         correct_room_handler,
         schema=CORRECT_ROOM_SCHEMA,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_HISTORY,
         get_history_handler,
         schema=GET_HISTORY_SCHEMA,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_CLEAR_HISTORY,
         clear_history_handler,
         schema=CLEAR_HISTORY_SCHEMA,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_PATTERNS,
         get_patterns_handler,
         schema=GET_PATTERNS_SCHEMA,
     )
-    
+
     _LOGGER.info("WhoLLM services registered")
 
 
@@ -241,5 +241,5 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     hass.services.async_remove(DOMAIN, SERVICE_GET_HISTORY)
     hass.services.async_remove(DOMAIN, SERVICE_CLEAR_HISTORY)
     hass.services.async_remove(DOMAIN, SERVICE_GET_PATTERNS)
-    
+
     _LOGGER.info("WhoLLM services unloaded")

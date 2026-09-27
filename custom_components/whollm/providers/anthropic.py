@@ -20,13 +20,13 @@ DEFAULT_ANTHROPIC_MODEL = "claude-3-haiku-20240307"
 
 class AnthropicProvider(BaseLLMProvider):
     """Anthropic Claude API provider for presence detection.
-    
+
     Uses the Anthropic Messages API.
     """
 
     def __init__(self, url: str, model: str, **kwargs) -> None:
         """Initialize the Anthropic provider.
-        
+
         Args:
             url: API endpoint URL (default: Anthropic's API)
             model: Model name (e.g., claude-3-haiku-20240307, claude-3-sonnet-20240229)
@@ -35,21 +35,21 @@ class AnthropicProvider(BaseLLMProvider):
         # Default to haiku if no model specified (cheap and fast)
         actual_model = model or DEFAULT_ANTHROPIC_MODEL
         super().__init__(url or DEFAULT_ANTHROPIC_URL, actual_model, **kwargs)
-        
+
         self.api_key = kwargs.get("api_key")
         if not self.api_key:
             raise ValueError("Anthropic provider requires an api_key")
-        
+
         # Use messages endpoint
         self.endpoint = f"{self.url.rstrip('/')}/v1/messages"
 
     async def _call_api(self, messages: list[dict], system: str = "") -> dict:
         """Call the Anthropic API.
-        
+
         Args:
             messages: List of message dicts with role and content
             system: System prompt
-            
+
         Returns:
             API response dict
         """
@@ -58,17 +58,17 @@ class AnthropicProvider(BaseLLMProvider):
             "anthropic-version": "2023-06-01",
             "Content-Type": "application/json",
         }
-        
+
         payload = {
             "model": self.model,
             "messages": messages,
             "max_tokens": 150,
             "temperature": 0.3,
         }
-        
+
         if system:
             payload["system"] = system
-        
+
         session = self._get_session()
         async with session.post(
             self.endpoint,
@@ -80,7 +80,9 @@ class AnthropicProvider(BaseLLMProvider):
                 error_text = await response.text()
                 _LOGGER.error("Anthropic API error %d: %s", response.status, error_text)
                 raise aiohttp.ClientResponseError(
-                    response.request_info, response.history, status=response.status,
+                    response.request_info,
+                    response.history,
+                    status=response.status,
                 )
 
             return await response.json()
@@ -96,7 +98,7 @@ class AnthropicProvider(BaseLLMProvider):
         """Query Anthropic Claude to deduce room presence."""
         # Build the prompt
         prompt = self._format_context_for_prompt(context, entity_name, entity_type)
-        
+
         system = """You are a home presence detection system. Based on sensor data, determine which room a person is most likely in.
 
 Respond in this EXACT format:
@@ -105,12 +107,12 @@ CONFIDENCE: <0.0 to 1.0>
 REASON: <brief explanation>
 
 Only use room names from the provided list. If uncertain, use "unknown" with low confidence."""
-        
+
         messages = [{"role": "user", "content": prompt}]
-        
+
         try:
             response = await self._call_api(messages, system=system)
-            
+
             # Extract response content
             content_blocks = response.get("content", [])
             content = ""
@@ -118,12 +120,12 @@ Only use room names from the provided list. If uncertain, use "unknown" with low
                 if block.get("type") == "text":
                     content = block.get("text", "")
                     break
-            
+
             _LOGGER.debug("Anthropic response for %s: %s", entity_name, content[:100])
-            
+
             # Parse the response
             room, confidence, reason = parse_llm_response(content, rooms)
-            
+
             return PresenceGuess(
                 room=room,
                 confidence=confidence,
@@ -131,7 +133,7 @@ Only use room names from the provided list. If uncertain, use "unknown" with low
                 indicators=[reason] if reason else [],
                 source="anthropic",
             )
-            
+
         except Exception as err:
             _LOGGER.warning("Anthropic API error for %s: %s", entity_name, err)
             return self._create_fallback_guess(context, entity_name, entity_type, rooms, str(err))

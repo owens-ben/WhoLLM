@@ -91,7 +91,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     confidence_combiner = ConfidenceCombiner(confidence_weights)
 
     coordinator = LLMPresenceCoordinator(
-        hass, entry,
+        hass,
+        entry,
         event_logger=event_logger,
         habit_predictor=habit_predictor,
         confidence_combiner=confidence_combiner,

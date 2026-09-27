@@ -11,14 +11,14 @@ from typing import Any
 
 from homeassistant.util import dt as dt_util
 
+from .const import DEFAULT_MAX_FILE_SIZE_MB, DEFAULT_RETENTION_DAYS
+
 _LOGGER = logging.getLogger(__name__)
 
 # Default log file location
 DEFAULT_LOG_PATH = "/config/whollm_events.jsonl"
 
 # Storage management defaults
-from .const import DEFAULT_RETENTION_DAYS, DEFAULT_MAX_FILE_SIZE_MB
-
 DEFAULT_MAX_FILE_SIZE_BYTES = DEFAULT_MAX_FILE_SIZE_MB * 1024 * 1024
 
 
