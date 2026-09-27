@@ -179,6 +179,7 @@ class TestCoordinatorRoomTransition:
             coordinator._previous_rooms = {"Alice": "bedroom"}
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
+            coordinator.history_tracker = None
 
             # Move Alice to office
             await coordinator._check_room_transition("Alice", "office", 0.9)
@@ -193,6 +194,26 @@ class TestCoordinatorRoomTransition:
 
             # Previous room should be updated
             assert coordinator._previous_rooms["Alice"] == "office"
+
+    @pytest.mark.asyncio
+    async def test_check_room_transition_records_history(self, mock_hass, mock_config_entry):
+        """Room transitions should be recorded in the history tracker."""
+        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+
+        with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
+            coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
+            coordinator.hass = mock_hass
+            coordinator.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *args: fn(*args))
+            coordinator._previous_rooms = {"Alice": "bedroom"}
+            coordinator.event_logger = MagicMock()
+            coordinator.event_logger.async_log_room_transition = AsyncMock()
+            coordinator.history_tracker = MagicMock()
+
+            await coordinator._check_room_transition("Alice", "office", 0.9)
+
+            coordinator.history_tracker.record_transition.assert_called_once_with(
+                "Alice", "bedroom", "office", 0.9
+            )
 
     @pytest.mark.asyncio
     async def test_check_room_transition_same_room_no_log(self, mock_hass, mock_config_entry):

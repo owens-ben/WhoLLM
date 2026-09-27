@@ -65,6 +65,7 @@ class TestConfigFlowUserStep:
         with patch("custom_components.whollm.config_flow.get_provider") as mock_get:
             mock_provider = MagicMock()
             mock_provider.test_connection = AsyncMock(return_value=False)
+            mock_provider.async_close = AsyncMock()
             mock_get.return_value = mock_provider
 
             result = await flow.async_step_user(
@@ -89,6 +90,7 @@ class TestConfigFlowUserStep:
         with patch("custom_components.whollm.config_flow.get_provider") as mock_get:
             mock_provider = MagicMock()
             mock_provider.test_connection = AsyncMock(return_value=True)
+            mock_provider.async_close = AsyncMock()
             mock_provider.get_available_models = AsyncMock(return_value=["llama3.2", "mistral"])
             mock_get.return_value = mock_provider
 

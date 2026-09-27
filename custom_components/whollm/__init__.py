@@ -8,12 +8,14 @@ Optionally uses vision models to identify specific people/pets.
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
 
@@ -32,6 +34,17 @@ from .const import (
 from .coordinator import LLMPresenceCoordinator
 from .event_logger import EventLogger
 from .habits import ConfidenceCombiner, HabitPredictor
+from .history import HistoryTracker
+from .services import (
+    SERVICE_CLEANUP_STORAGE,
+    SERVICE_DISABLE_TRACKING,
+    SERVICE_ENABLE_TRACKING,
+    SERVICE_IDENTIFY_PERSON,
+    SERVICE_REFRESH,
+    _get_coordinators,
+    async_setup_services,
+    async_unload_services,
+)
 from .vision import CameraTrackingController, VisionIdentifier
 
 if TYPE_CHECKING:
@@ -42,10 +55,6 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 # Service schemas
-SERVICE_IDENTIFY_PERSON = "identify_person"
-SERVICE_ENABLE_TRACKING = "enable_tracking"
-SERVICE_DISABLE_TRACKING = "disable_tracking"
-SERVICE_CLEANUP_STORAGE = "cleanup_storage"
 
 IDENTIFY_PERSON_SCHEMA = vol.Schema(
     {
@@ -83,8 +92,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     max_file_size_mb = entry.options.get(
         CONF_MAX_FILE_SIZE_MB, entry.data.get(CONF_MAX_FILE_SIZE_MB, DEFAULT_MAX_FILE_SIZE_MB)
     )
-    event_logger = EventLogger(retention_days=retention_days, max_file_size_mb=max_file_size_mb)
-    habit_predictor = HabitPredictor()
+    # These constructors touch the filesystem, so keep them off the event loop.
+    # Store data under HA's config dir so non-/config installs (HA Core) work.
+    config_dir = Path(hass.config.config_dir)
+    event_logger = await hass.async_add_executor_job(
+        lambda: EventLogger(
+            log_path=str(config_dir / "whollm_events.jsonl"),
+            retention_days=retention_days,
+            max_file_size_mb=max_file_size_mb,
+        )
+    )
+    habit_predictor = await hass.async_add_executor_job(HabitPredictor, config_dir)
+    history_tracker = await hass.async_add_executor_job(HistoryTracker, config_dir)
     confidence_weights = entry.options.get(
         CONF_CONFIDENCE_WEIGHTS, entry.data.get(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
     )
@@ -96,16 +115,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         event_logger=event_logger,
         habit_predictor=habit_predictor,
         confidence_combiner=confidence_combiner,
+        history_tracker=history_tracker,
     )
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
     hass.data[DOMAIN]["event_logger"] = event_logger
+    hass.data[DOMAIN]["habit_predictor"] = habit_predictor
+    hass.data[DOMAIN]["history_tracker"] = history_tracker
 
     # Perform initial cleanup on startup
     _LOGGER.info("Performing initial storage cleanup on startup...")
-    cleanup_result = event_logger.cleanup()
+    cleanup_result = await hass.async_add_executor_job(event_logger.cleanup)
     _LOGGER.info(
         "Startup cleanup complete: deleted %d events, kept %d, final size: %.1f MB",
         cleanup_result.get("total_deleted", 0),
@@ -113,15 +135,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         cleanup_result.get("final_size_mb", 0.0),
     )
 
-    # Schedule periodic cleanup (daily)
-    from datetime import timedelta
-
     async def periodic_cleanup(now) -> None:
         """Perform periodic cleanup."""
         _LOGGER.info("Running periodic storage cleanup...")
         logger = hass.data[DOMAIN].get("event_logger")
         if logger:
-            result = logger.cleanup()
+            result = await hass.async_add_executor_job(logger.cleanup)
             _LOGGER.info(
                 "Periodic cleanup complete: deleted %d events, kept %d, final size: %.1f MB",
                 result.get("total_deleted", 0),
@@ -129,12 +148,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 result.get("final_size_mb", 0.0),
             )
 
-    # Schedule daily cleanup (runs every 24 hours)
-    async_track_time_interval(
-        hass,
-        periodic_cleanup,
-        timedelta(hours=24),
-    )
+    # Apply options changes (Configure dialog) without a full HA restart
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
+    # Schedule daily cleanup; cancelled automatically when the entry unloads
+    entry.async_on_unload(async_track_time_interval(hass, periodic_cleanup, timedelta(hours=24)))
     _LOGGER.info("Scheduled daily periodic cleanup")
 
     # Initialize vision components
@@ -159,6 +177,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Register services
     await _async_register_services(hass)
+    if not hass.services.has_service(DOMAIN, SERVICE_REFRESH):
+        await async_setup_services(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -229,7 +249,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             event_logger.max_file_size_bytes = int(max_file_size_mb * 1024 * 1024)
 
         # Perform cleanup
-        result = event_logger.cleanup()
+        result = await hass.async_add_executor_job(event_logger.cleanup)
 
         # Fire an event with the cleanup result
         hass.bus.async_fire(
@@ -259,6 +279,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             SERVICE_IDENTIFY_PERSON,
             handle_identify_person,
             schema=IDENTIFY_PERSON_SCHEMA,
+            supports_response=SupportsResponse.OPTIONAL,
         )
 
         hass.services.async_register(
@@ -280,6 +301,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             SERVICE_CLEANUP_STORAGE,
             handle_cleanup_storage,
             schema=CLEANUP_STORAGE_SCHEMA,
+            supports_response=SupportsResponse.OPTIONAL,
         )
 
         _LOGGER.info("Registered WhoLLM services")
@@ -295,12 +317,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator = hass.data[DOMAIN].get(entry.entry_id)
         if coordinator and hasattr(coordinator, "provider"):
             await coordinator.provider.async_close()
+        if coordinator and getattr(coordinator, "history_tracker", None):
+            await hass.async_add_executor_job(coordinator.history_tracker.save)
         hass.data[DOMAIN].pop(entry.entry_id, None)
+
+        if not _get_coordinators(hass):
+            await async_unload_services(hass)
 
     return unload_ok
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload config entry."""
-    await async_unload_entry(hass, entry)
-    await async_setup_entry(hass, entry)
+    await hass.config_entries.async_reload(entry.entry_id)

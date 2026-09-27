@@ -14,15 +14,15 @@ import logging
 from typing import TYPE_CHECKING
 
 import voluptuous as vol
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
-from .habits import get_habit_predictor
-from .history import get_history_tracker
 
 if TYPE_CHECKING:
     from .coordinator import LLMPresenceCoordinator
+    from .habits import HabitPredictor
+    from .history import HistoryTracker
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +32,11 @@ SERVICE_CORRECT_ROOM = "correct_room"
 SERVICE_GET_HISTORY = "get_history"
 SERVICE_CLEAR_HISTORY = "clear_history"
 SERVICE_GET_PATTERNS = "get_patterns"
+# Registered in __init__.py alongside the vision components they depend on
+SERVICE_IDENTIFY_PERSON = "identify_person"
+SERVICE_ENABLE_TRACKING = "enable_tracking"
+SERVICE_DISABLE_TRACKING = "disable_tracking"
+SERVICE_CLEANUP_STORAGE = "cleanup_storage"
 
 # Service schemas
 REFRESH_SCHEMA = vol.Schema(
@@ -68,6 +73,21 @@ GET_PATTERNS_SCHEMA = vol.Schema(
 )
 
 
+def get_habit_predictor(hass: HomeAssistant) -> HabitPredictor | None:
+    """Return the habit predictor created during entry setup."""
+    return hass.data.get(DOMAIN, {}).get("habit_predictor")
+
+
+def get_history_tracker(hass: HomeAssistant) -> HistoryTracker | None:
+    """Return the history tracker created during entry setup."""
+    return hass.data.get(DOMAIN, {}).get("history_tracker")
+
+
+def _get_coordinators(hass: HomeAssistant) -> list[LLMPresenceCoordinator]:
+    """Return every loaded WhoLLM coordinator."""
+    return [v for v in hass.data.get(DOMAIN, {}).values() if hasattr(v, "async_request_refresh")]
+
+
 async def async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
     """Handle the refresh service call.
 
@@ -75,23 +95,14 @@ async def async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
     """
     _LOGGER.debug("Refresh service called with data: %s", call.data)
 
-    # Get coordinator from hass.data
-    coordinator: LLMPresenceCoordinator | None = None
-
-    if DOMAIN in hass.data:
-        for entry_data in hass.data[DOMAIN].values():
-            if isinstance(entry_data, dict) and "coordinator" in entry_data:
-                coordinator = entry_data["coordinator"]
-                break
-            elif hasattr(entry_data, "async_request_refresh"):
-                coordinator = entry_data
-                break
-
-    if coordinator:
-        await coordinator.async_request_refresh()
-        _LOGGER.info("Presence refresh triggered")
-    else:
+    coordinators = _get_coordinators(hass)
+    if not coordinators:
         _LOGGER.warning("No WhoLLM coordinator found for refresh")
+        return
+
+    for coordinator in coordinators:
+        await coordinator.async_request_refresh()
+    _LOGGER.info("Presence refresh triggered")
 
 
 async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -105,16 +116,17 @@ async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> N
 
     _LOGGER.debug("Correct room service: %s -> %s (confidence: %s)", entity_id, room, confidence)
 
-    # Extract entity name from entity_id (e.g., sensor.ben_room -> Ben)
+    # Extract entity name from entity_id (e.g., sensor.alice_room -> Alice)
     entity_name = entity_id.split(".")[-1].replace("_room", "").replace("_", " ").title()
 
     # Learn from the correction
-    predictor = get_habit_predictor()
-    predictor.learn_from_event(
-        entity_name=entity_name,
-        room=room,
-        confidence=confidence,
-    )
+    predictor = get_habit_predictor(hass)
+    if predictor is not None:
+        predictor.learn_from_event(
+            entity_name=entity_name,
+            room=room,
+            confidence=confidence,
+        )
 
     # Update the state
     current_state = hass.states.get(entity_id)
@@ -138,8 +150,8 @@ async def async_handle_get_history(hass: HomeAssistant, call: ServiceCall) -> li
     entity_name = call.data.get("entity_name")
     limit = call.data.get("limit", 20)
 
-    tracker = get_history_tracker()
-    history = tracker.get_recent_transitions(entity_name, limit=limit)
+    tracker = get_history_tracker(hass)
+    history = tracker.get_recent_transitions(entity_name, limit=limit) if tracker else []
 
     _LOGGER.debug("Retrieved %d history entries for %s", len(history), entity_name)
 
@@ -153,8 +165,11 @@ async def async_handle_clear_history(hass: HomeAssistant, call: ServiceCall) -> 
     """
     entity_name = call.data.get("entity_name")
 
-    tracker = get_history_tracker()
-    tracker.clear_history(entity_name)
+    tracker = get_history_tracker(hass)
+    if tracker is None:
+        _LOGGER.warning("History tracker not initialized")
+        return
+    await hass.async_add_executor_job(tracker.clear_history, entity_name)
 
     if entity_name:
         _LOGGER.info("Cleared history for %s", entity_name)
@@ -169,8 +184,8 @@ async def async_handle_get_patterns(hass: HomeAssistant, call: ServiceCall) -> l
     """
     entity_name = call.data.get("entity_name")
 
-    tracker = get_history_tracker()
-    patterns = tracker.detect_patterns(entity_name)
+    tracker = get_history_tracker(hass)
+    patterns = tracker.detect_patterns(entity_name) if tracker else []
 
     _LOGGER.debug("Retrieved %d patterns for %s", len(patterns), entity_name)
 
@@ -186,14 +201,14 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     async def correct_room_handler(call: ServiceCall) -> None:
         await async_handle_correct_room(hass, call)
 
-    async def get_history_handler(call: ServiceCall) -> list[dict]:
-        return await async_handle_get_history(hass, call)
+    async def get_history_handler(call: ServiceCall) -> ServiceResponse:
+        return {"transitions": await async_handle_get_history(hass, call)}
 
     async def clear_history_handler(call: ServiceCall) -> None:
         await async_handle_clear_history(hass, call)
 
-    async def get_patterns_handler(call: ServiceCall) -> list[dict]:
-        return await async_handle_get_patterns(hass, call)
+    async def get_patterns_handler(call: ServiceCall) -> ServiceResponse:
+        return {"patterns": await async_handle_get_patterns(hass, call)}
 
     # Register services
     hass.services.async_register(
@@ -215,6 +230,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_GET_HISTORY,
         get_history_handler,
         schema=GET_HISTORY_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
 
     hass.services.async_register(
@@ -229,17 +245,25 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_GET_PATTERNS,
         get_patterns_handler,
         schema=GET_PATTERNS_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
 
     _LOGGER.info("WhoLLM services registered")
 
 
 async def async_unload_services(hass: HomeAssistant) -> None:
-    """Unload WhoLLM services."""
-    hass.services.async_remove(DOMAIN, SERVICE_REFRESH)
-    hass.services.async_remove(DOMAIN, SERVICE_CORRECT_ROOM)
-    hass.services.async_remove(DOMAIN, SERVICE_GET_HISTORY)
-    hass.services.async_remove(DOMAIN, SERVICE_CLEAR_HISTORY)
-    hass.services.async_remove(DOMAIN, SERVICE_GET_PATTERNS)
+    """Unload all WhoLLM services."""
+    for service in (
+        SERVICE_REFRESH,
+        SERVICE_CORRECT_ROOM,
+        SERVICE_GET_HISTORY,
+        SERVICE_CLEAR_HISTORY,
+        SERVICE_GET_PATTERNS,
+        SERVICE_IDENTIFY_PERSON,
+        SERVICE_ENABLE_TRACKING,
+        SERVICE_DISABLE_TRACKING,
+        SERVICE_CLEANUP_STORAGE,
+    ):
+        hass.services.async_remove(DOMAIN, service)
 
     _LOGGER.info("WhoLLM services unloaded")

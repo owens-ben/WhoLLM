@@ -86,12 +86,17 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 model=user_input.get(CONF_MODEL, DEFAULT_MODEL),
             )
 
-            if await provider.test_connection():
+            try:
+                connected = await provider.test_connection()
+                if connected:
+                    self._available_models = await provider.get_available_models()
+            finally:
+                await provider.async_close()
+
+            if connected:
                 self._data.update(user_input)
-                self._available_models = await provider.get_available_models()
                 return await self.async_step_model()
-            else:
-                errors["base"] = "cannot_connect"
+            errors["base"] = "cannot_connect"
 
         return self.async_show_form(
             step_id="user",
@@ -325,7 +330,20 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        # HA >= 2024.11 exposes a read-only `config_entry` property on OptionsFlow,
+        # so keep our own reference to stay compatible with older and newer cores.
+        self._entry = config_entry
+
+    def _current(self, key: str, default: Any = None) -> Any:
+        """Return the effective value: saved options first, then initial setup data."""
+        return self._entry.options.get(key, self._entry.data.get(key, default))
+
+    def _save(self, updates: dict[str, Any]) -> FlowResult:
+        """Save options, keeping values set on other options pages.
+
+        HA replaces the whole options dict on save, so merge rather than overwrite.
+        """
+        return self.async_create_entry(title="", data={**self._entry.options, **updates})
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage the options - show menu."""
@@ -337,7 +355,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
     async def async_step_general(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """General options."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            return self._save(user_input)
 
         return self.async_show_form(
             step_id="general",
@@ -345,7 +363,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                 {
                     vol.Optional(
                         CONF_POLL_INTERVAL,
-                        default=self.config_entry.data.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL),
+                        default=self._current(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL),
                     ): selector.NumberSelector(
                         selector.NumberSelectorConfig(
                             min=5,
@@ -357,9 +375,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                     ),
                     vol.Optional(
                         CONF_TIMEOUT,
-                        default=self.config_entry.options.get(
-                            CONF_TIMEOUT, self.config_entry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
-                        ),
+                        default=self._current(CONF_TIMEOUT, DEFAULT_TIMEOUT),
                     ): selector.NumberSelector(
                         selector.NumberSelectorConfig(
                             min=5,
@@ -371,7 +387,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                     ),
                     vol.Optional(
                         CONF_LEARNING_ENABLED,
-                        default=self.config_entry.data.get(CONF_LEARNING_ENABLED, DEFAULT_LEARNING_ENABLED),
+                        default=self._current(CONF_LEARNING_ENABLED, DEFAULT_LEARNING_ENABLED),
                     ): bool,
                 }
             ),
@@ -381,8 +397,8 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
         """Configure room-entity mappings."""
         if user_input is not None:
             # Process and save room entity mappings, validating entities exist
-            room_entities = self.config_entry.data.get(CONF_ROOM_ENTITIES, {}).copy()
-            rooms = self.config_entry.data.get(CONF_ROOMS, [])
+            room_entities = self._current(CONF_ROOM_ENTITIES, {}).copy()
+            rooms = self._current(CONF_ROOMS, [])
             invalid_entities = []
 
             for room in rooms:
@@ -408,11 +424,11 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                     ", ".join(invalid_entities),
                 )
 
-            return self.async_create_entry(title="", data={CONF_ROOM_ENTITIES: room_entities})
+            return self._save({CONF_ROOM_ENTITIES: room_entities})
 
         # Build dynamic schema
-        rooms = self.config_entry.data.get(CONF_ROOMS, [])
-        current_mappings = self.config_entry.data.get(CONF_ROOM_ENTITIES, {})
+        rooms = self._current(CONF_ROOMS, [])
+        current_mappings = self._current(CONF_ROOM_ENTITIES, {})
         schema_dict = {}
 
         for room in rooms:
@@ -444,8 +460,8 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             # Process and save person device mappings
             person_devices = {}
-            persons = self.config_entry.data.get(CONF_PERSONS, [])
-            pets = self.config_entry.data.get(CONF_PETS, [])
+            persons = self._current(CONF_PERSONS, [])
+            pets = self._current(CONF_PETS, [])
 
             for person in persons + pets:
                 name = person.get("name", "")
@@ -454,12 +470,12 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                 if devices:
                     person_devices[name] = devices
 
-            return self.async_create_entry(title="", data={CONF_PERSON_DEVICES: person_devices})
+            return self._save({CONF_PERSON_DEVICES: person_devices})
 
         # Build dynamic schema
-        persons = self.config_entry.data.get(CONF_PERSONS, [])
-        pets = self.config_entry.data.get(CONF_PETS, [])
-        current_mappings = self.config_entry.data.get(CONF_PERSON_DEVICES, {})
+        persons = self._current(CONF_PERSONS, [])
+        pets = self._current(CONF_PETS, [])
+        current_mappings = self._current(CONF_PERSON_DEVICES, {})
         schema_dict = {}
 
         for entity in persons + pets:
@@ -491,9 +507,9 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                     hint_type = key.replace("weight_", "")
                     weights[hint_type] = value / 100  # Convert from percentage
 
-            return self.async_create_entry(title="", data={CONF_CONFIDENCE_WEIGHTS: weights})
+            return self._save({CONF_CONFIDENCE_WEIGHTS: weights})
 
-        current_weights = self.config_entry.data.get(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
+        current_weights = self._current(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
         schema_dict = {}
 
         weight_descriptions = {

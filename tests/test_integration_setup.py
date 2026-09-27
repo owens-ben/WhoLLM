@@ -32,6 +32,8 @@ def mock_hass():
     hass.helpers = MagicMock()
     hass.helpers.event = MagicMock()
     hass.helpers.event.async_track_time_interval = MagicMock()
+    hass.config.config_dir = "/tmp/whollm-test-config"
+    hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *args: fn(*args))
     return hass
 
 
@@ -206,17 +208,14 @@ class TestAsyncReloadEntry:
 
     @pytest.mark.asyncio
     async def test_reload_entry(self, mock_hass, mock_config_entry):
-        """Test that reload calls unload then setup."""
+        """Reload delegates to HA so entry state stays consistent."""
         from custom_components.whollm import async_reload_entry
 
-        mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
+        mock_hass.config_entries.async_reload = AsyncMock(return_value=True)
 
-        with patch("custom_components.whollm.async_unload_entry", new_callable=AsyncMock) as mock_unload:
-            with patch("custom_components.whollm.async_setup_entry", new_callable=AsyncMock) as mock_setup:
-                await async_reload_entry(mock_hass, mock_config_entry)
+        await async_reload_entry(mock_hass, mock_config_entry)
 
-                mock_unload.assert_called_once_with(mock_hass, mock_config_entry)
-                mock_setup.assert_called_once_with(mock_hass, mock_config_entry)
+        mock_hass.config_entries.async_reload.assert_called_once_with(mock_config_entry.entry_id)
 
 
 class TestServiceHandlers:
@@ -229,7 +228,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, supports_response=None):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register
@@ -266,7 +265,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, supports_response=None):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register

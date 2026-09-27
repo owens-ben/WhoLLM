@@ -44,6 +44,7 @@ from .const import (
 )
 from .event_logger import EventLogger
 from .habits import ConfidenceCombiner, HabitPredictor
+from .history import HistoryTracker
 from .providers import get_provider
 from .providers.base import PresenceGuess
 
@@ -146,6 +147,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         event_logger: EventLogger | None = None,
         habit_predictor: HabitPredictor | None = None,
         confidence_combiner: ConfidenceCombiner | None = None,
+        history_tracker: HistoryTracker | None = None,
     ) -> None:
         """Initialize the coordinator."""
         self.entry = entry
@@ -174,6 +176,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.event_logger = event_logger or EventLogger()
         self.habit_predictor = habit_predictor or HabitPredictor()
         self.confidence_combiner = confidence_combiner or ConfidenceCombiner(self.confidence_weights)
+        self.history_tracker = history_tracker
 
         # Device tracker helper for away detection
         self.device_tracker_helper = DeviceTrackerHelper()
@@ -624,5 +627,15 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 _LOGGER.debug("Room transition: %s moved from %s to %s", entity_name, previous_room, new_room)
             except OSError as err:
                 _LOGGER.warning("Failed to log room transition: %s", err)
+
+            if self.history_tracker is not None:
+                # record_transition periodically writes to disk
+                await self.hass.async_add_executor_job(
+                    self.history_tracker.record_transition,
+                    entity_name,
+                    previous_room,
+                    new_room,
+                    confidence,
+                )
 
         self._previous_rooms[entity_name] = new_room

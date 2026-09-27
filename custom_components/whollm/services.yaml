@@ -6,7 +6,7 @@ refresh:
       name: Entity ID
       description: Optional entity to refresh (refreshes all if not specified)
       required: false
-      example: sensor.ben_room
+      example: sensor.alice_room
       selector:
         entity:
           domain: sensor
@@ -20,7 +20,7 @@ correct_room:
       name: Entity ID
       description: The room sensor to correct
       required: true
-      example: sensor.ben_room
+      example: sensor.alice_room
       selector:
         entity:
           domain: sensor
@@ -46,13 +46,13 @@ correct_room:
 
 get_history:
   name: Get History
-  description: Get recent room transitions for a person
+  description: "Get recent room transitions for a person. Responds with a transitions list."
   fields:
     entity_name:
       name: Entity Name
-      description: Name of the person (e.g., "Ben")
+      description: Name of the person (e.g., "Alice")
       required: true
-      example: Ben
+      example: Alice
       selector:
         text:
     limit:
@@ -75,19 +75,19 @@ clear_history:
       name: Entity Name
       description: Name of the person (clears all if not specified)
       required: false
-      example: Ben
+      example: Alice
       selector:
         text:
 
 get_patterns:
   name: Get Patterns
-  description: Get detected movement patterns for a person
+  description: "Get detected movement patterns for a person. Responds with a patterns list."
   fields:
     entity_name:
       name: Entity Name
       description: Name of the person
       required: true
-      example: Ben
+      example: Alice
       selector:
         text:
 
@@ -114,3 +114,50 @@ cleanup_storage:
           max: 1000
           step: 1
           mode: box
+
+identify_person:
+  name: Identify Person
+  description: Take a camera snapshot and ask the vision model who is in it. Fires a whollm_vision_identification event and can return the result.
+  fields:
+    camera_entity_id:
+      name: Camera
+      description: Camera to snapshot
+      required: true
+      example: camera.living_room
+      selector:
+        entity:
+          domain: camera
+    detection_type:
+      name: Detection Type
+      description: Whether to identify a person or an animal
+      required: false
+      default: person
+      selector:
+        select:
+          options:
+            - person
+            - animal
+
+enable_tracking:
+  name: Enable Camera Tracking
+  description: Turn on the tracking switch for a camera (e.g. Reolink auto-track)
+  fields:
+    camera_name:
+      name: Camera Name
+      description: Camera name as used in its switch entity (switch.<camera_name>_auto_tracking)
+      required: true
+      example: living_room
+      selector:
+        text:
+
+disable_tracking:
+  name: Disable Camera Tracking
+  description: Turn off the tracking switch for a camera
+  fields:
+    camera_name:
+      name: Camera Name
+      description: Camera name as used in its switch entity (switch.<camera_name>_auto_tracking)
+      required: true
+      example: living_room
+      selector:
+        text:

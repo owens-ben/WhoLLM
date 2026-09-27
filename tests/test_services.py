@@ -173,6 +173,7 @@ class TestClearHistoryService:
         mock_tracker.clear_history = MagicMock()
         
         mock_hass = MagicMock()
+        mock_hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *args: fn(*args))
         
         with patch("custom_components.whollm.services.get_history_tracker", return_value=mock_tracker):
             call = MagicMock()
@@ -191,6 +192,7 @@ class TestClearHistoryService:
         mock_tracker.clear_history = MagicMock()
         
         mock_hass = MagicMock()
+        mock_hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *args: fn(*args))
         
         with patch("custom_components.whollm.services.get_history_tracker", return_value=mock_tracker):
             call = MagicMock()

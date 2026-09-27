@@ -92,6 +92,10 @@ class HistoryTracker:
         except Exception as err:
             _LOGGER.warning("Could not save history: %s", err)
 
+    def save(self) -> None:
+        """Persist history to disk (blocking; call from an executor)."""
+        self._save_history()
+
     def _add_to_entity_history(self, transition: RoomTransition) -> None:
         """Add transition to entity-specific history."""
         entity = transition.entity_name
