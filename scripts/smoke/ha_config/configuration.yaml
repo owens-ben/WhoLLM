@@ -1,0 +1,41 @@
+# Minimal Home Assistant config for the WhoLLM smoke test.
+# Simulated sensors are input_booleans wrapped in template binary_sensors
+# so the smoke driver can flip them through the REST API.
+default_config:
+
+logger:
+  default: warning
+  logs:
+    custom_components.whollm: debug
+    homeassistant.util.loop: warning
+
+input_boolean:
+  office_motion_sim:
+    name: Office motion (sim)
+  kitchen_motion_sim:
+    name: Kitchen motion (sim)
+  alice_pc_sim:
+    name: Alice PC (sim)
+
+template:
+  - binary_sensor:
+      - name: Office Motion
+        unique_id: smoke_office_motion
+        device_class: motion
+        state: "{{ is_state('input_boolean.office_motion_sim', 'on') }}"
+      - name: Kitchen Motion
+        unique_id: smoke_kitchen_motion
+        device_class: motion
+        state: "{{ is_state('input_boolean.kitchen_motion_sim', 'on') }}"
+  - switch:
+      - name: Alice PC
+        unique_id: smoke_alice_pc
+        state: "{{ is_state('input_boolean.alice_pc_sim', 'on') }}"
+        turn_on:
+          action: input_boolean.turn_on
+          target:
+            entity_id: input_boolean.alice_pc_sim
+        turn_off:
+          action: input_boolean.turn_off
+          target:
+            entity_id: input_boolean.alice_pc_sim
