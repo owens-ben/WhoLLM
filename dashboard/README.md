@@ -1,149 +1,66 @@
-# WhoLLM Dashboard
+# WhoLLM dashboards
 
-A beautiful, modern dashboard for visualizing LLM-powered room presence detection.
+![Standalone dashboard with demo data](../docs/assets/dashboard-live.png)
 
-![Dashboard Preview](preview.png)
+*Rendered from this code with demo data.*
 
-## Features
+This folder holds two ways to show WhoLLM on a screen. The full guide, with screenshots, is in
+**[docs/dashboard.md](../docs/dashboard.md)**. There is also a single-file Lovelace card in
+[`www/whollm-card.js`](../www/whollm-card.js).
 
-- 🧠 Real-time presence visualization
-- 👥 Multi-person and pet tracking
-- 🏠 Room occupancy overview with visual indicators
-- 📊 Confidence level display
-- 🤖 LLM response viewer
-- 📜 Activity timeline
-- 🌙 Dark theme with animated gradients
-- 📱 Fully responsive design
+| File | What it is |
+|---|---|
+| `index.html` | Standalone web dashboard (people, rooms, LLM analysis, activity timeline). |
+| `docker-compose.yml` | Runs the dashboard behind nginx on port 3380 (`DASHBOARD_PORT` to change). |
+| `nginx.conf` | Serves the page and proxies `/api/` and `/auth/token` to Home Assistant. |
+| `whollm-dashboard.yaml` | A multi-section Lovelace dashboard (needs Mushroom and card-mod from HACS). |
 
-## Installation Options
+## Standalone dashboard in three steps
 
-### Option 1: Docker (Recommended)
+1. Edit `nginx.conf` and replace every `192.168.0.233:8123` with your Home Assistant host and port.
+   (The `HA_URL` variable in `docker-compose.yml` is **not** used by `nginx.conf`.)
+2. `docker compose up -d`
+3. Open `http://<your-host>:3380`, enter your Home Assistant address, and choose **Sign in with Home Assistant**.
 
-```bash
-cd whollm/dashboard
-docker compose up -d
-```
+It signs in with Home Assistant's OAuth flow. A long-lived access token is available under *Advanced*.
 
-Access at: `http://YOUR_HOST:3380`
+## Lovelace YAML dashboard
 
-### Option 2: Home Assistant Dashboard
-
-Import `llm-presence-dashboard.yaml` into Home Assistant:
-
-1. Copy `llm-presence-dashboard.yaml` to your HA config directory
-2. Add to `configuration.yaml`:
+Copy `whollm-dashboard.yaml` into your Home Assistant config directory and register it:
 
 ```yaml
 lovelace:
-  mode: yaml
   dashboards:
-    llm-presence:
+    whollm:
       mode: yaml
       title: WhoLLM
       icon: mdi:brain
       show_in_sidebar: true
-      filename: llm-presence-dashboard.yaml
+      filename: whollm-dashboard.yaml
 ```
 
-3. Restart Home Assistant
+The file uses demo entity names (`sensor.alice_room`, and so on). Replace them with yours.
 
-### Option 3: Static File Server
+## Customising the standalone page
 
-Serve the `index.html` file with any web server (nginx, Apache, Python http.server).
-
-```bash
-# Quick test with Python
-cd whollm/dashboard
-python3 -m http.server 3380
-```
-
-## Configuration
-
-On first load, enter your Home Assistant details:
-
-1. **Home Assistant URL**: `http://homeassistant.local:8123` (or your HA IP/hostname)
-2. **Long-Lived Access Token**: Generate in HA → Profile → Long-Lived Access Tokens
-
-Settings are saved to browser localStorage.
-
-## Requirements
-
-- WhoLLM integration installed in Home Assistant
-- Home Assistant accessible from the browser
-- Valid long-lived access token
-
-## Customization
-
-### Adding Rooms
-
-Edit the `CONFIG.rooms` array in `index.html`:
+Room tiles come from a fixed list near the top of the script in `index.html`:
 
 ```javascript
-rooms: ['office', 'living_room', 'bedroom', 'kitchen', 'bathroom', 'garage', 'away'],
-roomIcons: {
-    office: '🖥️',
-    living_room: '🛋️',
-    bedroom: '🛏️',
-    kitchen: '🍳',
-    bathroom: '🚿',
-    garage: '🚗',
-    away: '🚪',
-    unknown: '❓'
-}
+rooms: ['office', 'living_room', 'bedroom', 'kitchen', 'bathroom', 'entry', 'away'],
+roomIcons: { office: '🖥️', living_room: '🛋️', /* ... */ }
 ```
 
-### Changing Colors
+Add your own rooms and icons there. Colours are CSS variables in the `:root` block (`--accent-primary`,
+`--room-office`, and so on).
 
-Modify CSS variables in the `:root` section:
+## Known limitations
 
-```css
-:root {
-    --accent-primary: #6366f1;    /* Main accent color */
-    --accent-success: #10b981;    /* Success/occupied color */
-    --room-office: #3b82f6;       /* Office room color */
-    /* ... etc */
-}
-```
+- The vision panel and *Identify Now* button still use the old `llm_presence` integration name and do not work yet.
+  Use the `whollm.identify_person` service from Home Assistant instead.
+- The activity timeline is built in the browser from changes it sees while open; it is not history.
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `index.html` | Standalone web dashboard |
-| `llm-presence-dashboard.yaml` | Home Assistant Lovelace dashboard |
-| `docker-compose.yml` | Docker deployment |
-| `nginx.conf` | Nginx configuration |
-
-## Integration with Homepage
-
-The Docker container includes Homepage labels for automatic discovery:
-
-- **Group**: AI
-- **Name**: WhoLLM Dashboard
-- **Port**: 3380
-
-## Troubleshooting
-
-### "Waiting for WhoLLM data..."
-
-- Ensure the WhoLLM integration is configured in Home Assistant
-- Check that entities like `sensor.{person_name}_room` exist (e.g., `sensor.alice_room`)
-- Verify the integration is polling (check HA logs)
-
-### Connection Failed
-
-- Verify Home Assistant URL is correct
-- Check the access token is valid
-- Ensure CORS is not blocking requests (HA should allow API access)
-
-### No Room Data
-
-- The integration needs to be configured with persons/pets and rooms
-- Go to Settings → Devices & Services → WhoLLM → Configure
+More in [Status & roadmap](../docs/status.md#known-issues) and [Troubleshooting](../docs/troubleshooting.md#dashboard-and-card-problems).
 
 ## License
 
-MIT License - Part of the [WhoLLM](https://github.com/owens-ben/whollm) project.
-
-
-
+MIT, as part of [WhoLLM](https://github.com/owens-ben/WhoLLM).

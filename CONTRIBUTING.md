@@ -19,12 +19,17 @@ Thank you for your interest in contributing to WhoLLM!
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies
-pip install -r requirements_dev.txt
+# Install the same dependencies CI uses
+pip install pytest pytest-asyncio pytest-cov aiohttp voluptuous pillow
+pip install pytest-homeassistant-custom-component
 
 # Install pre-commit hooks
+pip install pre-commit ruff
 pre-commit install
 ```
+
+The [development guide](docs/development.md) covers running tests, trying your changes in a real Home Assistant, and a
+map of the codebase.
 
 ## Code Style
 
@@ -42,7 +47,9 @@ pre-commit install
 ## Pull Request Guidelines
 
 1. **One feature per PR** - Keep PRs focused and reviewable
-2. **Update documentation** - If you change behavior, update the docs
+2. **Update documentation** - If you change behavior, update the page in [`docs/`](docs/README.md) that describes it
+   (and the status table in [`docs/status.md`](docs/status.md) if a feature moves between working and not connected).
+   Diagrams and screenshots can be regenerated; see [Working on the docs](docs/development.md#working-on-the-docs)
 3. **Add tests** - New features should include tests
 4. **Follow existing patterns** - Match the code style of the project
 5. **Write clear commit messages** - Explain what and why
@@ -56,7 +63,9 @@ pre-commit install
 ## Areas for Contribution
 
 - **Prompt engineering** - Improve LLM prompts for better accuracy
-- **New providers** - Add support for OpenAI, Anthropic, etc.
+- **Connecting finished modules** - Notifications, extra services, zones, history and the ML predictor are written and
+  tested but not wired into the integration (see [Status](docs/status.md))
+- **More providers** - The OpenAI and Anthropic providers exist but are not offered in the wizard (no API key step yet)
 - **Testing** - Improve test coverage
 - **Documentation** - Examples, troubleshooting guides
 - **Translations** - Help translate strings

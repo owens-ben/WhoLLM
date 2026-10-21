@@ -5,326 +5,110 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
 
-**A Home Assistant integration that uses local LLMs to determine *who* is in which room.**
+**Know *who* is in which room, not just that a room is occupied.**
+A Home Assistant integration that uses a local LLM to turn many weak signals into one answer per person and pet.
 
-> **Status: Alpha** — Running, but expect rough edges.
+> **Status: Alpha (v0.1.0).** The core detection works. Some finished code is not connected yet.
+> See [what works today](docs/status.md).
 
----
+![Many weak signals go in, one room per person comes out](docs/assets/hero.svg)
 
-## The Problem
+## Why
 
-Occupancy sensors tell you a room is occupied. They don't tell you *who* is there.
+Occupancy sensors tell you a room is occupied. They do not tell you *who* is there, so you cannot:
 
-Without person-level tracking, you can't:
-- Apply personal lighting preferences when someone enters a room
-- Know when the whole family is gathered in one place
-- Send "you've been at your desk for 3 hours" reminders to a specific person
-- Distinguish between a pet and a person triggering motion
+- apply personal lighting when a particular person walks in,
+- know when the whole family is in one place,
+- nudge one person after three hours at their desk,
+- tell a pet from a person.
 
-## The Solution
+No single sensor is definitive. Together (motion, a PC that is on, a TV playing, a phone on Wi-Fi) they usually are.
+WhoLLM weighs them the way a person would, with a local LLM in the loop.
 
-WhoLLM uses a local LLM to reason across multiple weak signals—the same way humans do:
+## What you get
 
-```
-Motion in office
-+ Alice's PC is on
-+ Alice's phone on home WiFi
-+ Bob's car is gone
-─────────────────────────────
-→ Alice is in the office (high confidence)
-```
+- **A room per person and pet**: `sensor.alice_room`, plus `binary_sensor.alice_in_office` for every room.
+- **Private by design**: inference runs on your own network through [Ollama](https://ollama.com).
+- **Evidence you can read**: every answer carries a confidence number and the `indicators` behind it.
+- **Sensible fallbacks**: a phone that is away means `away`. If the LLM is unreachable, a rule-based guess takes over.
+- **Habit hints**: learns where people usually are at what time (kept in memory for now).
+- **Optional camera identification** with a local vision model.
+- **Ready-made screens and automations**: a Lovelace card, two dashboards and blueprints.
 
-No single sensor is definitive. Together, they're enough for a good guess.
+| Standalone dashboard | Lovelace card |
+|---|---|
+| ![Dashboard with demo data](docs/assets/dashboard-live.png) | ![Lovelace card with demo data](docs/assets/lovelace-card.png) |
 
----
+*Rendered from the real code with demo data.*
 
-## Features
+## Quick start
 
-- **Multi-person + pet tracking** — Track everyone in your household
-- **Privacy-first** — All inference runs locally via Ollama
-- **Confidence scoring** — Each prediction includes confidence level and reasoning
-- **Vision identification** — Optional camera-based identification using vision LLMs
-- **Graceful degradation** — Falls back through heuristics when LLM is unavailable
-- **Habit learning** — Learns patterns from your history over time
-- **Flexible configuration** — Map specific sensors to rooms and devices to people
+You need Home Assistant 2024.1 or newer and [Ollama](https://ollama.com) reachable from it.
 
----
+1. **Get a model**
 
-## Installation
-
-### Prerequisites
-
-1. **Home Assistant 2024.1+**
-2. **Ollama** running locally or on your network:
    ```bash
    curl -fsSL https://ollama.com/install.sh | sh
-   ollama pull llama3.2        # For text reasoning (~2GB)
-   ollama pull llava:7b        # Optional: for vision identification (~4GB)
+   ollama pull llama3.2
    ```
 
-### Via HACS (Recommended)
+2. **Install through HACS**: HACS, then ⋮, then *Custom repositories*, add
+   `https://github.com/owens-ben/WhoLLM` as an **Integration**, install **WhoLLM** and restart Home Assistant.
+   (Prefer manual? Copy `custom_components/whollm` into your `config/custom_components/`.)
 
-1. Open HACS → Integrations → ⋮ Menu → Custom repositories
-2. Add `https://github.com/owens-ben/WhoLLM` as an Integration
-3. Search for "WhoLLM" and install
-4. Restart Home Assistant
-5. Go to Settings → Devices & Services → Add Integration → WhoLLM
+3. **Add it**: *Settings, Devices & Services, Add Integration, WhoLLM*, and follow the five-step wizard. Map your
+   sensors to rooms when asked. That step matters most.
 
-### Manual Installation
+4. **Check**: in *Developer Tools, States*, look for `sensor.<name>_room`.
 
-1. Download the `custom_components/whollm` folder from this repository
-2. Copy it to your Home Assistant `config/custom_components/` directory
-3. Restart Home Assistant
-4. Add the integration via Settings → Devices & Services
+5. **Automate**:
 
----
+   ```yaml
+   automation:
+     - alias: "Alice's office lighting"
+       trigger:
+         - platform: state
+           entity_id: binary_sensor.alice_in_office
+           to: "on"
+       action:
+         - service: light.turn_on
+           target:
+             entity_id: light.office
+           data:
+             brightness_pct: 80
+   ```
 
-## Configuration
+The full walkthrough, with what to type at every step, is in **[Getting started](docs/getting-started.md)**.
 
-The setup wizard guides you through:
+## Documentation
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| **Provider** | LLM provider (Ollama recommended) | `ollama` |
-| **URL** | Ollama server URL | `http://localhost:11434` |
-| **Model** | Model for reasoning | `llama3.2` |
-| **Rooms** | Rooms to track | — |
-| **Persons** | People to track | — |
-| **Pets** | Pets to track (optional) | — |
-| **Poll Interval** | How often to update (seconds) | `30` |
+| | |
+|---|---|
+| **[Getting started](docs/getting-started.md)** | Install, run the wizard, verify, first automation. |
+| **[Configuration](docs/configuration.md)** | Every setting, entity mapping, device ownership, weights, storage. |
+| **[How it works](docs/how-it-works.md)** | The detection pipeline, how confidence is computed, why it picked that room. |
+| **[Entities & services](docs/entities-and-services.md)** | Sensor names, attributes, events and services. |
+| **[Automations](docs/automations.md)** | Recipes and blueprints. |
+| **[Dashboard](docs/dashboard.md)** | The Lovelace card, the YAML dashboard and the standalone web dashboard. |
+| **[Troubleshooting](docs/troubleshooting.md)** | Symptom to cause to fix, plus performance tips. |
+| **[Status & roadmap](docs/status.md)** | What is finished, what is not connected yet, known issues. |
+| **[Development](docs/development.md)** | Dev setup, tests, repo map, regenerating the docs images. |
+| **[ML & training data](docs/ml-and-training-data.md)** | The event log and the experimental training scripts. |
 
-### Room-Entity Mapping
-
-After initial setup, configure which sensors inform each room:
-
-- **Motion sensors** — `binary_sensor.office_motion`
-- **Lights** — `light.office_lights`
-- **Media players** — `media_player.living_room_tv`
-- **Computers** — `switch.alice_pc`, `device_tracker.alice_pc`
-- **Doors** — `binary_sensor.front_door`
-- **Cameras with AI** — Cameras that detect people/animals
-
-### Person-Device Mapping
-
-Associate devices with specific people:
-- Alice's phone → `device_tracker.alice_iphone`
-- Alice's PC → `switch.alice_pc`
-- Bob's car → `device_tracker.bob_car`
-
----
-
-## Entities Created
-
-### Sensors
-
-| Entity | Description |
-|--------|-------------|
-| `sensor.{name}_room` | Current room for each person/pet |
-| `sensor.vision_last_identification` | Last camera identification result |
-
-**Attributes:**
-- `confidence` — Prediction confidence (0-100%)
-- `indicators` — Signals that contributed to the prediction
-- `reasoning` — LLM's explanation (when available)
-- `last_updated` — Timestamp of last update
-
-### Binary Sensors
-
-| Entity | Description |
-|--------|-------------|
-| `binary_sensor.{name}_in_{room}` | Whether person/pet is in specific room |
-
-Example: `binary_sensor.alice_in_office`, `binary_sensor.fido_in_living_room`
-
----
-
-## Services
-
-### `whollm.identify_person`
-
-Trigger vision-based identification from a camera.
-
-```yaml
-service: whollm.identify_person
-data:
-  camera_entity_id: camera.living_room
-  detection_type: person  # or "animal"
-```
-
-### `whollm.enable_tracking` / `whollm.disable_tracking`
-
-Control camera auto-tracking for PTZ cameras.
-
-```yaml
-service: whollm.enable_tracking
-data:
-  camera_name: e1_zoom
-```
-
-### `whollm.request_vision_update`
-
-Manually trigger vision identification for all configured cameras.
-
-```yaml
-service: whollm.request_vision_update
-```
-
----
-
-## Example Automations
-
-### Personal Lighting Preferences
-
-```yaml
-automation:
-  - alias: "Alice's office lighting"
-    trigger:
-      - platform: state
-        entity_id: binary_sensor.alice_in_office
-        to: "on"
-    action:
-      - service: light.turn_on
-        target:
-          entity_id: light.office
-        data:
-          brightness_pct: 80
-          color_temp_kelvin: 4000
-```
-
-### Family Movie Night Detection
-
-```yaml
-automation:
-  - alias: "Everyone in living room"
-    trigger:
-      - platform: template
-        value_template: >
-          {{ is_state('binary_sensor.alice_in_living_room', 'on') and
-             is_state('binary_sensor.bob_in_living_room', 'on') }}
-    action:
-      - service: scene.turn_on
-        target:
-          entity_id: scene.movie_mode
-```
-
-### Desk Time Reminder
-
-```yaml
-automation:
-  - alias: "Alice desk reminder"
-    trigger:
-      - platform: state
-        entity_id: binary_sensor.alice_in_office
-        to: "on"
-        for:
-          hours: 3
-    action:
-      - service: notify.alice_phone
-        data:
-          message: "You've been at your desk for 3 hours. Time for a break!"
-```
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Home Assistant                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│   Sensors ──┐                                               │
-│   Lights ───┤                                               │
-│   Media ────┼──→ Context ──→ Ollama ──→ Per-Person         │
-│   Devices ──┤    Builder       │        Sensors            │
-│   Cameras ──┘                  │                            │
-│                                ▼                            │
-│                     ┌─────────────────────┐                 │
-│                     │  Fallback Layers    │                 │
-│                     │  1. LLM reasoning   │                 │
-│                     │  2. Heuristics      │                 │
-│                     │  3. Habit patterns  │                 │
-│                     │  4. ML models       │                 │
-│                     └─────────────────────┘                 │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Troubleshooting
-
-### "Timeout" or low confidence predictions
-
-The LLM is taking too long to respond. Try:
-- Use a smaller model: `ollama pull llama3.2:1b`
-- Check Ollama is running: `curl http://localhost:11434/api/tags`
-- Increase poll interval to reduce load
-
-### Integration not loading
-
-Check Home Assistant logs:
-```
-Settings → System → Logs → Filter by "whollm"
-```
-
-Common issues:
-- Ollama URL incorrect or unreachable
-- Missing model (run `ollama pull <model>`)
-
-### Predictions seem wrong
-
-1. Check the `indicators` attribute on the sensor to see what signals are being used
-2. Verify room-entity mappings are correct
-3. Consider adding more sensors to improve accuracy
-
-### Vision identification not working
-
-- Ensure you have a vision model: `ollama pull llava:7b`
-- Configure vision model in integration options
-- Check camera entity is accessible
-
----
-
-## Performance Tips
-
-| Scenario | Recommendation |
-|----------|----------------|
-| Slow predictions | Use smaller model (`llama3.2:1b`, `phi3:mini`) |
-| High CPU usage | Increase poll interval to 60+ seconds |
-| GPU available | Configure Ollama to use GPU for faster inference |
-| Many people/rooms | Consider dedicated Ollama instance |
-
----
-
-## Roadmap
-
-- [ ] Event-driven updates (reduce polling)
-- [ ] ML model training from HA history
-- [ ] More LLM providers (OpenAI, Anthropic, local llama.cpp)
-- [ ] Better prompt engineering
-- [ ] Dashboard card
-
----
+Start at the [guide home](docs/README.md) if you are not sure where to look.
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-Areas that need help:
-- **Prompt engineering** — Better prompts = better accuracy
-- **Testing** — More test coverage
-- **Documentation** — Examples, troubleshooting guides
-
----
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [development guide](docs/development.md).
+Areas that need help: prompt engineering, tests, documentation, and connecting the finished-but-unused modules listed
+in [Status](docs/status.md).
 
 ## Acknowledgments
 
-- [Ollama](https://ollama.ai) — Making local LLMs accessible
-- [Area Occupancy Detection](https://github.com/Hankanman/Area-Occupancy-Detection) — Inspiration for room-level presence
-
----
+- [Ollama](https://ollama.ai), for making local LLMs accessible.
+- [Area Occupancy Detection](https://github.com/Hankanman/Area-Occupancy-Detection), the inspiration for room-level
+  presence.
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE).
