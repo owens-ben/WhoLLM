@@ -25,6 +25,7 @@ def mock_hass(tmp_path):
     hass.data = {}
     hass.config.config_dir = str(tmp_path)
     hass.config.path = lambda *parts: str(tmp_path.joinpath(*parts))
+    hass.async_add_executor_job = AsyncMock(side_effect=lambda func, *args: func(*args))
     hass.services = MagicMock()
     hass.services.has_service = MagicMock(return_value=False)
     hass.services.async_register = MagicMock()
@@ -144,6 +145,8 @@ class TestAsyncSetupEntry:
 
         # Should have called async_register multiple times for services
         assert mock_hass.services.async_register.called
+        registered = {c.args[1] for c in mock_hass.services.async_register.call_args_list}
+        assert {"refresh", "correct_room", "get_history", "clear_history", "get_patterns"} <= registered
 
     @pytest.mark.asyncio
     async def test_setup_entry_schedules_cleanup(self, mock_hass, mock_config_entry):
@@ -252,7 +255,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, **kwargs):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register
@@ -289,7 +292,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, **kwargs):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register

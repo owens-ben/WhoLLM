@@ -56,6 +56,7 @@ class HistoryTracker:
         self._config_path = config_path or Path("/config")
         self._history_path = self._config_path / "whollm_history.json"
         self._max_history = max_history
+        self._unsaved = 0
         
         # In-memory history (deque for efficient append/pop)
         self._transitions: deque[RoomTransition] = deque(maxlen=max_history)
@@ -128,9 +129,16 @@ class HistoryTracker:
         self._transitions.append(transition)
         self._add_to_entity_history(transition)
         
-        # Periodic save (every 10 transitions)
-        if len(self._transitions) % 10 == 0:
-            self._save_history()
+        # Periodic save (every 10 transitions). Count separately: once the
+        # deque is full its length stays at max_history.
+        self._unsaved += 1
+        if self._unsaved >= 10:
+            self.save()
+
+    def save(self) -> None:
+        """Persist history to disk."""
+        self._save_history()
+        self._unsaved = 0
     
     def get_recent_transitions(
         self,

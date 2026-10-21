@@ -16,6 +16,7 @@ from .const import (
     CONF_CONFIDENCE_WEIGHTS,
     CONF_LEARNING_ENABLED,
     CONF_MODEL,
+    CONF_NOTIFICATIONS_ENABLED,
     CONF_PERSON_DEVICES,
     CONF_PERSONS,
     CONF_PETS,
@@ -28,6 +29,7 @@ from .const import (
     DEFAULT_CONFIDENCE_WEIGHTS,
     DEFAULT_LEARNING_ENABLED,
     DEFAULT_MODEL,
+    DEFAULT_NOTIFICATIONS_ENABLED,
     DEFAULT_POLL_INTERVAL,
     DEFAULT_PROVIDER,
     DEFAULT_TIMEOUT,
@@ -44,6 +46,8 @@ from .const import (
 )
 from .event_logger import EventLogger
 from .habits import ConfidenceCombiner, HabitPredictor
+from .history import HistoryTracker
+from .notifications import NotificationManager
 from .providers import get_provider
 from .providers.base import PresenceGuess
 
@@ -149,6 +153,8 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         event_logger: EventLogger | None = None,
         habit_predictor: HabitPredictor | None = None,
         confidence_combiner: ConfidenceCombiner | None = None,
+        history_tracker: HistoryTracker | None = None,
+        notification_manager: NotificationManager | None = None,
     ) -> None:
         """Initialize the coordinator."""
         self.entry = entry
@@ -177,6 +183,10 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.event_logger = event_logger or EventLogger()
         self.habit_predictor = habit_predictor or HabitPredictor()
         self.confidence_combiner = confidence_combiner or ConfidenceCombiner(self.confidence_weights)
+        self.history_tracker = history_tracker or HistoryTracker()
+        self.notification_manager = notification_manager or NotificationManager(
+            hass, enabled=self._get_config(entry, CONF_NOTIFICATIONS_ENABLED, DEFAULT_NOTIFICATIONS_ENABLED)
+        )
 
         # Device tracker helper for away detection
         self.device_tracker_helper = DeviceTrackerHelper()
@@ -604,10 +614,18 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         new_room: str,
         confidence: float,
     ) -> None:
-        """Check if entity moved rooms and log transition."""
+        """Check if entity moved rooms; log it and fire arrival/departure/room-change events."""
         previous_room = self._previous_rooms.get(entity_name)
 
+        self.notification_manager.update_room(entity_name, new_room, confidence)
+
         if previous_room and previous_room != new_room and new_room != "unknown":
+            self.history_tracker.record_transition(
+                entity_name=entity_name,
+                from_room=previous_room,
+                to_room=new_room,
+                confidence=confidence,
+            )
             try:
                 await self.event_logger.async_log_room_transition(
                     entity_name=entity_name,

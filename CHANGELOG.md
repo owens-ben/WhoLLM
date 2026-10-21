@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Options toggle for arrival/departure events (`notifications_enabled`)
 - Activity Log blueprint: posts room changes with confidence and indicators to any notify action (Slack, Discord, mobile)
 - Test suite with pytest (52 tests covering habits, providers, coordinator)
 - CI workflow for running tests on Python 3.11 and 3.12
@@ -23,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `local/` overlay and `scripts/deploy.sh` for household-specific settings
 
 ### Fixed
+- `refresh`, `correct_room`, `get_history`, `clear_history` and `get_patterns` services were never registered, and `services.py` failed to import after the singleton removal. `get_history` and `get_patterns` now return responses
+- Arrival, departure and room-change events never fired because `NotificationManager` was never created. They now fire, except for the first reading after startup
+- Room transition history was never recorded. It's now saved every 10 transitions and on unload; the periodic save also no longer runs on every transition once the buffer is full
 - Dashboard vision panel and "identify" button used the old `llm_presence` domain and entity IDs
 - `setup_local_testing.sh`, `check_integration.sh` and `sync_training_data.sh` referenced the old `llm_presence` names
 - Home Assistant 2025.x compatibility: use direct import for `async_track_time_interval` instead of deprecated `hass.helpers.event` access

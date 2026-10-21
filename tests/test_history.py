@@ -8,6 +8,7 @@ import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
 import tempfile
+from unittest.mock import patch
 
 
 class TestHistoryTracker:
@@ -154,6 +155,18 @@ class TestPatternDetection:
 
 class TestHistoryPersistence:
     """Test history persistence to disk."""
+
+    def test_periodic_save_when_buffer_full(self):
+        """Once the buffer is full, saves still happen every 10 transitions, not every one."""
+        from custom_components.whollm.history import HistoryTracker
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tracker = HistoryTracker(config_path=Path(tmpdir), max_history=5)
+            with patch.object(tracker, "_save_history") as mock_save:
+                for i in range(30):
+                    tracker.record_transition("Ben", f"room{i}", f"room{i + 1}", 0.9)
+
+            assert mock_save.call_count == 3
 
     def test_save_and_load(self):
         """History should persist across restarts."""

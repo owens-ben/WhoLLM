@@ -61,6 +61,12 @@ class NotificationManager:
             new_room: New room name
             confidence: Confidence of the detection
         """
+        # First sighting (e.g. after an HA restart) only seeds state; announcing
+        # it would report everyone at home as "arrived" on every restart.
+        if entity_name not in self._current_rooms:
+            self._current_rooms[entity_name] = new_room
+            return
+
         old_room = self._current_rooms.get(entity_name)
         
         # No change

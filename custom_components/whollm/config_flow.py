@@ -16,6 +16,7 @@ from .const import (
     CONF_CONFIDENCE_WEIGHTS,
     CONF_LEARNING_ENABLED,
     CONF_MODEL,
+    CONF_NOTIFICATIONS_ENABLED,
     CONF_PERSON_DEVICES,
     CONF_PERSONS,
     CONF_PETS,
@@ -28,6 +29,7 @@ from .const import (
     DEFAULT_CONFIDENCE_WEIGHTS,
     DEFAULT_LEARNING_ENABLED,
     DEFAULT_MODEL,
+    DEFAULT_NOTIFICATIONS_ENABLED,
     DEFAULT_POLL_INTERVAL,
     DEFAULT_PROVIDER,
     DEFAULT_TIMEOUT,
@@ -374,6 +376,13 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_LEARNING_ENABLED,
                         default=self.config_entry.data.get(CONF_LEARNING_ENABLED, DEFAULT_LEARNING_ENABLED),
+                    ): bool,
+                    vol.Optional(
+                        CONF_NOTIFICATIONS_ENABLED,
+                        default=self.config_entry.options.get(
+                            CONF_NOTIFICATIONS_ENABLED,
+                            self.config_entry.data.get(CONF_NOTIFICATIONS_ENABLED, DEFAULT_NOTIFICATIONS_ENABLED),
+                        ),
                     ): bool,
                 }
             ),

@@ -161,13 +161,52 @@ data:
   camera_name: e1_zoom
 ```
 
-### `whollm.request_vision_update`
+### `whollm.correct_room`
 
-Manually trigger vision identification for all configured cameras.
+Correct a wrong guess. The sensor updates right away and the habit learner records the correction.
 
 ```yaml
-service: whollm.request_vision_update
+service: whollm.correct_room
+data:
+  entity_id: sensor.alice_room
+  room: office
 ```
+
+### `whollm.refresh`
+
+Run presence detection now instead of waiting for the next poll.
+
+### `whollm.get_history` / `whollm.get_patterns`
+
+Return recent room transitions or detected movement patterns for a person. These are response-only, so call them from Developer Tools → Actions or a script with `response_variable`.
+
+```yaml
+service: whollm.get_history
+data:
+  entity_name: Alice
+  limit: 20
+response_variable: history
+```
+
+### `whollm.clear_history`
+
+Clear transition history for one person (`entity_name`) or everyone.
+
+### `whollm.cleanup_storage`
+
+Trim the event log by age and size (also runs daily).
+
+## Events
+
+WhoLLM fires these on the HA event bus. They can be turned off in the integration options.
+
+| Event | Data |
+|-------|------|
+| `whollm_person_arrived` | `entity_name`, `room`, `confidence`, `timestamp` |
+| `whollm_person_left` | `entity_name`, `last_room`, `timestamp` |
+| `whollm_room_changed` | `entity_name`, `from_room`, `to_room`, `confidence`, `timestamp` |
+
+Nothing fires for the first reading after a restart, so a restart doesn't announce everyone as arrived.
 
 ---
 

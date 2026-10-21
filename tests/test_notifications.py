@@ -54,6 +54,18 @@ class TestNotificationManager:
         assert manager.get_current_room("Ben") == "kitchen"
         assert manager.get_previous_room("Ben") == "bedroom"
 
+    def test_first_sighting_fires_nothing(self):
+        """The first update after startup only seeds state (no 'arrived' on every HA restart)."""
+        from custom_components.whollm.notifications import NotificationManager
+
+        mock_hass = MagicMock()
+        manager = NotificationManager(mock_hass)
+
+        manager.update_room("Ben", "office")
+
+        mock_hass.bus.async_fire.assert_not_called()
+        assert manager.get_current_room("Ben") == "office"
+
     def test_detect_arrival(self):
         """Manager should detect arrival (away -> home)."""
         from custom_components.whollm.notifications import NotificationManager

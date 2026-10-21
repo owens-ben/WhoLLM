@@ -21,11 +21,13 @@ from homeassistant.helpers.event import async_track_time_interval
 from .const import (
     CONF_CONFIDENCE_WEIGHTS,
     CONF_MAX_FILE_SIZE_MB,
+    CONF_NOTIFICATIONS_ENABLED,
     CONF_RETENTION_DAYS,
     CONF_URL,
     CONF_VISION_MODEL,
     DEFAULT_CONFIDENCE_WEIGHTS,
     DEFAULT_MAX_FILE_SIZE_MB,
+    DEFAULT_NOTIFICATIONS_ENABLED,
     DEFAULT_RETENTION_DAYS,
     DEFAULT_VISION_MODEL,
     DOMAIN,
@@ -33,6 +35,9 @@ from .const import (
 from .coordinator import LLMPresenceCoordinator
 from .event_logger import EventLogger
 from .habits import ConfidenceCombiner, HabitPredictor
+from .history import HistoryTracker
+from .notifications import NotificationManager
+from .services import SERVICE_REFRESH, async_setup_services, async_unload_services
 from .vision import CameraTrackingController, VisionIdentifier
 
 if TYPE_CHECKING:
@@ -90,6 +95,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         max_file_size_mb=max_file_size_mb,
     )
     habit_predictor = HabitPredictor(config_path=Path(hass.config.config_dir))
+    history_tracker = HistoryTracker(config_path=Path(hass.config.config_dir))
+    notification_manager = NotificationManager(
+        hass,
+        enabled=entry.options.get(
+            CONF_NOTIFICATIONS_ENABLED, entry.data.get(CONF_NOTIFICATIONS_ENABLED, DEFAULT_NOTIFICATIONS_ENABLED)
+        ),
+    )
     confidence_weights = entry.options.get(
         CONF_CONFIDENCE_WEIGHTS, entry.data.get(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
     )
@@ -100,6 +112,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         event_logger=event_logger,
         habit_predictor=habit_predictor,
         confidence_combiner=confidence_combiner,
+        history_tracker=history_tracker,
+        notification_manager=notification_manager,
     )
     await coordinator.async_config_entry_first_refresh()
 
@@ -163,6 +177,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Register services
     await _async_register_services(hass)
+    if not hass.services.has_service(DOMAIN, SERVICE_REFRESH):
+        await async_setup_services(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -299,7 +315,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator = hass.data[DOMAIN].get(entry.entry_id)
         if coordinator and hasattr(coordinator, "provider"):
             await coordinator.provider.async_close()
+        if coordinator and hasattr(coordinator, "history_tracker"):
+            await hass.async_add_executor_job(coordinator.history_tracker.save)
         hass.data[DOMAIN].pop(entry.entry_id, None)
+        # Services are shared across entries; drop them with the last coordinator
+        if not any(hasattr(v, "async_request_refresh") for v in hass.data[DOMAIN].values()):
+            await async_unload_services(hass)
 
     return unload_ok
 
