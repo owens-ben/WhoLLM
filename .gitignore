@@ -91,3 +91,4 @@ custom_components/llm_presence/models/
 !data/.gitkeep
 !models/.gitkeep
 
+site/

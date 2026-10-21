@@ -1,0 +1,80 @@
+site_name: Roomer
+site_description: Know who is in which room — a Home Assistant integration.
+site_url: https://owens-ben.github.io/roomer/
+repo_url: https://github.com/owens-ben/roomer
+repo_name: owens-ben/roomer
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  icon:
+    logo: material/home-account
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.footer
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - How it works: getting-started/how-it-works.md
+      - What you'll need: getting-started/requirements.md
+      - Install: getting-started/install.md
+      - First setup: getting-started/first-setup.md
+      - Map your rooms: getting-started/map-rooms.md
+  - Using Roomer:
+      - Entities: using/entities.md
+      - Dashboard card: using/dashboard-card.md
+      - Automations: using/automations.md
+      - Services & events: using/services-events.md
+      - Accuracy & limits: using/accuracy.md
+      - Troubleshooting: using/troubleshooting.md
+  - Migrating from WhoLLM: migrating.md
+  - Contributing:
+      - Architecture: contributing/architecture.md
+      - Dev setup: contributing/dev-setup.md
+      - Adding a provider: contributing/adding-provider.md
+      - ML models: contributing/ml-models.md
+      - Releasing: contributing/releasing.md
+
+not_in_nav: |
+  contributing/ml-enhancement-proposal.md
