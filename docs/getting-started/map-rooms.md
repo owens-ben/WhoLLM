@@ -92,8 +92,12 @@ office motion sensor doesn't know who moved.
 This screen has one picker per person and pet, labelled with their name. It accepts device trackers,
 binary sensors, switches and sensors. Add the devices that belong to that person.
 
-Roomer uses them in two ways:
+Roomer uses them in three ways:
 
+- **Devices that report a room place that person.** A phone, watch or tag that
+  says which room it's in (Bluetooth room tracking, such as Bermuda or
+  ESPresense) puts its owner in that room. See
+  [Devices that report a room](#devices-that-report-a-room) below.
 - **Device trackers decide home or away.** If all of a person's
   `device_tracker` entities say they're away, Roomer marks them `away` straight
   away, at 95% confidence. If any says `home`, Roomer works out which room
@@ -103,10 +107,57 @@ Roomer uses them in two ways:
   device's room. **The device must also be mapped to a room** under Room Entity
   Mapping, or Roomer won't know where it is and will ignore it.
 
-Pets appear on this screen too, but devices assigned to pets aren't used yet.
+Pets appear on this screen too. Only a device that reports a room (such as a
+Bluetooth tag on a collar) is used for a pet.
 
 !!! example "Screenshot needed: options-person-devices.png"
     The "Person Device Ownership" options screen with a phone tracker and a PC switch assigned to Alice, and a phone tracker and gaming PC assigned to Bob.
+
+### Devices that report a room
+
+Bluetooth room-presence tools tell you which room a phone, watch or tag is in.
+Assign that entity to its owner here, and Roomer takes the room it reports. It
+doesn't ask the language model, because this is the one clue that belongs to a
+single person. **Nothing else in the house, such as someone else's motion or PC,
+can pull them into another room.** The entity does not need to be mapped under
+Room Entity Mapping.
+
+| Tool | Entity to assign | Reports |
+|---|---|---|
+| [Bermuda](https://github.com/agittins/bermuda) | The device's **Area** sensor, such as `sensor.alice_phone_area` | The area's name, such as `Office` |
+| ESPresense or room-assistant, through Home Assistant's [`mqtt_room`](https://www.home-assistant.io/integrations/mqtt_room/) sensor | The `mqtt_room` sensor you create for each device | The room name the node reports, such as `office` |
+
+Your entity names will differ. What matters is that the entity's state is a
+room or area name. Roomer also reads the room from an `area_id`, `area_name`,
+`area` or `room` attribute, so Bermuda's Area sensor works either way. Bermuda
+also creates a home/away `device_tracker` for each device. Assign that too, so
+Roomer can tell when someone has left.
+
+- **The names must match your Roomer rooms.** Capitals, spaces and dashes don't
+  matter, so `Living Room`, `living-room` and `living_room` are the same. If a
+  sensor ending in `_area` or `_room`, or a device tracker, reports a room that
+  Roomer doesn't have, the log shows a warning naming the entity and the value.
+  Rename the area in Home Assistant or the room in Roomer so they agree.
+- **How sure Roomer is.** One device, or several that agree: `source` is
+  `device_room` and `confidence` is 0.9. If a person's devices disagree (a phone
+  left on the desk while the watch moves with them), the room most devices report
+  wins, then the device that changed most recently, at 0.7.
+- **Roomer trusts the device.** It reports where the *device* is, not where the
+  person is. A phone charging in the bedroom keeps its owner in the bedroom.
+  Assign a second device they carry, such as a watch. When one person's devices
+  name different rooms, the one that moved most recently wins.
+- **When there's no room to read,** such as `unknown`, `unavailable` or
+  `not_home`, Roomer carries on with its normal steps for that person.
+- **Home or away still applies.** If a home/away tracker went `not_home` *after*
+  the room device last changed, the person is `away`. If the room device changed
+  more recently, the room wins. Bluetooth usually sees someone arrive before
+  Wi-Fi does, and a room sensor can keep its last room for a while after someone
+  leaves. Set a timeout in your Bluetooth tool (for example `away_timeout` on an
+  `mqtt_room` sensor, which switches it to `not_home`) so it stops reporting a
+  room once the device is gone.
+- **GPS trackers only decide home or away.** A phone's GPS tracker reports Home
+  Assistant *zones*, so a work zone called `Office` is never read as the office
+  room.
 
 ## Worked example
 
@@ -162,7 +213,8 @@ Open `sensor.alice_room` in **Settings → Devices & services → Entities**, or
 **Developer tools → States**. Look at these attributes:
 
 - `confidence`: from 0 to 1. For example, `0.82` means 82%.
-- `indicators`: the clues Roomer used, such as `computer: alice_pc`.
+- `indicators`: the clues Roomer used, such as `computer: alice_pc` or `device: alice_phone_area in office`.
+- `source`: where the answer came from. `device_room` means one of their devices reported the room, `device_tracker` means away, and `llm` means Roomer worked it out from sensors.
 
 If a device you expected isn't listed, check that it's mapped to a room and is
 currently active.

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Device-based room presence.** A phone, watch or tag entity assigned to a person or pet that reports a room (Bermuda area sensors, ESPresense, room-assistant, or an `area`/`room` attribute) now places them in that room directly, without asking the LLM. Room names are matched ignoring case, spaces and dashes; an unmatched room is logged once as a warning.
+- `sensor.{room}_occupants` for each room: the number of people in it, with `people`, `pets`, `confidence` and `sources` attributes.
+- `source` attribute on `sensor.{name}_room` (`device_room`, `device_tracker` or `llm`).
+
+### Fixed
+- A device tracker whose state is a room name is no longer treated as "not home".
+
 ## [0.3.0] - 2026-10-21
 
 The redesign release: a new look across the dashboard card, the standalone dashboard, the docs site and the README.

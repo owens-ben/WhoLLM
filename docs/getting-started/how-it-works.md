@@ -30,7 +30,9 @@ On every poll, Roomer runs each person through these steps:
 flowchart TD
     start(["Poll: next person"]) --> dt{"Do this person's device trackers<br/>all say they're away?"}
     dt -- "Yes" --> away["Result: away (95%)"]
-    dt -- "No, or no trackers mapped" --> gather["Gather active clues:<br/>room sensors + this person's own devices"]
+    dt -- "No, or no trackers mapped" --> dev{"Does a device of theirs<br/>report a room?"}
+    dev -- "Yes" --> located["Result: that room (90%)"]
+    dev -- "No" --> gather["Gather active clues:<br/>room sensors + this person's own devices"]
     gather --> llm["Ask the language model for a guess<br/>(clues, time of day, learned habit)"]
     llm -- "model unreachable" --> fb["Simple built-in rules<br/>make a fallback guess"]
     llm --> combine["Confidence combiner:<br/>language model + sensor clues + habit"]
@@ -41,6 +43,7 @@ flowchart TD
     learn -- "No" --> done(["Done"])
     habits --> done
     away --> done
+    located --> learn
 ```
 
 ### 1. Is the person home at all?
@@ -57,6 +60,16 @@ saves a call to the language model.
 **Alice:** her phone says `home`, so she moves on to step 2.
 
 Pets skip this step, since they don't carry phones.
+
+!!! tip "Shortcut: a device that already knows the room"
+    If a device assigned to the person reports which room it's in (a Bluetooth
+    room tracker such as Bermuda or ESPresense), Roomer takes that room, at 90%
+    confidence, and skips the language model and the combiner. Pets can use
+    this too, with a tag on the collar. It's the one clue that belongs to a
+    single person, so nothing else in the house can pull them into another room.
+    If a home/away tracker went away *after* the room device last changed, the
+    person is still `away`. See
+    [Devices that report a room](map-rooms.md#devices-that-report-a-room).
 
 ### 2. Gather the clues
 

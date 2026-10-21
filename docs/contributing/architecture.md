@@ -16,11 +16,12 @@ If you are new to Home Assistant integration development, three HA concepts carr
 | --- | --- |
 | [`__init__.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/__init__.py) | Integration entry point. `async_setup_entry` builds the `EventLogger`, `HabitPredictor`, `ConfidenceCombiner` and the coordinator, runs the first refresh, schedules daily storage cleanup, creates the vision helpers, registers services through `services.py`, forwards setup to the `sensor` and `binary_sensor` platforms, and registers the options update listener. |
 | [`coordinator.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/coordinator.py) | `LLMPresenceCoordinator`, the core polling loop, plus `DeviceTrackerHelper` (works out "home / away / unknown" from a person's `device_tracker.*` entities). |
+| [`device_presence.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/device_presence.py) | `DeviceRoomLocator` reads which configured room a person's or pet's device reports (state or an `area_id`/`area_name`/`area`/`room` attribute, names compared with `room_key()`), and turns the readings into a `PresenceGuess` with `source='device_room'`. `seen_since_away()` decides whether a room reading is newer than a home/away tracker's departure. GPS trackers are never read as rooms. |
 | [`config_flow.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/config_flow.py) | `LLMPresenceConfigFlow` (setup wizard: provider → model → rooms → persons → room entities) and `LLMPresenceOptionsFlow` (general settings, room entities, person devices, confidence weights). |
 | [`const.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/const.py) | Config keys, defaults, entity hint types, `DEFAULT_CONFIDENCE_WEIGHTS`, provider names and `SUPPORTED_PROVIDERS`. |
 | [`habits.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/habits.py) | `HabitPredictor` (learns which room someone is usually in for each two-hour slot) and `ConfidenceCombiner` (merges sensor, LLM and habit signals into a final room and confidence). Also `calculate_time_decay`. |
 | [`event_logger.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/event_logger.py) | `EventLogger`: appends presence, room-transition and vision events to a JSONL file for later ML training, and handles retention and size-based cleanup. |
-| [`sensor.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/sensor.py) | `LLMPresenceSensor` (one "*Name* Room" sensor per person or pet) and `LLMVisionSensor` (last vision identification, driven by an HA event rather than the coordinator). |
+| [`sensor.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/sensor.py) | `LLMPresenceSensor` (one "*Name* Room" sensor per person or pet), `RoomOccupantsSensor` (one "*Room* Occupants" sensor per room, counting people and listing pets) and `LLMVisionSensor` (last vision identification, driven by an HA event rather than the coordinator). |
 | [`binary_sensor.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/binary_sensor.py) | `LLMPresenceRoomBinarySensor`: one occupancy binary sensor for every person or pet × room combination. |
 | [`vision.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/vision.py) | `VisionIdentifier` (takes a camera snapshot, sends it to an Ollama vision model, parses who it sees) and `CameraTrackingController` (switches camera auto-tracking on and off). |
 | [`history.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/history.py) | `HistoryTracker`: room-transition history, daily timelines, room statistics and simple pattern detection. Owned by the coordinator, which records every transition; read by the `get_history`, `get_patterns` and `clear_history` services. |
@@ -77,7 +78,10 @@ flowchart TD
         LOG1 --> TR1["_check_room_transition()"]
         TR1 --> RET1([return guess])
 
-        DT -- "no / unknown / pet" --> H["habit_predictor.get_habit_hint()<br/>+ get_habit_context_for_prompt()"]
+        DT -- "no / unknown / pet" --> DEV{"A device of theirs<br/>reports a configured room?<br/>(DeviceRoomLocator)"}
+        DEV -- "yes" --> DR["PresenceGuess(room=reported room,<br/>confidence=0.9, or 0.7 if devices disagree,<br/>source='device_room')"]
+        DR --> HL
+        DEV -- "no" --> H["habit_predictor.get_habit_hint()<br/>+ get_habit_context_for_prompt()"]
         H --> I["Indicators:<br/>pets: all except 'computer'<br/>persons: _get_person_indicators()<br/>adds the person's own active devices"]
         I --> D["provider.deduce_presence()<br/>LLM call, or rule-based fallback on error"]
         D --> C["confidence_combiner.combine()<br/>sensor weights + LLM + habit"]
@@ -98,6 +102,7 @@ flowchart TD
 
 A few details that are easy to miss when reading the code:
 
+- **Room-reporting devices come first, for persons and pets.** `_process_entity()` asks `DeviceRoomLocator.locate()` which of the entity's `person_devices` currently report a configured room. Trackers that do are left out of the away check. If any report a room, the guess is built from them (`DEVICE_ROOM_CONFIDENCE` 0.9, or `DEVICE_ROOM_SPLIT_CONFIDENCE` 0.7 when they name different rooms), learned like any confident guess, logged, and returned without calling the LLM or the combiner. A room reading that is newer than the trackers' last change also beats `away` (`seen_since_away()`).
 - **Only configured entities are read.** `_gather_sensor_context()` collects entity IDs from the `room_entities` and `person_devices` options and nothing else. `_categorize_entity()` sorts each one into a bucket using its configured `hint_type` first, then falls back to the domain and entity-ID keywords (for example `binary_sensor.*motion*` → `motion`). Entities that fit no bucket are dropped.
 - **The device-tracker check is persons only, and only for "away".** If every `device_tracker.*` in the person's `person_devices` reports something other than `home`, the person is marked `away` at `DEVICE_TRACKER_AWAY_CONFIDENCE` (0.95) and the LLM is never called. If any tracker says `home`, or all are unavailable, the normal pipeline runs.
 - **The LLM is one vote, not the answer.** `ConfidenceCombiner.combine()` adds up a weight per active indicator (from `confidence_weights`, see `DEFAULT_CONFIDENCE_WEIGHTS` in `const.py`), `llm_confidence × weights["llm_reasoning"]` for the LLM's room, and `habit_confidence × weights["habit"]` for the habit room. The room with the highest score wins. Its confidence is normalised against the sum of the three largest weights. The combiner can and does overrule the LLM.

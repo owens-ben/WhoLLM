@@ -102,6 +102,19 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
 
     **The opposite problem, never `away`:** assign a device tracker to the person. Without one, Roomer can't tell they've left.
 
+??? question "A phone or watch that reports a room isn't being used"
+
+    A person whose device is used shows `source: device_room` on their room sensor, and `indicators` reads `device: alice_phone_area in office`. If you see `source: llm` instead, work through these.
+
+    **What to check**
+
+    1. In **Developer Tools → States**, look at the device's entity. Its state should be a room or area name, such as `Office`. If it says `unknown` or `unavailable`, the problem is in your Bluetooth tool, not Roomer.
+    2. The entity is assigned to the person (or pet) under **Configure → Person Device Ownership**. Mapping it under Room Entity Mapping is not enough.
+    3. The name matches one of your Roomer rooms. Capitals, spaces and dashes don't matter, but `Master Bedroom` does not match a room called `bedroom`. In **Settings → System → Logs**, search for `doesn't match any Roomer room`. The warning names the entity, the value it reported and your rooms.
+    4. It isn't a GPS tracker. A phone's GPS `device_tracker` reports zones, which are never read as rooms.
+
+    **The person stays in their last room after leaving:** some tools keep reporting the last room until a timeout. Set one (for example `away_timeout` on an `mqtt_room` sensor), or assign a home/away `device_tracker` too, since `away` wins when it changed after the room did.
+
 ??? question "Ollama is unreachable or slow (timeouts)"
 
     **What you'll see**

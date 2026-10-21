@@ -56,8 +56,42 @@ models locally on your own hardware.
     can reach Ollama on its own machine. On Home Assistant OS, `localhost` means
     the Home Assistant system itself, so use the IP address of the computer
     running Ollama instead, for example `http://192.168.1.50:11434`. By default
-    Ollama only accepts local connections. Set `OLLAMA_HOST=0.0.0.0` on the
-    Ollama machine so it accepts connections from your network.
+    Ollama only accepts local connections, so you also have to tell it to listen
+    on your network. Give that computer a fixed address in your router
+    (a "DHCP reservation"), so the address in Roomer doesn't go stale.
+
+    === "macOS (the Ollama app)"
+
+        Open **Terminal**, run this, then quit Ollama from the menu bar and
+        open it again:
+
+        ```bash
+        launchctl setenv OLLAMA_HOST "0.0.0.0:11434"
+        ```
+
+        If macOS asks whether Ollama may accept incoming network connections,
+        choose **Allow**. Also stop the Mac from sleeping (**System Settings →
+        Energy**, then turn on preventing automatic sleep). A sleeping Mac stops
+        answering, and Roomer falls back to its simpler built-in rules until it
+        wakes up.
+
+    === "Linux"
+
+        Run `sudo systemctl edit ollama`, add the lines below, save, then run
+        `sudo systemctl restart ollama`:
+
+        ```ini
+        [Service]
+        Environment="OLLAMA_HOST=0.0.0.0:11434"
+        ```
+
+    === "Windows"
+
+        Add a user environment variable named `OLLAMA_HOST` with the value
+        `0.0.0.0:11434` (search for "environment variables" in the Start menu),
+        then quit Ollama from the system tray and start it again.
+
+    Then repeat the check in step 4 above, from another computer.
 
 ### How powerful does it need to be?
 
@@ -86,7 +120,7 @@ Signals ranked by how well they identify *who* is in a room:
 | Strength | Signal | Example entity | What it tells Roomer |
 |---|---|---|---|
 | :material-signal-cellular-3: **Strong** | A personal computer used by one person | `switch.alice_pc`, `binary_sensor.alice_desktop_active` | "Alice is at her desk", as long as nobody else uses it |
-| :material-signal-cellular-3: **Strong** | A person's phone or watch located to a room (Bermuda, ESPresense and similar) | `binary_sensor.alice_phone_in_office` | "Alice's phone is in the office". Needs a per-room on/off entity (see tip below) |
+| :material-signal-cellular-3: **Strong** | A person's phone or watch located to a room (Bermuda, ESPresense, room-assistant and similar) | `sensor.alice_phone_area` | "Alice is in the office". Roomer reads the room straight from the sensor (see tip below) |
 | :material-signal-cellular-2: **Medium** | Phone on home Wi-Fi or the Companion app (`device_tracker` home/away) | `device_tracker.alice_phone` | "Alice is home" or "Alice is out". It rules people out but doesn't give a room |
 | :material-signal-cellular-2: **Medium** | A media device mostly used by one person | `media_player.bob_bedroom_tv`, `switch.bob_gaming_pc` | "Probably Bob", in that room |
 | :material-signal-cellular-1: **Anonymous** | Camera person detection (Frigate, Reolink, UniFi and similar) | `binary_sensor.kitchen_person` | "*Someone* is in the kitchen". Reliable about the room, but not about who |
@@ -102,14 +136,13 @@ Signals ranked by how well they identify *who* is in a room:
     results get much better. See [Accuracy & limits](../using/accuracy.md).
 
 !!! tip "Room-level phone tracking"
-    Tools like Bermuda and ESPresense usually report a phone's room as a text
-    sensor (for example, `sensor.alice_phone_area` = `Office`). Roomer only
-    counts entities that are *on* or *off*, so it won't use a text sensor like
-    that directly. Create a
-    [template binary sensor](https://www.home-assistant.io/integrations/template/)
-    for each person and room you care about, such as one that is on when
-    `sensor.alice_phone_area` is `Office`. Then map it to that room and to that
-    person in [Map your rooms](map-rooms.md).
+    Tools like Bermuda, ESPresense and room-assistant report which room a phone,
+    watch or tag is in, usually as a sensor whose state is the room or area name
+    (for example, `sensor.alice_phone_area` = `Office`). Assign that sensor to
+    its owner under **Person Device Ownership** and Roomer puts them in that room
+    directly. No helper entity is needed, and it works for a pet's tag too. The
+    room names only have to match your Roomer rooms ignoring capitals, spaces and
+    dashes. See [Devices that report a room](map-rooms.md#devices-that-report-a-room).
 
 ### About camera identification
 
