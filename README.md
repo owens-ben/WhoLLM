@@ -89,7 +89,7 @@ Roomer is the same integration under a new name, but the Home Assistant domain c
 4. **Re-add** the integration via Settings → Devices & Services → Add Integration → Roomer, and redo your room/person mappings.
 5. **Update anything that references the old names:**
    - **Services:** `whollm.*` → `roomer.*` (e.g. `whollm.identify_person` → `roomer.identify_person`)
-   - **Events:** `whollm_room_changed`, `whollm_person_arrived`, `whollm_person_left` → `roomer_room_changed`, `roomer_person_arrived`, `roomer_person_left`
+   - **Events:** `whollm_room_changed`, `whollm_person_arrived`, `whollm_person_left`, `whollm_vision_identification`, `whollm_storage_cleanup` → `roomer_room_changed`, `roomer_person_arrived`, `roomer_person_left`, `roomer_vision_identification`, `roomer_storage_cleanup`
    - **Entities:** entity IDs are still based on the names you configure (`sensor.{name}_room`, `binary_sensor.{name}_in_{room}`), but they are new entities under the `roomer` platform with new unique IDs. If an old entity was not removed, the new one gets a `_2` suffix — delete the stale entity and rename the new one.
    - **Logging config:** `custom_components.whollm` → `custom_components.roomer`
    - Automations, scripts, blueprints and dashboards that use any of the above.
