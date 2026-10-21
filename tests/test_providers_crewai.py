@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 
-from custom_components.whollm.providers.base import PresenceGuess
-from custom_components.whollm.const import VALID_ROOMS
+from custom_components.roomer.providers.base import PresenceGuess
+from custom_components.roomer.const import VALID_ROOMS
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ class TestCrewAIProvider:
 
     def test_initialization_default(self):
         """Test default initialization."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider()
 
@@ -51,7 +51,7 @@ class TestCrewAIProvider:
 
     def test_initialization_custom(self):
         """Test initialization with custom values."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider(
             url="http://192.168.1.100:8502",
@@ -66,11 +66,11 @@ class TestCrewAIProvider:
     @pytest.mark.asyncio
     async def test_deduce_presence_success(self, mock_hass, sample_context):
         """Test successful presence deduction."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider(url="http://localhost:8502")
 
-        with patch("custom_components.whollm.providers.crewai.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.crewai.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json = AsyncMock(
@@ -106,11 +106,11 @@ class TestCrewAIProvider:
     @pytest.mark.asyncio
     async def test_deduce_presence_api_error(self, mock_hass, sample_context):
         """Test fallback when API returns error."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider(url="http://localhost:8502")
 
-        with patch("custom_components.whollm.providers.crewai.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.crewai.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 500
             mock_response.__aenter__ = AsyncMock(return_value=mock_response)
@@ -139,7 +139,7 @@ class TestCrewAIProvider:
     @pytest.mark.asyncio
     async def test_deduce_presence_timeout(self, mock_hass, sample_context):
         """Test fallback on timeout - fallback guess is created."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider(url="http://localhost:8502")
 
@@ -152,11 +152,11 @@ class TestCrewAIProvider:
     @pytest.mark.asyncio
     async def test_test_connection_success(self):
         """Test successful connection test."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider(url="http://localhost:8502")
 
-        with patch("custom_components.whollm.providers.crewai.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.crewai.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json = AsyncMock(return_value={"status": "ok"})
@@ -176,11 +176,11 @@ class TestCrewAIProvider:
     @pytest.mark.asyncio
     async def test_test_connection_failure(self):
         """Test failed connection test."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider(url="http://localhost:8502")
 
-        with patch("custom_components.whollm.providers.crewai.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.crewai.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json = AsyncMock(return_value={"status": "error"})
@@ -200,11 +200,11 @@ class TestCrewAIProvider:
     @pytest.mark.asyncio
     async def test_get_available_models_success(self):
         """Test getting available models."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider(url="http://localhost:8502")
 
-        with patch("custom_components.whollm.providers.crewai.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.crewai.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json = AsyncMock(
@@ -234,7 +234,7 @@ class TestCrewAIProvider:
     @pytest.mark.asyncio
     async def test_get_available_models_error(self):
         """Test fallback when getting models fails - returns defaults."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider(url="http://localhost:8502")
 
@@ -251,7 +251,7 @@ class TestCrewAIExtractIndicators:
 
     def test_extract_indicators_light_on(self, sample_context):
         """Test light indicator extraction."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider()
 
@@ -261,7 +261,7 @@ class TestCrewAIExtractIndicators:
 
     def test_extract_indicators_motion(self, sample_context):
         """Test motion indicator extraction."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider()
 
@@ -271,7 +271,7 @@ class TestCrewAIExtractIndicators:
 
     def test_extract_indicators_pc_active(self, sample_context):
         """Test PC active indicator extraction."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider()
 
@@ -281,7 +281,7 @@ class TestCrewAIExtractIndicators:
 
     def test_extract_indicators_media_playing(self, sample_context):
         """Test media playing indicator extraction."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider()
 
@@ -295,7 +295,7 @@ class TestCrewAIFallbackGuess:
 
     def test_fallback_guess_pc_on(self):
         """Test fallback when PC is on."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider()
 
@@ -315,7 +315,7 @@ class TestCrewAIFallbackGuess:
 
     def test_fallback_guess_tv_on(self):
         """Test fallback when TV is playing."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider()
 
@@ -334,7 +334,7 @@ class TestCrewAIFallbackGuess:
 
     def test_fallback_guess_pet(self):
         """Test fallback for pet entity."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider()
 
@@ -357,8 +357,8 @@ class TestProviderFactory:
 
     def test_get_provider_ollama(self):
         """Test getting Ollama provider."""
-        from custom_components.whollm.providers import get_provider
-        from custom_components.whollm.providers.ollama import OllamaProvider
+        from custom_components.roomer.providers import get_provider
+        from custom_components.roomer.providers.ollama import OllamaProvider
 
         provider = get_provider("ollama", "http://localhost:11434", "llama3.2")
 
@@ -368,8 +368,8 @@ class TestProviderFactory:
 
     def test_get_provider_crewai(self):
         """Test getting CrewAI provider."""
-        from custom_components.whollm.providers import get_provider
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers import get_provider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = get_provider("crewai", "http://localhost:8502", "sonnet")
 
@@ -379,7 +379,7 @@ class TestProviderFactory:
 
     def test_get_provider_unknown(self):
         """Test error for unknown provider."""
-        from custom_components.whollm.providers import get_provider
+        from custom_components.roomer.providers import get_provider
 
         with pytest.raises(ValueError) as exc_info:
             get_provider("unknown_provider", "http://localhost", "model")
@@ -388,7 +388,7 @@ class TestProviderFactory:
 
     def test_get_available_providers(self):
         """Test getting list of available providers."""
-        from custom_components.whollm.providers import get_available_providers
+        from custom_components.roomer.providers import get_available_providers
 
         providers = get_available_providers()
 
@@ -397,7 +397,7 @@ class TestProviderFactory:
 
     def test_get_provider_with_extra_kwargs(self):
         """Test that extra kwargs are passed to provider."""
-        from custom_components.whollm.providers import get_provider
+        from custom_components.roomer.providers import get_provider
 
         provider = get_provider(
             "crewai",

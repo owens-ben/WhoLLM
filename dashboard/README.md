@@ -1,6 +1,6 @@
-# WhoLLM Dashboard
+# Roomer Dashboard
 
-A beautiful, modern dashboard for visualizing LLM-powered room presence detection.
+A modern dashboard for seeing who is in which room, as reported by the Roomer integration.
 
 ![Dashboard Preview](preview.png)
 
@@ -20,7 +20,7 @@ A beautiful, modern dashboard for visualizing LLM-powered room presence detectio
 ### Option 1: Docker (Recommended)
 
 ```bash
-cd whollm/dashboard
+cd roomer/dashboard
 docker compose up -d
 ```
 
@@ -28,21 +28,21 @@ Access at: `http://YOUR_HOST:3380`
 
 ### Option 2: Home Assistant Dashboard
 
-Import `llm-presence-dashboard.yaml` into Home Assistant:
+Import `roomer-dashboard.yaml` into Home Assistant:
 
-1. Copy `llm-presence-dashboard.yaml` to your HA config directory
+1. Copy `roomer-dashboard.yaml` to your HA config directory
 2. Add to `configuration.yaml`:
 
 ```yaml
 lovelace:
   mode: yaml
   dashboards:
-    llm-presence:
+    roomer-presence:
       mode: yaml
-      title: WhoLLM
-      icon: mdi:brain
+      title: Roomer
+      icon: mdi:home-account
       show_in_sidebar: true
-      filename: llm-presence-dashboard.yaml
+      filename: roomer-dashboard.yaml
 ```
 
 3. Restart Home Assistant
@@ -53,7 +53,7 @@ Serve the `index.html` file with any web server (nginx, Apache, Python http.serv
 
 ```bash
 # Quick test with Python
-cd whollm/dashboard
+cd roomer/dashboard
 python3 -m http.server 3380
 ```
 
@@ -68,7 +68,7 @@ Settings are saved to browser localStorage.
 
 ## Requirements
 
-- WhoLLM integration installed in Home Assistant
+- Roomer integration installed in Home Assistant
 - Home Assistant accessible from the browser
 - Valid long-lived access token
 
@@ -110,7 +110,7 @@ Modify CSS variables in the `:root` section:
 | File | Description |
 |------|-------------|
 | `index.html` | Standalone web dashboard |
-| `llm-presence-dashboard.yaml` | Home Assistant Lovelace dashboard |
+| `roomer-dashboard.yaml` | Home Assistant Lovelace dashboard |
 | `docker-compose.yml` | Docker deployment |
 | `nginx.conf` | Nginx configuration |
 
@@ -119,14 +119,14 @@ Modify CSS variables in the `:root` section:
 The Docker container includes Homepage labels for automatic discovery:
 
 - **Group**: AI
-- **Name**: WhoLLM Dashboard
+- **Name**: Roomer Dashboard
 - **Port**: 3380
 
 ## Troubleshooting
 
-### "Waiting for WhoLLM data..."
+### "Waiting for Roomer data..."
 
-- Ensure the WhoLLM integration is configured in Home Assistant
+- Ensure the Roomer integration is configured in Home Assistant
 - Check that entities like `sensor.{person_name}_room` exist (e.g., `sensor.alice_room`)
 - Verify the integration is polling (check HA logs)
 
@@ -139,11 +139,11 @@ The Docker container includes Homepage labels for automatic discovery:
 ### No Room Data
 
 - The integration needs to be configured with persons/pets and rooms
-- Go to Settings → Devices & Services → WhoLLM → Configure
+- Go to Settings → Devices & Services → Roomer → Configure
 
 ## License
 
-MIT License - Part of the [WhoLLM](https://github.com/owens-ben/whollm) project.
+MIT License - Part of the [Roomer](https://github.com/owens-ben/Roomer) project.
 
 
 

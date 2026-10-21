@@ -1,4 +1,4 @@
-"""Edge case tests for WhoLLM."""
+"""Edge case tests for Roomer."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from datetime import datetime
 
-from custom_components.whollm.const import VALID_ROOMS
-from custom_components.whollm.providers.base import PresenceGuess
+from custom_components.roomer.const import VALID_ROOMS
+from custom_components.roomer.providers.base import PresenceGuess
 
 
 class TestEmptyConfiguration:
@@ -15,7 +15,7 @@ class TestEmptyConfiguration:
 
     def test_empty_persons_list(self):
         """Test sensor with empty persons list."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         mock_coordinator = MagicMock()
         mock_coordinator.data = {"persons": {}, "pets": {}}
@@ -34,7 +34,7 @@ class TestEmptyConfiguration:
 
     def test_no_room_entities_configured(self):
         """Test confidence combiner with no room entities."""
-        from custom_components.whollm.habits import ConfidenceCombiner
+        from custom_components.roomer.habits import ConfidenceCombiner
 
         combiner = ConfidenceCombiner()
 
@@ -55,11 +55,11 @@ class TestInvalidRoomResponses:
 
     def test_llm_returns_invalid_room(self):
         """Test handling when LLM returns room not in valid list."""
-        from custom_components.whollm.providers.ollama import OllamaProvider
+        from custom_components.roomer.providers.ollama import OllamaProvider
 
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
-        with patch("custom_components.whollm.providers.ollama.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.ollama.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json = AsyncMock(
@@ -81,11 +81,11 @@ class TestInvalidRoomResponses:
 
     def test_llm_returns_empty_response(self):
         """Test handling of empty LLM response."""
-        from custom_components.whollm.providers.ollama import OllamaProvider
+        from custom_components.roomer.providers.ollama import OllamaProvider
 
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
-        with patch("custom_components.whollm.providers.ollama.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.ollama.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json = AsyncMock(
@@ -104,7 +104,7 @@ class TestInvalidRoomResponses:
 
     def test_llm_returns_multiword_response(self):
         """Test handling when LLM returns verbose response."""
-        from custom_components.whollm.providers.ollama import OllamaProvider
+        from custom_components.roomer.providers.ollama import OllamaProvider
 
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
@@ -118,7 +118,7 @@ class TestInvalidRoomResponses:
             "time_context": {"current_time": "14:00", "day_of_week": "Monday"},
         }
 
-        with patch("custom_components.whollm.providers.ollama.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.ollama.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json = AsyncMock(
@@ -142,12 +142,12 @@ class TestNetworkFailures:
     @pytest.mark.asyncio
     async def test_ollama_connection_refused(self):
         """Test handling when Ollama connection is refused."""
-        from custom_components.whollm.providers.ollama import OllamaProvider
+        from custom_components.roomer.providers.ollama import OllamaProvider
         import aiohttp
 
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
-        with patch("custom_components.whollm.providers.ollama.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.ollama.aiohttp.ClientSession") as mock_session:
             mock_session_instance = MagicMock()
             mock_session_instance.post = MagicMock(
                 side_effect=aiohttp.ClientConnectorError(MagicMock(), OSError("Connection refused"))
@@ -163,7 +163,7 @@ class TestNetworkFailures:
     @pytest.mark.asyncio
     async def test_ollama_timeout(self):
         """Test handling of Ollama timeout - fallback guess is returned."""
-        from custom_components.whollm.providers.ollama import OllamaProvider
+        from custom_components.roomer.providers.ollama import OllamaProvider
 
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
@@ -186,7 +186,7 @@ class TestNetworkFailures:
     @pytest.mark.asyncio
     async def test_crewai_api_unavailable(self):
         """Test handling when CrewAI API is unavailable."""
-        from custom_components.whollm.providers.crewai import CrewAIProvider
+        from custom_components.roomer.providers.crewai import CrewAIProvider
 
         provider = CrewAIProvider(url="http://localhost:8502")
 
@@ -211,7 +211,7 @@ class TestMalformedData:
 
     def test_malformed_presence_guess_in_coordinator_data(self):
         """Test sensor handling when coordinator data is malformed."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         mock_coordinator = MagicMock()
         mock_coordinator.data = {
@@ -232,7 +232,7 @@ class TestMalformedData:
 
     def test_malformed_vision_response(self):
         """Test vision identifier with malformed LLM response."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://localhost:11434",
@@ -255,7 +255,7 @@ class TestMalformedData:
 
     def test_json_decode_error_in_event_logger(self):
         """Test event logger handles malformed JSON gracefully."""
-        from custom_components.whollm.event_logger import EventLogger
+        from custom_components.roomer.event_logger import EventLogger
         from tempfile import TemporaryDirectory
         from pathlib import Path
 
@@ -283,7 +283,7 @@ class TestBoundaryConditions:
 
     def test_confidence_at_boundaries(self):
         """Test confidence values at 0 and 1 boundaries."""
-        from custom_components.whollm.habits import ConfidenceCombiner
+        from custom_components.roomer.habits import ConfidenceCombiner
 
         combiner = ConfidenceCombiner()
 
@@ -320,7 +320,7 @@ class TestBoundaryConditions:
 
     def test_very_long_entity_name(self):
         """Test handling of very long entity names."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         mock_coordinator = MagicMock()
         mock_coordinator.data = None
@@ -338,7 +338,7 @@ class TestBoundaryConditions:
 
     def test_special_characters_in_names(self):
         """Test handling of special characters in entity names."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         mock_coordinator = MagicMock()
         mock_coordinator.data = None
@@ -367,7 +367,7 @@ class TestConcurrencyEdgeCases:
     @pytest.mark.asyncio
     async def test_concurrent_vision_requests(self):
         """Test multiple concurrent vision identification requests."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
         import asyncio
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
@@ -398,7 +398,7 @@ class TestMemoryAndCleanup:
 
     def test_event_logger_cleanup_very_old_events(self):
         """Test cleanup of very old events."""
-        from custom_components.whollm.event_logger import EventLogger
+        from custom_components.roomer.event_logger import EventLogger
         from tempfile import TemporaryDirectory
         from pathlib import Path
         from datetime import timedelta
@@ -441,7 +441,7 @@ class TestMemoryAndCleanup:
 
     def test_habit_predictor_clear_all(self):
         """Test clearing all learned patterns."""
-        from custom_components.whollm.habits import HabitPredictor
+        from custom_components.roomer.habits import HabitPredictor
         from tempfile import TemporaryDirectory
         from pathlib import Path
 

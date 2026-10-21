@@ -1,7 +1,7 @@
 """
 Tests for arrival/departure notifications (TDD).
 
-These tests verify that WhoLLM fires events when people arrive or leave.
+These tests verify that Roomer fires events when people arrive or leave.
 """
 
 import pytest
@@ -13,15 +13,15 @@ class TestNotificationEvents:
 
     def test_event_constants_defined(self):
         """Event type constants should be defined."""
-        from custom_components.whollm.notifications import (
+        from custom_components.roomer.notifications import (
             EVENT_PERSON_ARRIVED,
             EVENT_PERSON_LEFT,
             EVENT_ROOM_CHANGED,
         )
         
-        assert EVENT_PERSON_ARRIVED == "whollm_person_arrived"
-        assert EVENT_PERSON_LEFT == "whollm_person_left"
-        assert EVENT_ROOM_CHANGED == "whollm_room_changed"
+        assert EVENT_PERSON_ARRIVED == "roomer_person_arrived"
+        assert EVENT_PERSON_LEFT == "roomer_person_left"
+        assert EVENT_ROOM_CHANGED == "roomer_room_changed"
 
 
 class TestNotificationManager:
@@ -29,7 +29,7 @@ class TestNotificationManager:
 
     def test_manager_initialization(self):
         """Manager should initialize without errors."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         manager = NotificationManager(mock_hass)
@@ -39,7 +39,7 @@ class TestNotificationManager:
 
     def test_track_state_change(self):
         """Manager should track room state changes."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         manager = NotificationManager(mock_hass)
@@ -56,7 +56,7 @@ class TestNotificationManager:
 
     def test_detect_arrival(self):
         """Manager should detect arrival (away -> home)."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         mock_hass.bus.async_fire = MagicMock()
@@ -79,7 +79,7 @@ class TestNotificationManager:
 
     def test_detect_departure(self):
         """Manager should detect departure (home -> away)."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         mock_hass.bus.async_fire = MagicMock()
@@ -102,7 +102,7 @@ class TestNotificationManager:
 
     def test_room_change_event(self):
         """Manager should fire room change events."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         mock_hass.bus.async_fire = MagicMock()
@@ -118,7 +118,7 @@ class TestNotificationManager:
 
     def test_no_event_for_same_room(self):
         """Manager should not fire event for same room."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         mock_hass.bus.async_fire = MagicMock()
@@ -141,7 +141,7 @@ class TestEventData:
 
     def test_arrival_event_data(self):
         """Arrival event should include relevant data."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         mock_hass.bus.async_fire = MagicMock()
@@ -163,7 +163,7 @@ class TestEventData:
 
     def test_departure_event_data(self):
         """Departure event should include relevant data."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         mock_hass.bus.async_fire = MagicMock()
@@ -187,7 +187,7 @@ class TestNotificationConfig:
 
     def test_notifications_enabled_default(self):
         """Notifications should be enabled by default."""
-        from custom_components.whollm.const import (
+        from custom_components.roomer.const import (
             CONF_NOTIFICATIONS_ENABLED,
             DEFAULT_NOTIFICATIONS_ENABLED,
         )
@@ -197,7 +197,7 @@ class TestNotificationConfig:
 
     def test_disable_notifications(self):
         """Should respect notifications_enabled config."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         mock_hass.bus.async_fire = MagicMock()
@@ -216,7 +216,7 @@ class TestMultiplePeople:
 
     def test_track_multiple_people(self):
         """Should track multiple people independently."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         manager = NotificationManager(mock_hass)
@@ -229,7 +229,7 @@ class TestMultiplePeople:
 
     def test_independent_arrival_events(self):
         """Each person should get their own arrival event."""
-        from custom_components.whollm.notifications import NotificationManager
+        from custom_components.roomer.notifications import NotificationManager
         
         mock_hass = MagicMock()
         mock_hass.bus.async_fire = MagicMock()

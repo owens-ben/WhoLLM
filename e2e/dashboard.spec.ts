@@ -3,12 +3,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Dashboard loads', () => {
   test('page loads with correct title', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle('LLM Room Presence');
+    await expect(page).toHaveTitle('Roomer');
   });
 
   test('header renders with logo and status bar', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('h1')).toHaveText('LLM Room Presence');
+    await expect(page.locator('h1')).toHaveText('Roomer');
     await expect(page.locator('.subtitle')).toBeVisible();
     await expect(page.locator('#ha-status')).toBeVisible();
     await expect(page.locator('#ollama-status')).toBeVisible();
@@ -17,7 +17,7 @@ test.describe('Dashboard loads', () => {
   test('footer renders with GitHub link', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('footer')).toBeVisible();
-    await expect(page.locator('footer a')).toHaveAttribute('href', 'https://github.com/owens-ben/WhoLLM');
+    await expect(page.locator('footer a')).toHaveAttribute('href', 'https://github.com/owens-ben/Roomer');
   });
 });
 

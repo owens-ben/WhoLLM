@@ -1,4 +1,4 @@
-"""Config flow for WhoLLM integration."""
+"""Config flow for Roomer integration."""
 
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def _guess_entity_hint(entity_id: str) -> str:
 
 
 class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for WhoLLM."""
+    """Handle a config flow for Roomer."""
 
     VERSION = 2  # Bumped for new room_entities config
 
@@ -278,7 +278,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             # Create the config entry
             return self.async_create_entry(
-                title=f"WhoLLM ({self._data[CONF_PROVIDER]})",
+                title=f"Roomer ({self._data[CONF_PROVIDER]})",
                 data=self._data,
             )
 
@@ -309,7 +309,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="room_entities",
             data_schema=vol.Schema(schema_dict),
             description_placeholders={
-                "room_hint": "Select entities that indicate activity in each room. This helps WhoLLM understand which sensors/devices belong to which room.",
+                "room_hint": "Select entities that indicate activity in each room. This helps Roomer understand which sensors/devices belong to which room.",
             },
         )
 
@@ -323,7 +323,7 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
-    """Handle options flow for WhoLLM."""
+    """Handle options flow for Roomer."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""

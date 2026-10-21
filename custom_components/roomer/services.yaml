@@ -10,7 +10,7 @@ refresh:
       selector:
         entity:
           domain: sensor
-          integration: whollm
+          integration: roomer
 
 correct_room:
   name: Correct Room
@@ -24,7 +24,7 @@ correct_room:
       selector:
         entity:
           domain: sensor
-          integration: whollm
+          integration: roomer
     room:
       name: Room
       description: The correct room name

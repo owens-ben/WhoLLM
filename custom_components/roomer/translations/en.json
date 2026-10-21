@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "WhoLLM Setup",
+        "title": "Roomer Setup",
         "description": "Configure your LLM provider for person-level presence detection.",
         "data": {
           "provider": "Provider",
@@ -35,7 +35,7 @@
       },
       "room_entities": {
         "title": "Room Entity Mapping",
-        "description": "Assign sensors and devices to each room. This helps WhoLLM understand which entities indicate activity in which room.\n\nSelect motion sensors, media players, lights, computers, and other devices for each room.",
+        "description": "Assign sensors and devices to each room. This helps Roomer understand which entities indicate activity in which room.\n\nSelect motion sensors, media players, lights, computers, and other devices for each room.",
         "data": {}
       }
     },
@@ -47,13 +47,13 @@
       "at_least_one_room": "Please select at least one room to track."
     },
     "abort": {
-      "already_configured": "WhoLLM is already configured"
+      "already_configured": "Roomer is already configured"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "WhoLLM Options",
+        "title": "Roomer Options",
         "menu_options": {
           "general": "General Settings",
           "room_entities": "Room Entity Mapping",

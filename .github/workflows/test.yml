@@ -34,7 +34,7 @@ jobs:
       - name: Run tests with coverage
         if: matrix.python-version == '3.11'
         run: |
-          pytest tests/ --cov=custom_components/whollm --cov-report=xml --cov-report=term-missing
+          pytest tests/ --cov=custom_components/roomer --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage
         if: matrix.python-version == '3.11'
@@ -58,9 +58,9 @@ jobs:
         run: pip install ruff
 
       - name: Run ruff check
-        run: ruff check custom_components/whollm/ --output-format=github
+        run: ruff check custom_components/roomer/ --output-format=github
         continue-on-error: true  # Don't fail CI yet, just report
 
       - name: Run ruff format check
-        run: ruff format --check custom_components/whollm/
+        run: ruff format --check custom_components/roomer/
         continue-on-error: true

@@ -1,4 +1,4 @@
-"""Tests for WhoLLM event logger."""
+"""Tests for Roomer event logger."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from custom_components.whollm.event_logger import (
+from custom_components.roomer.event_logger import (
     EventLogger,
     DEFAULT_RETENTION_DAYS,
     DEFAULT_MAX_FILE_SIZE_MB,

@@ -1,11 +1,11 @@
-"""Home Assistant services for WhoLLM.
+"""Home Assistant services for Roomer.
 
 Provides services for manual control and data access:
-- whollm.refresh: Force immediate presence refresh
-- whollm.correct_room: Manually correct a person's room
-- whollm.get_history: Get movement history
-- whollm.clear_history: Clear history data
-- whollm.get_patterns: Get detected patterns
+- roomer.refresh: Force immediate presence refresh
+- roomer.correct_room: Manually correct a person's room
+- roomer.get_history: Get movement history
+- roomer.clear_history: Clear history data
+- roomer.get_patterns: Get detected patterns
 """
 
 from __future__ import annotations
@@ -110,7 +110,7 @@ async def async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
         await coordinator.async_request_refresh()
         _LOGGER.info("Presence refresh triggered")
     else:
-        _LOGGER.warning("No WhoLLM coordinator found for refresh")
+        _LOGGER.warning("No Roomer coordinator found for refresh")
 
 
 async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -200,7 +200,7 @@ async def async_handle_get_patterns(hass: HomeAssistant, call: ServiceCall) -> l
 
 
 async def async_setup_services(hass: HomeAssistant) -> None:
-    """Set up WhoLLM services."""
+    """Set up Roomer services."""
     
     async def refresh_handler(call: ServiceCall) -> None:
         await async_handle_refresh(hass, call)
@@ -253,15 +253,15 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         schema=GET_PATTERNS_SCHEMA,
     )
     
-    _LOGGER.info("WhoLLM services registered")
+    _LOGGER.info("Roomer services registered")
 
 
 async def async_unload_services(hass: HomeAssistant) -> None:
-    """Unload WhoLLM services."""
+    """Unload Roomer services."""
     hass.services.async_remove(DOMAIN, SERVICE_REFRESH)
     hass.services.async_remove(DOMAIN, SERVICE_CORRECT_ROOM)
     hass.services.async_remove(DOMAIN, SERVICE_GET_HISTORY)
     hass.services.async_remove(DOMAIN, SERVICE_CLEAR_HISTORY)
     hass.services.async_remove(DOMAIN, SERVICE_GET_PATTERNS)
     
-    _LOGGER.info("WhoLLM services unloaded")
+    _LOGGER.info("Roomer services unloaded")

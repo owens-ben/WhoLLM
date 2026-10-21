@@ -1,4 +1,4 @@
-"""Multi-zone support for WhoLLM.
+"""Multi-zone support for Roomer.
 
 Tracks people across multiple zones beyond just home/away:
 - Home: At home (room detection active)

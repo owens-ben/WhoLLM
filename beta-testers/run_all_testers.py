@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-WhoLLM Beta Tester Runner
+Roomer Beta Tester Runner
 
-Executes all beta tester scenarios against a WhoLLM instance.
+Executes all beta tester scenarios against a Roomer instance.
 
 Usage:
     python run_all_testers.py --ha-url http://localhost:8123 --ha-token TOKEN
@@ -51,7 +51,7 @@ class TesterReport:
 
 
 class BetaTesterRunner:
-    """Run beta tester scenarios against WhoLLM."""
+    """Run beta tester scenarios against Roomer."""
 
     def __init__(self, ha_url: str, ha_token: str):
         self.ha_url = ha_url.rstrip("/")
@@ -205,7 +205,7 @@ def generate_report(reports: list[TesterReport], output_path: Path):
     total_tests = sum(r.total_scenarios for r in reports)
     total_passed = sum(r.passed for r in reports)
     
-    report = f"""# WhoLLM Beta Tester Report
+    report = f"""# Roomer Beta Tester Report
 
 **Generated**: {datetime.now().isoformat()}
 
@@ -244,7 +244,7 @@ def generate_report(reports: list[TesterReport], output_path: Path):
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="WhoLLM Beta Tester Runner")
+    parser = argparse.ArgumentParser(description="Roomer Beta Tester Runner")
     parser.add_argument("--ha-url", default="http://localhost:8123", help="Home Assistant URL")
     parser.add_argument("--ha-token", default="", help="HA long-lived access token")
     parser.add_argument("--tester", help="Run specific tester (e.g., alice, bob)")

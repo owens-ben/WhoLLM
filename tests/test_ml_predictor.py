@@ -1,4 +1,4 @@
-"""Tests for WhoLLM ML predictor."""
+"""Tests for Roomer ML predictor."""
 
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ class TestMLPredictorInitialization:
 
     def test_initialization_without_models(self, mock_hass):
         """Test initialization when no models are available."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor(mock_hass)
@@ -67,7 +67,7 @@ class TestMLPredictorInitialization:
 
     def test_initialization_with_hass(self, mock_hass):
         """Test that hass instance is stored."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor(mock_hass)
@@ -80,7 +80,7 @@ class TestFeatureExtraction:
 
     def test_extract_features_basic(self, sample_context):
         """Test basic feature extraction."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -111,7 +111,7 @@ class TestFeatureExtraction:
 
     def test_extract_features_time_parsing(self, sample_context):
         """Test time parsing in feature extraction."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -127,7 +127,7 @@ class TestFeatureExtraction:
 
     def test_extract_features_weekend_detection(self, sample_context):
         """Test weekend detection in features."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -146,7 +146,7 @@ class TestFeatureExtraction:
 
     def test_extract_features_sensor_counts(self, sample_context):
         """Test sensor count features."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -168,7 +168,7 @@ class TestPrediction:
 
     def test_predict_without_models(self, sample_context):
         """Test prediction returns fallback when no models loaded."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -182,7 +182,7 @@ class TestPrediction:
 
     def test_predict_unknown_entity(self, sample_context):
         """Test prediction for entity not in models."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -201,7 +201,7 @@ class TestUncertaintyNotification:
     @pytest.mark.asyncio
     async def test_notify_uncertainty_sends_notification(self, mock_hass):
         """Test that notification is sent when uncertain."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor(mock_hass)
@@ -227,7 +227,7 @@ class TestUncertaintyNotification:
     @pytest.mark.asyncio
     async def test_notify_uncertainty_no_hass(self):
         """Test notification returns False without hass."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor(None)
@@ -245,7 +245,7 @@ class TestUncertaintyNotification:
     @pytest.mark.asyncio
     async def test_notify_uncertainty_cooldown(self, mock_hass):
         """Test notification cooldown prevents spam."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor(mock_hass)
@@ -274,7 +274,7 @@ class TestUncertaintyNotification:
     @pytest.mark.asyncio
     async def test_notify_uncertainty_stores_pending(self, mock_hass):
         """Test that pending feedback request is stored."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor(mock_hass)
@@ -296,7 +296,7 @@ class TestFeedbackRecording:
 
     def test_record_feedback(self):
         """Test recording user feedback."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with TemporaryDirectory() as tmpdir:
             feedback_path = Path(tmpdir) / "feedback.jsonl"
@@ -305,7 +305,7 @@ class TestFeedbackRecording:
                 predictor = MLPredictor()
 
             # Mock the feedback path
-            with patch("custom_components.whollm.ml_predictor.Path") as mock_path:
+            with patch("custom_components.roomer.ml_predictor.Path") as mock_path:
                 mock_path.return_value = feedback_path
 
                 # Add pending feedback
@@ -322,7 +322,7 @@ class TestFeedbackRecording:
 
     def test_record_feedback_without_pending(self):
         """Test recording feedback without pending request."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -342,7 +342,7 @@ class TestModelInfo:
 
     def test_get_model_info_not_loaded(self):
         """Test model info when not loaded."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -353,7 +353,7 @@ class TestModelInfo:
 
     def test_get_model_info_loaded(self):
         """Test model info when models are loaded."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -386,7 +386,7 @@ class TestGlobalPredictor:
 
     def test_get_ml_predictor_creates_instance(self, mock_hass):
         """Test that get_ml_predictor creates instance."""
-        from custom_components.whollm import ml_predictor
+        from custom_components.roomer import ml_predictor
 
         # Reset global
         ml_predictor._ml_predictor = None
@@ -399,7 +399,7 @@ class TestGlobalPredictor:
 
     def test_get_ml_predictor_returns_same_instance(self, mock_hass):
         """Test that same instance is returned."""
-        from custom_components.whollm import ml_predictor
+        from custom_components.roomer import ml_predictor
 
         ml_predictor._ml_predictor = None
 
@@ -411,7 +411,7 @@ class TestGlobalPredictor:
 
     def test_get_ml_predictor_updates_hass(self):
         """Test that hass is updated if provided later."""
-        from custom_components.whollm import ml_predictor
+        from custom_components.roomer import ml_predictor
 
         ml_predictor._ml_predictor = None
 
@@ -430,7 +430,7 @@ class TestEdgeCases:
 
     def test_extract_features_invalid_time(self, sample_context):
         """Test feature extraction with invalid time format."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -447,7 +447,7 @@ class TestEdgeCases:
 
     def test_extract_features_missing_context(self):
         """Test feature extraction with minimal context."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()
@@ -466,7 +466,7 @@ class TestEdgeCases:
 
     def test_predict_handles_model_error(self, sample_context):
         """Test that prediction handles model errors gracefully."""
-        from custom_components.whollm.ml_predictor import MLPredictor
+        from custom_components.roomer.ml_predictor import MLPredictor
 
         with patch.object(Path, "exists", return_value=False):
             predictor = MLPredictor()

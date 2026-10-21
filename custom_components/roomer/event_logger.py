@@ -14,7 +14,7 @@ from homeassistant.util import dt as dt_util
 _LOGGER = logging.getLogger(__name__)
 
 # Default log file location
-DEFAULT_LOG_PATH = "/config/whollm_events.jsonl"
+DEFAULT_LOG_PATH = "/config/roomer_events.jsonl"
 
 # Storage management defaults
 from .const import DEFAULT_RETENTION_DAYS, DEFAULT_MAX_FILE_SIZE_MB

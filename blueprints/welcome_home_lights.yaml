@@ -1,19 +1,19 @@
 blueprint:
-  name: WhoLLM - Welcome Home Lights
+  name: Roomer - Welcome Home Lights
   description: >-
-    Turn on lights when someone arrives home. Uses WhoLLM's arrival
+    Turn on lights when someone arrives home. Uses Roomer's arrival
     detection to trigger lights in the room they arrive to.
   domain: automation
-  author: WhoLLM
-  source_url: https://github.com/owens-ben/WhoLLM/blob/main/blueprints/welcome_home_lights.yaml
+  author: Roomer
+  source_url: https://github.com/owens-ben/Roomer/blob/main/blueprints/welcome_home_lights.yaml
   input:
     person_sensor:
       name: Person Room Sensor
-      description: The WhoLLM room sensor for the person
+      description: The Roomer room sensor for the person
       selector:
         entity:
           domain: sensor
-          integration: whollm
+          integration: roomer
     lights:
       name: Welcome Lights
       description: Lights to turn on when arriving home
@@ -39,7 +39,7 @@ blueprint:
 
 trigger:
   - platform: event
-    event_type: whollm_person_arrived
+    event_type: roomer_person_arrived
 
 condition:
   - condition: template

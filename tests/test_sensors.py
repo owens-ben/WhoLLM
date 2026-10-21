@@ -1,4 +1,4 @@
-"""Tests for WhoLLM sensor entities."""
+"""Tests for Roomer sensor entities."""
 
 from __future__ import annotations
 
@@ -6,13 +6,13 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from datetime import datetime
 
-from custom_components.whollm.const import (
+from custom_components.roomer.const import (
     ATTR_CONFIDENCE,
     ATTR_INDICATORS,
     ATTR_RAW_RESPONSE,
     DOMAIN,
 )
-from custom_components.whollm.providers.base import PresenceGuess
+from custom_components.roomer.providers.base import PresenceGuess
 
 
 class TestLLMPresenceSensor:
@@ -20,7 +20,7 @@ class TestLLMPresenceSensor:
 
     def test_sensor_initialization(self, mock_coordinator):
         """Test sensor initializes with correct attributes."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         sensor = LLMPresenceSensor(
             coordinator=mock_coordinator,
@@ -36,7 +36,7 @@ class TestLLMPresenceSensor:
 
     def test_sensor_pet_icon(self, mock_coordinator):
         """Test that pet sensors have paw icon."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         sensor = LLMPresenceSensor(
             coordinator=mock_coordinator,
@@ -48,7 +48,7 @@ class TestLLMPresenceSensor:
 
     def test_native_value_returns_room(self, mock_coordinator):
         """Test that native_value returns the current room."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         sensor = LLMPresenceSensor(
             coordinator=mock_coordinator,
@@ -60,7 +60,7 @@ class TestLLMPresenceSensor:
 
     def test_native_value_with_no_data(self, mock_coordinator):
         """Test native_value returns None when no data available."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         mock_coordinator.data = None
 
@@ -74,7 +74,7 @@ class TestLLMPresenceSensor:
 
     def test_native_value_unknown_person(self, mock_coordinator):
         """Test native_value returns None for unknown person."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         sensor = LLMPresenceSensor(
             coordinator=mock_coordinator,
@@ -86,7 +86,7 @@ class TestLLMPresenceSensor:
 
     def test_extra_state_attributes(self, mock_coordinator):
         """Test extra state attributes are populated correctly."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         sensor = LLMPresenceSensor(
             coordinator=mock_coordinator,
@@ -103,7 +103,7 @@ class TestLLMPresenceSensor:
 
     def test_extra_state_attributes_empty_when_no_data(self, mock_coordinator):
         """Test attributes are empty when no data."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         mock_coordinator.data = None
 
@@ -117,7 +117,7 @@ class TestLLMPresenceSensor:
 
     def test_pet_sensor_native_value(self, mock_coordinator):
         """Test pet sensor returns correct room."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         sensor = LLMPresenceSensor(
             coordinator=mock_coordinator,
@@ -129,7 +129,7 @@ class TestLLMPresenceSensor:
 
     def test_handle_coordinator_update_callback(self, mock_coordinator):
         """Test that coordinator update callback triggers state write."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         sensor = LLMPresenceSensor(
             coordinator=mock_coordinator,
@@ -151,7 +151,7 @@ class TestLLMVisionSensor:
 
     def test_vision_sensor_initialization(self, mock_coordinator):
         """Test vision sensor initializes correctly."""
-        from custom_components.whollm.sensor import LLMVisionSensor
+        from custom_components.roomer.sensor import LLMVisionSensor
 
         hass = MagicMock()
         sensor = LLMVisionSensor(hass, mock_coordinator)
@@ -163,7 +163,7 @@ class TestLLMVisionSensor:
 
     def test_vision_sensor_native_value(self, mock_coordinator):
         """Test vision sensor native_value."""
-        from custom_components.whollm.sensor import LLMVisionSensor
+        from custom_components.roomer.sensor import LLMVisionSensor
 
         hass = MagicMock()
         sensor = LLMVisionSensor(hass, mock_coordinator)
@@ -176,7 +176,7 @@ class TestLLMVisionSensor:
 
     def test_vision_sensor_attributes(self, mock_coordinator):
         """Test vision sensor extra state attributes."""
-        from custom_components.whollm.sensor import LLMVisionSensor
+        from custom_components.roomer.sensor import LLMVisionSensor
 
         hass = MagicMock()
         sensor = LLMVisionSensor(hass, mock_coordinator)
@@ -202,7 +202,7 @@ class TestLLMVisionSensor:
     @pytest.mark.asyncio
     async def test_vision_sensor_event_listener(self, mock_coordinator):
         """Test that vision sensor listens for events."""
-        from custom_components.whollm.sensor import LLMVisionSensor
+        from custom_components.roomer.sensor import LLMVisionSensor
 
         hass = MagicMock()
         hass.bus = MagicMock()
@@ -222,7 +222,7 @@ class TestLLMVisionSensor:
     @pytest.mark.asyncio
     async def test_vision_sensor_event_handler(self, mock_coordinator):
         """Test vision sensor event handler updates state."""
-        from custom_components.whollm.sensor import LLMVisionSensor
+        from custom_components.roomer.sensor import LLMVisionSensor
 
         hass = MagicMock()
         hass.bus = MagicMock()
@@ -263,7 +263,7 @@ class TestLLMVisionSensor:
     @pytest.mark.asyncio
     async def test_vision_sensor_unsubscribe_on_remove(self, mock_coordinator):
         """Test that event listener is unsubscribed on removal."""
-        from custom_components.whollm.sensor import LLMVisionSensor
+        from custom_components.roomer.sensor import LLMVisionSensor
 
         hass = MagicMock()
         mock_unsub = MagicMock()
@@ -283,7 +283,7 @@ class TestSensorSetupEntry:
     @pytest.mark.asyncio
     async def test_async_setup_entry_creates_entities(self, mock_coordinator):
         """Test that setup entry creates sensor entities."""
-        from custom_components.whollm.sensor import async_setup_entry
+        from custom_components.roomer.sensor import async_setup_entry
 
         hass = MagicMock()
         hass.data = {DOMAIN: {"test_entry_id": mock_coordinator}}

@@ -1,6 +1,6 @@
 """Habit learning and pattern-based presence prediction.
 
-WhoLLM learns presence patterns over time from observed data.
+Roomer learns presence patterns over time from observed data.
 No hardcoded patterns - all patterns are learned from your household's actual behavior.
 """
 
@@ -86,7 +86,7 @@ class HabitPredictor:
     def __init__(self, config_path: Path | None = None):
         """Initialize with optional path to learned patterns."""
         self._config_path = config_path or Path("/config")
-        self._learned_patterns_path = self._config_path / "whollm_learned_habits.json"
+        self._learned_patterns_path = self._config_path / "roomer_learned_habits.json"
         self.habits: dict[str, dict] = {}
         self._load_learned_patterns()
 

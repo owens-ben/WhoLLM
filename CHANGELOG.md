@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive README with badges, troubleshooting, and examples
 
 ### Changed
+- **BREAKING: Renamed the project from WhoLLM to Roomer.** The Home Assistant domain changed from `whollm` to `roomer` and the integration now lives in `custom_components/roomer`. Remove the old integration and `custom_components/whollm`, install Roomer, and re-add it; there is no automatic migration.
+- **BREAKING:** Services moved from `whollm.*` to `roomer.*`, and events were renamed to `roomer_room_changed`, `roomer_person_arrived`, `roomer_person_left`, `roomer_vision_identification` and `roomer_storage_cleanup`. Automations, blueprints and dashboards that reference the old names must be updated.
+- **BREAKING:** Entities are recreated under the new domain (new unique IDs), and storage files are now `roomer_history.json`, `roomer_learned_habits.json` and `roomer_events.jsonl`, so learned habits and history start fresh.
+- Docs now lead with the problem (who is in which room, from combined weak signals) rather than the LLM; an LLM provider is still required.
 - Removed emojis from indicator strings in provider code
 
 ### Fixed

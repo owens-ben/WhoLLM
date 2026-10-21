@@ -14,7 +14,7 @@ class TestZoneConstants:
 
     def test_zone_constants_defined(self):
         """Zone constants should be defined."""
-        from custom_components.whollm.zones import (
+        from custom_components.roomer.zones import (
             ZONE_HOME,
             ZONE_AWAY,
             ZONE_WORK,
@@ -30,7 +30,7 @@ class TestZoneManager:
 
     def test_manager_initialization(self):
         """Manager should initialize with default zones."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         manager = ZoneManager(mock_hass)
@@ -39,7 +39,7 @@ class TestZoneManager:
 
     def test_get_zone_from_device_tracker(self):
         """Should determine zone from device tracker state."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         mock_hass.states.get.return_value = MagicMock(state="work")
@@ -51,7 +51,7 @@ class TestZoneManager:
 
     def test_home_zone_detection(self):
         """Should detect home zone."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         mock_hass.states.get.return_value = MagicMock(state="home")
@@ -63,7 +63,7 @@ class TestZoneManager:
 
     def test_not_home_is_away(self):
         """not_home should map to away zone."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         mock_hass.states.get.return_value = MagicMock(state="not_home")
@@ -75,7 +75,7 @@ class TestZoneManager:
 
     def test_custom_zone_mapping(self):
         """Should support custom zone mappings."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         mock_hass.states.get.return_value = MagicMock(state="gym")
@@ -91,7 +91,7 @@ class TestPersonZoneTracking:
 
     def test_get_person_zone(self):
         """Should get zone for a person from their device trackers."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         mock_hass.states.get.return_value = MagicMock(state="work")
@@ -105,7 +105,7 @@ class TestPersonZoneTracking:
 
     def test_multiple_trackers_priority(self):
         """Should handle multiple device trackers per person."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         
@@ -125,7 +125,7 @@ class TestPersonZoneTracking:
 
     def test_no_trackers_returns_unknown(self):
         """Should return unknown when no trackers configured."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         manager = ZoneManager(mock_hass)
@@ -141,7 +141,7 @@ class TestZoneAttributes:
 
     def test_zone_friendly_name(self):
         """Should provide friendly names for zones."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         manager = ZoneManager(mock_hass)
@@ -152,7 +152,7 @@ class TestZoneAttributes:
 
     def test_is_at_home(self):
         """Should check if zone is home."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         manager = ZoneManager(mock_hass)
@@ -163,7 +163,7 @@ class TestZoneAttributes:
 
     def test_is_known_zone(self):
         """Should check if zone is known."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         manager = ZoneManager(mock_hass)
@@ -174,11 +174,11 @@ class TestZoneAttributes:
 
 
 class TestZoneIntegration:
-    """Test zone integration with WhoLLM."""
+    """Test zone integration with Roomer."""
 
     def test_zone_affects_room_prediction(self):
         """When person is at work, room should be 'work' not home rooms."""
-        from custom_components.whollm.zones import ZoneManager, ZONE_WORK
+        from custom_components.roomer.zones import ZoneManager, ZONE_WORK
         
         mock_hass = MagicMock()
         mock_hass.states.get.return_value = MagicMock(state="work")
@@ -193,7 +193,7 @@ class TestZoneIntegration:
 
     def test_home_zone_allows_room_prediction(self):
         """When person is home, room prediction should continue."""
-        from custom_components.whollm.zones import ZoneManager
+        from custom_components.roomer.zones import ZoneManager
         
         mock_hass = MagicMock()
         mock_hass.states.get.return_value = MagicMock(state="home")

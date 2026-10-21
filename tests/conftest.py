@@ -1,4 +1,4 @@
-"""Shared fixtures for WhoLLM tests."""
+"""Shared fixtures for Roomer tests."""
 
 from __future__ import annotations
 
@@ -7,9 +7,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, AsyncMock
 
-from custom_components.whollm.habits import HabitPredictor, ConfidenceCombiner
-from custom_components.whollm.providers.base import PresenceGuess
-from custom_components.whollm.const import (
+from custom_components.roomer.habits import HabitPredictor, ConfidenceCombiner
+from custom_components.roomer.providers.base import PresenceGuess
+from custom_components.roomer.const import (
     CONF_MODEL,
     CONF_PERSON_DEVICES,
     CONF_PERSONS,

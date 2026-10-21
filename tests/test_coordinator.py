@@ -1,4 +1,4 @@
-"""Tests for the WhoLLM coordinator."""
+"""Tests for the Roomer coordinator."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from datetime import timedelta
 
-from custom_components.whollm.const import (
+from custom_components.roomer.const import (
     CONF_ROOM_ENTITIES,
     CONF_PERSON_DEVICES,
     ENTITY_HINT_COMPUTER,
@@ -20,7 +20,7 @@ class TestCoordinatorHelpers:
 
     def test_is_entity_active_on(self):
         """Test entity active detection for 'on' state."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -30,7 +30,7 @@ class TestCoordinatorHelpers:
 
     def test_is_entity_active_motion(self):
         """Test entity active detection for motion sensors."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -40,7 +40,7 @@ class TestCoordinatorHelpers:
 
     def test_is_entity_active_media_playing(self):
         """Test entity active detection for media players."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -52,7 +52,7 @@ class TestCoordinatorHelpers:
 
     def test_is_entity_active_device_tracker(self):
         """Test entity active detection for device trackers."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -66,7 +66,7 @@ class TestCoordinatorRoomEntityMapping:
 
     def test_find_entity_room(self, mock_hass, mock_config_entry):
         """Test finding which room an entity belongs to."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -78,7 +78,7 @@ class TestCoordinatorRoomEntityMapping:
 
     def test_get_active_indicators(self, mock_hass, mock_config_entry):
         """Test getting active indicators from room entities."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -111,7 +111,7 @@ class TestCoordinatorPersonDevices:
 
     def test_get_person_indicators_with_owned_device(self, mock_hass, mock_config_entry):
         """Test that person's owned devices are included in indicators."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -142,7 +142,7 @@ class TestCoordinatorPersonDevices:
 
     def test_get_person_indicators_without_owned_device(self, mock_hass, mock_config_entry):
         """Test indicators for person without device ownership configured."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -172,7 +172,7 @@ class TestCoordinatorRoomTransition:
     @pytest.mark.asyncio
     async def test_check_room_transition_logs_movement(self, mock_hass, mock_config_entry):
         """Test that room transitions are detected."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -197,7 +197,7 @@ class TestCoordinatorRoomTransition:
     @pytest.mark.asyncio
     async def test_check_room_transition_same_room_no_log(self, mock_hass, mock_config_entry):
         """Test that staying in same room doesn't log transition."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
@@ -214,7 +214,7 @@ class TestCoordinatorRoomTransition:
     @pytest.mark.asyncio
     async def test_check_room_transition_to_unknown_no_log(self, mock_hass, mock_config_entry):
         """Test that transition to 'unknown' doesn't log."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
 
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)

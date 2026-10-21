@@ -7,8 +7,8 @@ import pytest
 from datetime import datetime
 from pathlib import Path
 
-from custom_components.whollm.habits import HabitPredictor, ConfidenceCombiner
-from custom_components.whollm.const import (
+from custom_components.roomer.habits import HabitPredictor, ConfidenceCombiner
+from custom_components.roomer.const import (
     ENTITY_HINT_COMPUTER,
     ENTITY_HINT_MEDIA,
     ENTITY_HINT_MOTION,

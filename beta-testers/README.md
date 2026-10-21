@@ -1,4 +1,4 @@
-# WhoLLM Beta Tester Agents
+# Roomer Beta Tester Agents
 
 This directory contains 5 simulated beta tester profiles with varied home setups for comprehensive testing.
 

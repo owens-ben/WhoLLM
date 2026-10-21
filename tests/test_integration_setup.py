@@ -1,4 +1,4 @@
-"""Tests for WhoLLM integration setup."""
+"""Tests for Roomer integration setup."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from datetime import timedelta
 
-from custom_components.whollm.const import (
+from custom_components.roomer.const import (
     CONF_URL,
     CONF_VISION_MODEL,
     CONF_RETENTION_DAYS,
@@ -71,7 +71,7 @@ class TestAsyncSetup:
     @pytest.mark.asyncio
     async def test_async_setup_creates_domain_data(self, mock_hass):
         """Test that async_setup initializes domain data."""
-        from custom_components.whollm import async_setup
+        from custom_components.roomer import async_setup
 
         result = await async_setup(mock_hass, {})
 
@@ -85,18 +85,18 @@ class TestAsyncSetupEntry:
     @pytest.mark.asyncio
     async def test_setup_entry_creates_coordinator(self, mock_hass, mock_config_entry):
         """Test that setup creates coordinator."""
-        from custom_components.whollm import async_setup_entry
+        from custom_components.roomer import async_setup_entry
 
-        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+        with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class:
             mock_coordinator = MagicMock()
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+            with patch("custom_components.roomer.EventLogger") as mock_logger_class:
                 mock_logger_class.return_value = _make_mock_event_logger()
 
-                with patch("custom_components.whollm.VisionIdentifier"):
-                    with patch("custom_components.whollm.CameraTrackingController"):
+                with patch("custom_components.roomer.VisionIdentifier"):
+                    with patch("custom_components.roomer.CameraTrackingController"):
                         result = await async_setup_entry(mock_hass, mock_config_entry)
 
         assert result is True
@@ -105,18 +105,18 @@ class TestAsyncSetupEntry:
     @pytest.mark.asyncio
     async def test_setup_entry_registers_services(self, mock_hass, mock_config_entry):
         """Test that setup registers services."""
-        from custom_components.whollm import async_setup_entry
+        from custom_components.roomer import async_setup_entry
 
-        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+        with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class:
             mock_coordinator = MagicMock()
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+            with patch("custom_components.roomer.EventLogger") as mock_logger_class:
                 mock_logger_class.return_value = _make_mock_event_logger()
 
-                with patch("custom_components.whollm.VisionIdentifier"):
-                    with patch("custom_components.whollm.CameraTrackingController"):
+                with patch("custom_components.roomer.VisionIdentifier"):
+                    with patch("custom_components.roomer.CameraTrackingController"):
                         await async_setup_entry(mock_hass, mock_config_entry)
 
         # Should have called async_register multiple times for services
@@ -125,19 +125,19 @@ class TestAsyncSetupEntry:
     @pytest.mark.asyncio
     async def test_setup_entry_schedules_cleanup(self, mock_hass, mock_config_entry):
         """Test that setup schedules periodic cleanup."""
-        from custom_components.whollm import async_setup_entry
+        from custom_components.roomer import async_setup_entry
 
-        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+        with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class:
             mock_coordinator = MagicMock()
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+            with patch("custom_components.roomer.EventLogger") as mock_logger_class:
                 mock_logger_class.return_value = _make_mock_event_logger()
 
-                with patch("custom_components.whollm.VisionIdentifier"):
-                    with patch("custom_components.whollm.CameraTrackingController"):
-                        with patch("custom_components.whollm.async_track_time_interval") as mock_track:
+                with patch("custom_components.roomer.VisionIdentifier"):
+                    with patch("custom_components.roomer.CameraTrackingController"):
+                        with patch("custom_components.roomer.async_track_time_interval") as mock_track:
                             await async_setup_entry(mock_hass, mock_config_entry)
 
                             # Should schedule daily cleanup
@@ -146,18 +146,18 @@ class TestAsyncSetupEntry:
     @pytest.mark.asyncio
     async def test_setup_entry_initializes_vision(self, mock_hass, mock_config_entry):
         """Test that setup initializes vision components."""
-        from custom_components.whollm import async_setup_entry
+        from custom_components.roomer import async_setup_entry
 
-        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+        with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class:
             mock_coordinator = MagicMock()
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+            with patch("custom_components.roomer.EventLogger") as mock_logger_class:
                 mock_logger_class.return_value = _make_mock_event_logger()
 
-                with patch("custom_components.whollm.VisionIdentifier") as mock_vision:
-                    with patch("custom_components.whollm.CameraTrackingController") as mock_tracking:
+                with patch("custom_components.roomer.VisionIdentifier") as mock_vision:
+                    with patch("custom_components.roomer.CameraTrackingController") as mock_tracking:
                         await async_setup_entry(mock_hass, mock_config_entry)
 
                         # Vision identifier should be created with known persons/pets
@@ -173,7 +173,7 @@ class TestAsyncUnloadEntry:
     @pytest.mark.asyncio
     async def test_unload_entry_success(self, mock_hass, mock_config_entry):
         """Test successful unload."""
-        from custom_components.whollm import async_unload_entry
+        from custom_components.roomer import async_unload_entry
 
         # Setup data first - coordinator mock needs provider.async_close as AsyncMock
         mock_coordinator = MagicMock()
@@ -189,7 +189,7 @@ class TestAsyncUnloadEntry:
     @pytest.mark.asyncio
     async def test_unload_entry_platforms(self, mock_hass, mock_config_entry):
         """Test that platforms are unloaded."""
-        from custom_components.whollm import async_unload_entry, PLATFORMS
+        from custom_components.roomer import async_unload_entry, PLATFORMS
 
         mock_coordinator = MagicMock()
         mock_coordinator.provider = MagicMock()
@@ -207,12 +207,12 @@ class TestAsyncReloadEntry:
     @pytest.mark.asyncio
     async def test_reload_entry(self, mock_hass, mock_config_entry):
         """Test that reload calls unload then setup."""
-        from custom_components.whollm import async_reload_entry
+        from custom_components.roomer import async_reload_entry
 
         mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
 
-        with patch("custom_components.whollm.async_unload_entry", new_callable=AsyncMock) as mock_unload:
-            with patch("custom_components.whollm.async_setup_entry", new_callable=AsyncMock) as mock_setup:
+        with patch("custom_components.roomer.async_unload_entry", new_callable=AsyncMock) as mock_unload:
+            with patch("custom_components.roomer.async_setup_entry", new_callable=AsyncMock) as mock_setup:
                 await async_reload_entry(mock_hass, mock_config_entry)
 
                 mock_unload.assert_called_once_with(mock_hass, mock_config_entry)
@@ -225,7 +225,7 @@ class TestServiceHandlers:
     @pytest.mark.asyncio
     async def test_identify_person_service(self, mock_hass, mock_config_entry):
         """Test identify_person service handler."""
-        from custom_components.whollm import async_setup_entry
+        from custom_components.roomer import async_setup_entry
 
         captured_handlers = {}
 
@@ -234,15 +234,15 @@ class TestServiceHandlers:
 
         mock_hass.services.async_register = capture_register
 
-        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+        with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class:
             mock_coordinator = MagicMock()
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+            with patch("custom_components.roomer.EventLogger") as mock_logger_class:
                 mock_logger_class.return_value = _make_mock_event_logger()
 
-                with patch("custom_components.whollm.VisionIdentifier") as mock_vision_class:
+                with patch("custom_components.roomer.VisionIdentifier") as mock_vision_class:
                     mock_vision = MagicMock()
                     mock_vision.identify_from_camera = AsyncMock(
                         return_value={
@@ -253,7 +253,7 @@ class TestServiceHandlers:
                     )
                     mock_vision_class.return_value = mock_vision
 
-                    with patch("custom_components.whollm.CameraTrackingController"):
+                    with patch("custom_components.roomer.CameraTrackingController"):
                         await async_setup_entry(mock_hass, mock_config_entry)
 
         # Verify identify_person service was registered
@@ -262,7 +262,7 @@ class TestServiceHandlers:
     @pytest.mark.asyncio
     async def test_cleanup_storage_service(self, mock_hass, mock_config_entry):
         """Test cleanup_storage service handler."""
-        from custom_components.whollm import async_setup_entry
+        from custom_components.roomer import async_setup_entry
 
         captured_handlers = {}
 
@@ -281,16 +281,16 @@ class TestServiceHandlers:
             "final_size_mb": 4.5,
         })
 
-        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+        with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class:
             mock_coordinator = MagicMock()
             mock_coordinator.async_config_entry_first_refresh = AsyncMock()
             mock_coord_class.return_value = mock_coordinator
 
-            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+            with patch("custom_components.roomer.EventLogger") as mock_logger_class:
                 mock_logger_class.return_value = mock_event_logger
 
-                with patch("custom_components.whollm.VisionIdentifier"):
-                    with patch("custom_components.whollm.CameraTrackingController"):
+                with patch("custom_components.roomer.VisionIdentifier"):
+                    with patch("custom_components.roomer.CameraTrackingController"):
                         await async_setup_entry(mock_hass, mock_config_entry)
 
         # Verify cleanup_storage service was registered
@@ -311,7 +311,7 @@ class TestServiceSchemas:
 
     def test_identify_person_schema(self):
         """Test identify_person schema validation."""
-        from custom_components.whollm import IDENTIFY_PERSON_SCHEMA
+        from custom_components.roomer import IDENTIFY_PERSON_SCHEMA
         import voluptuous as vol
 
         # Valid input
@@ -331,7 +331,7 @@ class TestServiceSchemas:
 
     def test_tracking_schema(self):
         """Test tracking schema validation."""
-        from custom_components.whollm import TRACKING_SCHEMA
+        from custom_components.roomer import TRACKING_SCHEMA
 
         valid_data = {"camera_name": "living_room_camera"}
 
@@ -340,7 +340,7 @@ class TestServiceSchemas:
 
     def test_cleanup_storage_schema(self):
         """Test cleanup_storage schema validation."""
-        from custom_components.whollm import CLEANUP_STORAGE_SCHEMA
+        from custom_components.roomer import CLEANUP_STORAGE_SCHEMA
 
         # Optional parameters
         valid_data = {
@@ -362,7 +362,7 @@ class TestPlatforms:
 
     def test_platforms_list(self):
         """Test that correct platforms are defined."""
-        from custom_components.whollm import PLATFORMS
+        from custom_components.roomer import PLATFORMS
         from homeassistant.const import Platform
 
         assert Platform.SENSOR in PLATFORMS

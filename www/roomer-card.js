@@ -1,23 +1,23 @@
 /**
- * WhoLLM Presence Card for Lovelace
+ * Roomer Presence Card for Lovelace
  * 
  * A custom card to display room presence for people and pets.
  * 
  * Installation:
- * 1. Copy this file to /config/www/whollm-card.js
+ * 1. Copy this file to /config/www/roomer-card.js
  * 2. Add to Lovelace resources:
- *    url: /local/whollm-card.js
+ *    url: /local/roomer-card.js
  *    type: module
  * 
  * Usage:
- * type: custom:whollm-card
+ * type: custom:roomer-card
  * title: Room Presence
  * entities:
  *   - sensor.ben_room
  *   - sensor.alex_room
  */
 
-class WhoLLMCard extends HTMLElement {
+class RoomerCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     this._render();
@@ -199,7 +199,7 @@ class WhoLLMCard extends HTMLElement {
   }
 
   static getConfigElement() {
-    return document.createElement('whollm-card-editor');
+    return document.createElement('roomer-card-editor');
   }
 
   static getStubConfig() {
@@ -217,7 +217,7 @@ class WhoLLMCard extends HTMLElement {
 }
 
 // Card Editor for GUI configuration
-class WhoLLMCardEditor extends HTMLElement {
+class RoomerCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = config;
     this._render();
@@ -271,19 +271,19 @@ class WhoLLMCardEditor extends HTMLElement {
   }
 }
 
-customElements.define('whollm-card', WhoLLMCard);
-customElements.define('whollm-card-editor', WhoLLMCardEditor);
+customElements.define('roomer-card', RoomerCard);
+customElements.define('roomer-card-editor', RoomerCardEditor);
 
 // Register with Lovelace
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'whollm-card',
-  name: 'WhoLLM Presence Card',
+  type: 'roomer-card',
+  name: 'Roomer Presence Card',
   description: 'Display room presence for people and pets',
   preview: true,
 });
 
-console.info('%c WhoLLM Card %c v1.0.0 ', 
+console.info('%c Roomer Card %c v1.0.0 ', 
   'background: #3498db; color: white; padding: 2px 6px; border-radius: 3px 0 0 3px;',
   'background: #555; color: white; padding: 2px 6px; border-radius: 0 3px 3px 0;'
 );
