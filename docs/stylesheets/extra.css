@@ -467,3 +467,11 @@ body {
 .md-footer-meta__inner a:hover {
   color: var(--roomer-primary);
 }
+
+/* Home page logo above the hero title */
+.md-typeset .roomer-hero-logo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 0 0 0.6rem;
+}

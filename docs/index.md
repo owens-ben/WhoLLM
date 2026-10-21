@@ -1,3 +1,5 @@
+![Roomer logo: a house of four rooms, two lit with a person in each](assets/logo.svg){ width="96" .roomer-hero-logo }
+
 # Roomer { .roomer-hero }
 
 **Know *who* is in which room, not just that a room is occupied.**

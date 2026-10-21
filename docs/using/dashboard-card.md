@@ -44,7 +44,7 @@ lovelace:
 !!! tip "Updating the card"
     Browsers cache this file aggressively. After copying in a new version, change the resource URL to `/local/roomer-card.js?v=2` (and bump the number each time) so every device picks up the change.
 
-To check it loaded, open your browser's developer console. You should see a blue **Roomer Card v2.0.0** banner.
+To check it loaded, open your browser's developer console. You should see a blue **Roomer Card v0.3.0** banner.
 
 ## Add the card to a dashboard
 

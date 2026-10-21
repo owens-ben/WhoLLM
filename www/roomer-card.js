@@ -23,7 +23,7 @@
  * show_indicators: true
  */
 
-const ROOMER_CARD_VERSION = '2.0.0';
+const ROOMER_CARD_VERSION = '0.3.0';
 const DEFAULT_TITLE = "Who's where";
 const AWAY_STATES = ['away', 'not_home', 'unknown', 'unavailable', ''];
 const FONT_LINK_ID = 'roomer-card-fonts';
