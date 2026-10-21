@@ -3,18 +3,22 @@
 Provides services for manual control and data access:
 - roomer.refresh: Force immediate presence refresh
 - roomer.correct_room: Manually correct a person's room
-- roomer.get_history: Get movement history
+- roomer.get_history: Get movement history (returns a response)
 - roomer.clear_history: Clear history data
-- roomer.get_patterns: Get detected patterns
+- roomer.get_patterns: Get detected patterns (returns a response)
+
+get_history and get_patterns are response-only services: call them with
+``return_response`` (WebSocket ``call_service``) or ``response_variable`` in a
+script. Home Assistant requires service responses to be dicts.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
@@ -70,7 +74,7 @@ CORRECT_ROOM_SCHEMA = vol.Schema(
 GET_HISTORY_SCHEMA = vol.Schema(
     {
         vol.Required("entity_name"): cv.string,
-        vol.Optional("limit", default=20): vol.Coerce(int),
+        vol.Optional("limit", default=20): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
     }
 )
 
@@ -152,20 +156,20 @@ async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> N
         _LOGGER.warning("Entity %s not found", entity_id)
 
 
-async def async_handle_get_history(hass: HomeAssistant, call: ServiceCall) -> list[dict]:
+async def async_handle_get_history(hass: HomeAssistant, call: ServiceCall) -> dict[str, Any]:
     """Handle the get_history service call.
-    
-    Returns recent room transitions for an entity.
+
+    Returns recent room transitions for an entity, oldest first.
     """
     entity_name = call.data.get("entity_name")
     limit = call.data.get("limit", 20)
-    
+
     tracker = get_history_tracker(hass)
     history = tracker.get_recent_transitions(entity_name, limit=limit)
-    
+
     _LOGGER.debug("Retrieved %d history entries for %s", len(history), entity_name)
-    
-    return history
+
+    return {"entity_name": entity_name, "transitions": history}
 
 
 async def async_handle_clear_history(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -184,37 +188,39 @@ async def async_handle_clear_history(hass: HomeAssistant, call: ServiceCall) -> 
         _LOGGER.info("Cleared all history")
 
 
-async def async_handle_get_patterns(hass: HomeAssistant, call: ServiceCall) -> list[dict]:
+async def async_handle_get_patterns(hass: HomeAssistant, call: ServiceCall) -> dict[str, Any]:
     """Handle the get_patterns service call.
-    
+
     Returns detected movement patterns for an entity.
     """
     entity_name = call.data.get("entity_name")
-    
+
     tracker = get_history_tracker(hass)
     patterns = tracker.detect_patterns(entity_name)
-    
+
     _LOGGER.debug("Retrieved %d patterns for %s", len(patterns), entity_name)
-    
-    return patterns
+
+    return {"entity_name": entity_name, "patterns": patterns}
 
 
 async def async_setup_services(hass: HomeAssistant) -> None:
     """Set up Roomer services."""
-    
+    if hass.services.has_service(DOMAIN, SERVICE_REFRESH):
+        return
+
     async def refresh_handler(call: ServiceCall) -> None:
         await async_handle_refresh(hass, call)
     
     async def correct_room_handler(call: ServiceCall) -> None:
         await async_handle_correct_room(hass, call)
     
-    async def get_history_handler(call: ServiceCall) -> list[dict]:
+    async def get_history_handler(call: ServiceCall) -> dict[str, Any]:
         return await async_handle_get_history(hass, call)
     
     async def clear_history_handler(call: ServiceCall) -> None:
         await async_handle_clear_history(hass, call)
     
-    async def get_patterns_handler(call: ServiceCall) -> list[dict]:
+    async def get_patterns_handler(call: ServiceCall) -> dict[str, Any]:
         return await async_handle_get_patterns(hass, call)
     
     # Register services
@@ -237,6 +243,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_GET_HISTORY,
         get_history_handler,
         schema=GET_HISTORY_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
     
     hass.services.async_register(
@@ -251,6 +258,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_GET_PATTERNS,
         get_patterns_handler,
         schema=GET_PATTERNS_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
     
     _LOGGER.info("Roomer services registered")

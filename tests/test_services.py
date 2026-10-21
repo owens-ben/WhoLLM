@@ -138,9 +138,11 @@ class TestGetHistoryService:
             call.data = {"entity_name": "Ben", "limit": 10}
             
             result = await async_handle_get_history(mock_hass, call)
-            
-            assert len(result) == 1
-            assert result[0]["to_room"] == "kitchen"
+
+            # HA only accepts dict service responses, so the list is wrapped
+            assert result["entity_name"] == "Ben"
+            assert len(result["transitions"]) == 1
+            assert result["transitions"][0]["to_room"] == "kitchen"
 
     @pytest.mark.asyncio
     async def test_get_history_respects_limit(self):
@@ -221,9 +223,10 @@ class TestGetPatternsService:
             call.data = {"entity_name": "Ben"}
             
             result = await async_handle_get_patterns(mock_hass, call)
-            
-            assert len(result) == 1
-            assert result[0]["type"] == "morning_routine"
+
+            assert result["entity_name"] == "Ben"
+            assert len(result["patterns"]) == 1
+            assert result["patterns"][0]["type"] == "morning_routine"
 
 
 class TestServiceSchemas:
@@ -253,3 +256,134 @@ class TestServiceSchemas:
         
         # With optional limit
         GET_HISTORY_SCHEMA({"entity_name": "Ben", "limit": 20})
+
+    def test_get_history_limit_range(self):
+        """Limit must stay within what services.yaml advertises (1-100)."""
+        from custom_components.roomer.services import GET_HISTORY_SCHEMA
+        import voluptuous as vol
+
+        assert GET_HISTORY_SCHEMA({"entity_name": "Ben"})["limit"] == 20
+        GET_HISTORY_SCHEMA({"entity_name": "Ben", "limit": 1})
+        GET_HISTORY_SCHEMA({"entity_name": "Ben", "limit": 100})
+
+        # limit=0 used to slice as [-0:] and return the whole history
+        for bad in (0, -5, 101):
+            with pytest.raises(vol.Invalid):
+                GET_HISTORY_SCHEMA({"entity_name": "Ben", "limit": bad})
+
+
+class TestServiceSetup:
+    """Test async_setup_services registration."""
+
+    @staticmethod
+    def _mock_hass(already_registered=False):
+        mock_hass = MagicMock()
+        mock_hass.services.has_service = MagicMock(return_value=already_registered)
+        mock_hass.services.async_register = MagicMock()
+        return mock_hass
+
+    @staticmethod
+    def _registrations(mock_hass):
+        """Map service name -> kwargs it was registered with."""
+        return {c.args[1]: c.kwargs for c in mock_hass.services.async_register.call_args_list}
+
+    @pytest.mark.asyncio
+    async def test_registers_all_services(self):
+        from custom_components.roomer.services import async_setup_services
+
+        mock_hass = self._mock_hass()
+        await async_setup_services(mock_hass)
+
+        assert set(self._registrations(mock_hass)) == {
+            "refresh", "correct_room", "get_history", "clear_history", "get_patterns",
+        }
+
+    @pytest.mark.asyncio
+    async def test_history_and_patterns_are_response_only(self):
+        """Without supports_response HA drops the handler's return value."""
+        from homeassistant.core import SupportsResponse
+        from custom_components.roomer.services import async_setup_services
+
+        mock_hass = self._mock_hass()
+        await async_setup_services(mock_hass)
+        registered = self._registrations(mock_hass)
+
+        assert registered["get_history"]["supports_response"] == SupportsResponse.ONLY
+        assert registered["get_patterns"]["supports_response"] == SupportsResponse.ONLY
+        for name in ("refresh", "correct_room", "clear_history"):
+            assert "supports_response" not in registered[name]
+
+    @pytest.mark.asyncio
+    async def test_setup_is_idempotent(self):
+        """A second config entry or a reload must not re-register."""
+        from custom_components.roomer.services import async_setup_services
+
+        mock_hass = self._mock_hass(already_registered=True)
+        await async_setup_services(mock_hass)
+
+        mock_hass.services.async_register.assert_not_called()
+
+
+class TestServiceResponsesWithRealHass:
+    """Call the services through a real Home Assistant core, as a client would."""
+
+    @pytest.mark.asyncio
+    async def test_get_history_and_patterns_via_service_call(self, hass, tmp_path):
+        """return_response yields the dicts, and the data is JSON-serializable."""
+        import json
+
+        from custom_components.roomer.const import DOMAIN
+        from custom_components.roomer.history import HistoryTracker
+        from custom_components.roomer.services import HISTORY_TRACKER_KEY, async_setup_services
+
+        tracker = HistoryTracker(config_path=tmp_path)
+        tracker.record_transition("Ben", "bedroom", "kitchen", 0.8)
+        tracker.record_transition("Ben", "kitchen", "office", 0.9)
+        hass.data.setdefault(DOMAIN, {})[HISTORY_TRACKER_KEY] = tracker
+
+        await async_setup_services(hass)
+
+        history = await hass.services.async_call(
+            DOMAIN, "get_history", {"entity_name": "Ben", "limit": 1},
+            blocking=True, return_response=True,
+        )
+        assert history["entity_name"] == "Ben"
+        assert [t["to_room"] for t in history["transitions"]] == ["office"]
+        json.dumps(history)  # what the WebSocket API will do to it
+
+        patterns = await hass.services.async_call(
+            DOMAIN, "get_patterns", {"entity_name": "Ben"},
+            blocking=True, return_response=True,
+        )
+        assert patterns == {"entity_name": "Ben", "patterns": []}  # < 10 transitions
+
+    @pytest.mark.asyncio
+    async def test_response_only_services_reject_calls_without_return_response(self, hass, tmp_path):
+        """get_history has no side effect, so HA refuses a call that ignores the response."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        from custom_components.roomer.const import DOMAIN
+        from custom_components.roomer.services import async_setup_services
+
+        await async_setup_services(hass)
+
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                DOMAIN, "get_history", {"entity_name": "Ben"}, blocking=True,
+            )
+
+    @pytest.mark.asyncio
+    async def test_unknown_person_returns_empty_not_error(self, hass, tmp_path):
+        """A name with no history is a normal empty timeline."""
+        from custom_components.roomer.const import DOMAIN
+        from custom_components.roomer.history import HistoryTracker
+        from custom_components.roomer.services import HISTORY_TRACKER_KEY, async_setup_services
+
+        hass.data.setdefault(DOMAIN, {})[HISTORY_TRACKER_KEY] = HistoryTracker(config_path=tmp_path)
+        await async_setup_services(hass)
+
+        history = await hass.services.async_call(
+            DOMAIN, "get_history", {"entity_name": "Nobody"},
+            blocking=True, return_response=True,
+        )
+        assert history == {"entity_name": "Nobody", "transitions": []}

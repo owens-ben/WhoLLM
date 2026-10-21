@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed emojis from indicator strings in provider code
 
 ### Fixed
+- `roomer.refresh`, `roomer.correct_room`, `roomer.get_history`, `roomer.clear_history` and `roomer.get_patterns` were defined in `services.py` and listed in `services.yaml` but never registered with Home Assistant. They are now registered at setup.
+- `roomer.get_history` and `roomer.get_patterns` now return their results. They are registered as response services and respond with a dict (`{"entity_name", "transitions"}` / `{"entity_name", "patterns"}`), since Home Assistant does not accept bare lists.
+- Room transitions are now recorded to `roomer_history.json` (the history tracker was never fed), so `get_history` and `get_patterns` have data. The file lives in the Home Assistant config directory.
+- `roomer.get_history` rejects a `limit` outside 1-100 (`limit: 0` used to return the entire history).
 - Home Assistant 2025.x compatibility: use direct import for `async_track_time_interval` instead of deprecated `hass.helpers.event` access
 
 ## [0.1.0-alpha] - 2025-01-29

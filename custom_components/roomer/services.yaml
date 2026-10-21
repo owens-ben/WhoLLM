@@ -46,7 +46,7 @@ correct_room:
 
 get_history:
   name: Get History
-  description: Get recent room transitions for a person
+  description: Get recent room transitions for a person, oldest first. Returns a response, so call it with a response variable.
   fields:
     entity_name:
       name: Entity Name
@@ -81,7 +81,7 @@ clear_history:
 
 get_patterns:
   name: Get Patterns
-  description: Get detected movement patterns for a person
+  description: Get detected movement patterns for a person. Returns a response, so call it with a response variable.
   fields:
     entity_name:
       name: Entity Name

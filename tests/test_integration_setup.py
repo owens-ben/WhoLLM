@@ -19,10 +19,13 @@ from custom_components.roomer.const import (
 
 
 @pytest.fixture
-def mock_hass():
+def mock_hass(tmp_path):
     """Create a mock Home Assistant instance."""
     hass = MagicMock()
     hass.data = {}
+    hass.config.config_dir = str(tmp_path)
+    # Run executor jobs inline (setup loads the history tracker through one)
+    hass.async_add_executor_job = AsyncMock(side_effect=lambda func, *args: func(*args))
     hass.services = MagicMock()
     hass.services.has_service = MagicMock(return_value=False)
     hass.services.async_register = MagicMock()
@@ -167,6 +170,84 @@ class TestAsyncSetupEntry:
                         assert call_kwargs["known_pets"] == ["Whiskers"]
 
 
+class TestHistoryServicesWiring:
+    """setup_entry must wire the history/correction services and the tracker behind them."""
+
+    @staticmethod
+    async def _setup(mock_hass, mock_config_entry, registered):
+        """Run async_setup_entry with heavy components patched; record service registrations."""
+        from custom_components.roomer import async_setup_entry
+
+        def capture_register(domain, service, handler, schema=None, **kwargs):
+            registered[service] = kwargs
+
+        mock_hass.services.async_register = capture_register
+
+        with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class:
+            mock_coordinator = MagicMock()
+            mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+            mock_coord_class.return_value = mock_coordinator
+
+            with patch("custom_components.roomer.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
+
+                with patch("custom_components.roomer.VisionIdentifier"):
+                    with patch("custom_components.roomer.CameraTrackingController"):
+                        await async_setup_entry(mock_hass, mock_config_entry)
+
+        return mock_coord_class
+
+    @pytest.mark.asyncio
+    async def test_setup_entry_registers_history_and_correction_services(self, mock_hass, mock_config_entry):
+        """refresh/correct_room/get_history/clear_history/get_patterns exist after setup."""
+        registered = {}
+        await self._setup(mock_hass, mock_config_entry, registered)
+
+        for service in ("refresh", "correct_room", "get_history", "clear_history", "get_patterns"):
+            assert service in registered, f"roomer.{service} was never registered"
+        # The pre-existing services are still there
+        for service in ("identify_person", "enable_tracking", "disable_tracking", "cleanup_storage"):
+            assert service in registered
+
+    @pytest.mark.asyncio
+    async def test_history_services_return_responses(self, mock_hass, mock_config_entry):
+        """get_history and get_patterns are response-only; the rest return nothing."""
+        from homeassistant.core import SupportsResponse
+
+        registered = {}
+        await self._setup(mock_hass, mock_config_entry, registered)
+
+        assert registered["get_history"]["supports_response"] == SupportsResponse.ONLY
+        assert registered["get_patterns"]["supports_response"] == SupportsResponse.ONLY
+        assert "supports_response" not in registered["correct_room"]
+        assert "supports_response" not in registered["refresh"]
+
+    @pytest.mark.asyncio
+    async def test_coordinator_gets_the_shared_history_tracker(self, mock_hass, mock_config_entry):
+        """The tracker the coordinator writes to is the one the services read from."""
+        from custom_components.roomer.history import HistoryTracker
+        from custom_components.roomer.services import HISTORY_TRACKER_KEY, get_history_tracker
+
+        mock_coord_class = await self._setup(mock_hass, mock_config_entry, {})
+
+        tracker = mock_hass.data[DOMAIN][HISTORY_TRACKER_KEY]
+        assert isinstance(tracker, HistoryTracker)
+        assert mock_coord_class.call_args.kwargs["history_tracker"] is tracker
+        assert get_history_tracker(mock_hass) is tracker
+
+    @pytest.mark.asyncio
+    async def test_tracker_uses_hass_config_dir_and_survives_reload(self, mock_hass, mock_config_entry, tmp_path):
+        """History lives in the HA config dir and is reused, not recreated, on reload."""
+        from custom_components.roomer.services import HISTORY_TRACKER_KEY
+
+        await self._setup(mock_hass, mock_config_entry, {})
+        first = mock_hass.data[DOMAIN][HISTORY_TRACKER_KEY]
+        assert first._history_path == tmp_path / "roomer_history.json"
+
+        await self._setup(mock_hass, mock_config_entry, {})
+        assert mock_hass.data[DOMAIN][HISTORY_TRACKER_KEY] is first
+
+
 class TestAsyncUnloadEntry:
     """Test async_unload_entry function."""
 
@@ -229,7 +310,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, **kwargs):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register
@@ -266,7 +347,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, **kwargs):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register

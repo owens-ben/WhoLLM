@@ -187,6 +187,41 @@ Manually trigger vision identification for all configured cameras.
 service: roomer.request_vision_update
 ```
 
+### `roomer.correct_room`
+
+Tell Roomer where someone actually is. The correction is fed to the habit learner.
+
+```yaml
+service: roomer.correct_room
+data:
+  entity_id: sensor.alice_room
+  room: office
+```
+
+### `roomer.get_history` / `roomer.get_patterns`
+
+Return a person's recent room transitions (oldest first) and detected routines. These are response services: call them with `response_variable` in a script, or `return_response` over the WebSocket API. `entity_name` is the person's configured name (e.g. `Alice`), not the entity ID.
+
+```yaml
+- service: roomer.get_history
+  data:
+    entity_name: Alice
+    limit: 20          # 1-100
+  response_variable: history
+```
+
+```json
+{
+  "entity_name": "Alice",
+  "transitions": [
+    {"entity_name": "Alice", "from_room": "bedroom", "to_room": "kitchen",
+     "timestamp": "2025-01-30T08:00:00", "confidence": 0.8}
+  ]
+}
+```
+
+`get_patterns` responds with `{"entity_name": ..., "patterns": [...]}` and needs at least 10 recorded transitions before it reports anything. Transitions are recorded from the moment the integration is running and stored in `roomer_history.json`.
+
 ---
 
 ## Example Automations

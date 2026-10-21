@@ -8,6 +8,7 @@ Optionally uses vision models to identify specific people/pets.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
@@ -32,6 +33,8 @@ from .const import (
 from .coordinator import LLMPresenceCoordinator
 from .event_logger import EventLogger
 from .habits import ConfidenceCombiner, HabitPredictor
+from .history import HistoryTracker
+from .services import HISTORY_TRACKER_KEY, async_setup_services
 from .vision import CameraTrackingController, VisionIdentifier
 
 if TYPE_CHECKING:
@@ -90,15 +93,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     confidence_combiner = ConfidenceCombiner(confidence_weights)
 
+    # One history tracker shared by the coordinator (writer) and the
+    # get_history/get_patterns services (readers); reused across reloads.
+    hass.data.setdefault(DOMAIN, {})
+    history_tracker = hass.data[DOMAIN].get(HISTORY_TRACKER_KEY)
+    if history_tracker is None:
+        # Loads roomer_history.json from disk, so keep it off the event loop
+        history_tracker = await hass.async_add_executor_job(HistoryTracker, Path(hass.config.config_dir))
+        hass.data[DOMAIN][HISTORY_TRACKER_KEY] = history_tracker
+
     coordinator = LLMPresenceCoordinator(
         hass, entry,
         event_logger=event_logger,
         habit_predictor=habit_predictor,
         confidence_combiner=confidence_combiner,
+        history_tracker=history_tracker,
     )
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
     hass.data[DOMAIN]["event_logger"] = event_logger
 
@@ -158,6 +170,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Register services
     await _async_register_services(hass)
+    await async_setup_services(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

@@ -177,6 +177,7 @@ class TestCoordinatorRoomTransition:
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
             coordinator._previous_rooms = {"Alice": "bedroom"}
+            coordinator.history_tracker = None
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
 
@@ -202,6 +203,7 @@ class TestCoordinatorRoomTransition:
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
             coordinator._previous_rooms = {"Alice": "office"}
+            coordinator.history_tracker = None
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
 
@@ -219,6 +221,7 @@ class TestCoordinatorRoomTransition:
         with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
             coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
             coordinator._previous_rooms = {"Alice": "office"}
+            coordinator.history_tracker = None
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
 
@@ -227,3 +230,71 @@ class TestCoordinatorRoomTransition:
 
             # Should NOT log transition to unknown
             coordinator.event_logger.async_log_room_transition.assert_not_called()
+
+
+class TestCoordinatorHistoryRecording:
+    """Room transitions must reach the HistoryTracker that get_history reads."""
+
+    @staticmethod
+    def _make_coordinator(LLMPresenceCoordinator, history_tracker, previous_rooms):
+        coordinator = LLMPresenceCoordinator.__new__(LLMPresenceCoordinator)
+        coordinator._previous_rooms = previous_rooms
+        coordinator.history_tracker = history_tracker
+        coordinator.event_logger = MagicMock()
+        coordinator.event_logger.async_log_room_transition = AsyncMock()
+        coordinator.hass = MagicMock()
+        # Run executor jobs inline so the tracker is really exercised
+        coordinator.hass.async_add_executor_job = AsyncMock(side_effect=lambda func, *args: func(*args))
+        return coordinator
+
+    @pytest.mark.asyncio
+    async def test_transition_is_recorded_in_history_tracker(self, tmp_path):
+        """A room change should be readable through the tracker."""
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.history import HistoryTracker
+
+        tracker = HistoryTracker(config_path=tmp_path)
+
+        with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
+            coordinator = self._make_coordinator(LLMPresenceCoordinator, tracker, {"Alice": "bedroom"})
+
+            await coordinator._check_room_transition("Alice", "office", 0.9)
+
+        transitions = tracker.get_recent_transitions("Alice")
+        assert len(transitions) == 1
+        assert transitions[0]["from_room"] == "bedroom"
+        assert transitions[0]["to_room"] == "office"
+        assert transitions[0]["confidence"] == 0.9
+        coordinator.hass.async_add_executor_job.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_same_room_and_unknown_are_not_recorded(self):
+        """Staying put or going 'unknown' is not a transition."""
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
+
+        tracker = MagicMock()
+
+        with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
+            coordinator = self._make_coordinator(LLMPresenceCoordinator, tracker, {"Alice": "office"})
+
+            await coordinator._check_room_transition("Alice", "office", 0.9)
+            await coordinator._check_room_transition("Alice", "unknown", 0.3)
+
+        tracker.record_transition.assert_not_called()
+        coordinator.hass.async_add_executor_job.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_history_is_recorded_even_if_event_log_fails(self, tmp_path):
+        """A failing jsonl write must not cost the timeline its entry."""
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.history import HistoryTracker
+
+        tracker = HistoryTracker(config_path=tmp_path)
+
+        with patch.object(LLMPresenceCoordinator, "__init__", lambda x, y, z: None):
+            coordinator = self._make_coordinator(LLMPresenceCoordinator, tracker, {"Alice": "bedroom"})
+            coordinator.event_logger.async_log_room_transition = AsyncMock(side_effect=OSError("disk full"))
+
+            await coordinator._check_room_transition("Alice", "office", 0.9)
+
+        assert len(tracker.get_recent_transitions("Alice")) == 1
