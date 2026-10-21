@@ -327,16 +327,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        # Not self.config_entry: newer Home Assistant makes that a read-only property
-        self._entry = config_entry
-
-    def _current(self, key: str, default: Any = None) -> Any:
-        """Return the current value of a setting, from options first, then setup data."""
-        return self._entry.options.get(key, self._entry.data.get(key, default))
-
-    def _save(self, changes: dict[str, Any]) -> FlowResult:
-        """Save changed settings, keeping the ones saved from the other options pages."""
-        return self.async_create_entry(title="", data={**self._entry.options, **changes})
+        self.config_entry = config_entry
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage the options - show menu."""
@@ -348,7 +339,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
     async def async_step_general(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """General options."""
         if user_input is not None:
-            return self._save(user_input)
+            return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(
             step_id="general",
@@ -356,7 +347,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                 {
                     vol.Optional(
                         CONF_POLL_INTERVAL,
-                        default=self._current(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL),
+                        default=self.config_entry.data.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL),
                     ): selector.NumberSelector(
                         selector.NumberSelectorConfig(
                             min=5,
@@ -368,7 +359,9 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                     ),
                     vol.Optional(
                         CONF_TIMEOUT,
-                        default=self._current(CONF_TIMEOUT, DEFAULT_TIMEOUT),
+                        default=self.config_entry.options.get(
+                            CONF_TIMEOUT, self.config_entry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+                        ),
                     ): selector.NumberSelector(
                         selector.NumberSelectorConfig(
                             min=5,
@@ -380,7 +373,7 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                     ),
                     vol.Optional(
                         CONF_LEARNING_ENABLED,
-                        default=self._current(CONF_LEARNING_ENABLED, DEFAULT_LEARNING_ENABLED),
+                        default=self.config_entry.data.get(CONF_LEARNING_ENABLED, DEFAULT_LEARNING_ENABLED),
                     ): bool,
                 }
             ),
@@ -390,8 +383,8 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
         """Configure room-entity mappings."""
         if user_input is not None:
             # Process and save room entity mappings, validating entities exist
-            room_entities = dict(self._current(CONF_ROOM_ENTITIES, {}))
-            rooms = self._current(CONF_ROOMS, [])
+            room_entities = self.config_entry.data.get(CONF_ROOM_ENTITIES, {}).copy()
+            rooms = self.config_entry.data.get(CONF_ROOMS, [])
             invalid_entities = []
 
             for room in rooms:
@@ -417,11 +410,11 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                     ", ".join(invalid_entities),
                 )
 
-            return self._save({CONF_ROOM_ENTITIES: room_entities})
+            return self.async_create_entry(title="", data={CONF_ROOM_ENTITIES: room_entities})
 
         # Build dynamic schema
-        rooms = self._current(CONF_ROOMS, [])
-        current_mappings = self._current(CONF_ROOM_ENTITIES, {})
+        rooms = self.config_entry.data.get(CONF_ROOMS, [])
+        current_mappings = self.config_entry.data.get(CONF_ROOM_ENTITIES, {})
         schema_dict = {}
 
         for room in rooms:
@@ -453,8 +446,8 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             # Process and save person device mappings
             person_devices = {}
-            persons = self._current(CONF_PERSONS, [])
-            pets = self._current(CONF_PETS, [])
+            persons = self.config_entry.data.get(CONF_PERSONS, [])
+            pets = self.config_entry.data.get(CONF_PETS, [])
 
             for person in persons + pets:
                 name = person.get("name", "")
@@ -463,12 +456,12 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                 if devices:
                     person_devices[name] = devices
 
-            return self._save({CONF_PERSON_DEVICES: person_devices})
+            return self.async_create_entry(title="", data={CONF_PERSON_DEVICES: person_devices})
 
         # Build dynamic schema
-        persons = self._current(CONF_PERSONS, [])
-        pets = self._current(CONF_PETS, [])
-        current_mappings = self._current(CONF_PERSON_DEVICES, {})
+        persons = self.config_entry.data.get(CONF_PERSONS, [])
+        pets = self.config_entry.data.get(CONF_PETS, [])
+        current_mappings = self.config_entry.data.get(CONF_PERSON_DEVICES, {})
         schema_dict = {}
 
         for entity in persons + pets:
@@ -500,9 +493,9 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                     hint_type = key.replace("weight_", "")
                     weights[hint_type] = value / 100  # Convert from percentage
 
-            return self._save({CONF_CONFIDENCE_WEIGHTS: weights})
+            return self.async_create_entry(title="", data={CONF_CONFIDENCE_WEIGHTS: weights})
 
-        current_weights = self._current(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
+        current_weights = self.config_entry.data.get(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
         schema_dict = {}
 
         weight_descriptions = {

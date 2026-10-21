@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections.abc import Collection
@@ -17,6 +18,7 @@ from .const import (
     CONF_CONFIDENCE_WEIGHTS,
     CONF_LEARNING_ENABLED,
     CONF_MODEL,
+    CONF_NOTIFICATIONS_ENABLED,
     CONF_PERSON_DEVICES,
     CONF_PERSONS,
     CONF_PETS,
@@ -29,6 +31,7 @@ from .const import (
     DEFAULT_CONFIDENCE_WEIGHTS,
     DEFAULT_LEARNING_ENABLED,
     DEFAULT_MODEL,
+    DEFAULT_NOTIFICATIONS_ENABLED,
     DEFAULT_POLL_INTERVAL,
     DEFAULT_PROVIDER,
     DEFAULT_TIMEOUT,
@@ -40,12 +43,16 @@ from .const import (
     DOMAIN,
     ENTITY_HINT_COMPUTER,
     ENTITY_HINT_MEDIA,
+    HABIT_SAVE_INTERVAL,
     ROOM_AWAY,
+    ROOM_UNKNOWN,
     VALID_ROOMS,
 )
 from .device_presence import DeviceRoomLocator, seen_since_away
 from .event_logger import EventLogger
 from .habits import ConfidenceCombiner, HabitPredictor
+from .history import HistoryTracker
+from .notifications import NotificationManager
 from .providers import get_provider
 from .providers.base import PresenceGuess
 
@@ -155,6 +162,8 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         event_logger: EventLogger | None = None,
         habit_predictor: HabitPredictor | None = None,
         confidence_combiner: ConfidenceCombiner | None = None,
+        history_tracker: HistoryTracker | None = None,
+        notification_manager: NotificationManager | None = None,
     ) -> None:
         """Initialize the coordinator."""
         self.entry = entry
@@ -183,6 +192,15 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.event_logger = event_logger or EventLogger()
         self.habit_predictor = habit_predictor or HabitPredictor()
         self.confidence_combiner = confidence_combiner or ConfidenceCombiner(self.confidence_weights)
+        self.history_tracker = history_tracker or HistoryTracker()
+        self.notification_manager = notification_manager or NotificationManager(
+            hass,
+            enabled=self._get_config(entry, CONF_NOTIFICATIONS_ENABLED, DEFAULT_NOTIFICATIONS_ENABLED),
+        )
+
+        # Learned habits are written to disk periodically, not on every update
+        self._habits_dirty = False
+        self._last_habit_save = time.monotonic()
 
         # Device tracker helper for away detection
         self.device_tracker_helper = DeviceTrackerHelper()
@@ -240,6 +258,8 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
                 results["pets"][pet_name] = guess
 
+            await self._async_maybe_save_habits()
+
             elapsed = time.time() - start_time
             _LOGGER.debug("Finished fetching roomer data in %.3f seconds (success: True)", elapsed)
 
@@ -290,6 +310,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     room=guess.room,
                     confidence=guess.confidence,
                 )
+                self._habits_dirty = True
             await self._log_presence_event(name, entity_type, guess, context)
             await self._check_room_transition(name, guess.room, guess.confidence)
             return guess
@@ -353,6 +374,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 room=final_room,
                 confidence=final_confidence,
             )
+            self._habits_dirty = True
 
         # Log the event and check for room transitions
         await self._log_presence_event(name, entity_type, guess, context)
@@ -630,10 +652,15 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         new_room: str,
         confidence: float,
     ) -> None:
-        """Check if entity moved rooms and log transition."""
+        """Check if entity moved rooms, log and record the transition, and fire events."""
         previous_room = self._previous_rooms.get(entity_name)
 
-        if previous_room and previous_room != new_room and new_room != "unknown":
+        # "unknown" means the detection was inconclusive, not that the entity left,
+        # so keep the last known room rather than reporting a transition.
+        if new_room == ROOM_UNKNOWN:
+            return
+
+        if previous_room and previous_room != new_room:
             try:
                 await self.event_logger.async_log_room_transition(
                     entity_name=entity_name,
@@ -645,4 +672,32 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             except OSError as err:
                 _LOGGER.warning("Failed to log room transition: %s", err)
 
+            # record_transition writes to disk every few transitions
+            await asyncio.to_thread(
+                self.history_tracker.record_transition,
+                entity_name,
+                previous_room,
+                new_room,
+                confidence,
+            )
+
+        # Fires roomer_person_arrived / roomer_person_left / roomer_room_changed
+        self.notification_manager.update_room(entity_name, new_room, confidence)
+
         self._previous_rooms[entity_name] = new_room
+
+    async def _async_maybe_save_habits(self) -> None:
+        """Save learned habits if they changed and the save interval has elapsed."""
+        if not self._habits_dirty:
+            return
+        if time.monotonic() - self._last_habit_save < HABIT_SAVE_INTERVAL.total_seconds():
+            return
+        self._habits_dirty = False
+        self._last_habit_save = time.monotonic()
+        await asyncio.to_thread(self.habit_predictor.save_learned_patterns)
+
+    def save_state(self) -> None:
+        """Write learned habits and movement history to disk (blocking)."""
+        self.habit_predictor.save_learned_patterns()
+        self.history_tracker.save_history()
+        self._habits_dirty = False

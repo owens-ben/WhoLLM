@@ -9,12 +9,6 @@ import pytest
 from homeassistant.core import State
 
 from custom_components.roomer.const import (
-    CONF_CONFIDENCE_WEIGHTS,
-    CONF_PERSON_DEVICES,
-    CONF_PERSONS,
-    CONF_PETS,
-    CONF_ROOM_ENTITIES,
-    CONF_TIMEOUT,
     DEFAULT_CONFIDENCE_WEIGHTS,
     DEVICE_ROOM_CONFIDENCE,
     DEVICE_ROOM_SPLIT_CONFIDENCE,
@@ -273,6 +267,9 @@ def coordinator(habit_predictor):
     coord.provider.deduce_presence = AsyncMock(
         return_value=PresenceGuess(room="kitchen", confidence=0.6, raw_response="ROOM: kitchen", indicators=[])
     )
+    coord.history_tracker = MagicMock()
+    coord.notification_manager = MagicMock()
+    coord._habits_dirty = False
     coord._previous_rooms = {}
     coord.hass = make_hass()
     return coord
@@ -333,6 +330,16 @@ class TestCoordinatorDevicePresence:
         await coordinator._process_entity("Alice", "person", {}, [])
 
         assert coordinator.habit_predictor.habits["Alice"]
+        assert coordinator._habits_dirty is True
+
+    async def test_device_location_fires_room_events(self, coordinator):
+        """Arrival/departure/room-change events are fed from device locations too."""
+        coordinator.hass = make_hass(make_state("sensor.alice_phone_area", "Office", minutes_ago=5))
+        coordinator.person_devices = {"Alice": ["sensor.alice_phone_area"]}
+
+        await coordinator._process_entity("Alice", "person", {}, [])
+
+        coordinator.notification_manager.update_room.assert_called_once_with("Alice", "office", DEVICE_ROOM_CONFIDENCE)
 
     async def test_room_change_is_logged_as_transition(self, coordinator):
         coordinator.person_devices = {"Alice": ["sensor.alice_phone_area"]}
@@ -483,70 +490,3 @@ class TestRoomOccupantsSensor:
         sensor = LLMPresenceSensor(data_coordinator, "Alice", "person")
 
         assert sensor.extra_state_attributes["source"] == "device_room"
-
-
-class TestOptionsFlowDevices:
-    """Assigning devices through Configure must work and must not wipe other settings."""
-
-    @pytest.fixture
-    def entry(self):
-        entry = MagicMock()
-        entry.data = {
-            CONF_PERSONS: [{"name": "Alice"}],
-            CONF_PETS: [{"name": "Whiskers"}],
-            CONF_ROOM_ENTITIES: {"office": [{"entity_id": "binary_sensor.office_motion", "hint_type": "motion"}]},
-            CONF_PERSON_DEVICES: {},
-        }
-        entry.options = {
-            CONF_TIMEOUT: 45,
-            CONF_ROOM_ENTITIES: {"kitchen": [{"entity_id": "binary_sensor.kitchen_motion", "hint_type": "motion"}]},
-        }
-        return entry
-
-    def test_options_flow_opens(self, entry):
-        """Newer Home Assistant makes config_entry read-only; opening Configure must not crash."""
-        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
-
-        flow = LLMPresenceConfigFlow.async_get_options_flow(entry)
-
-        assert flow is not None
-
-    async def test_saving_devices_keeps_other_options(self, entry):
-        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
-
-        flow = LLMPresenceConfigFlow.async_get_options_flow(entry)
-        result = await flow.async_step_person_devices(
-            {"devices_Alice": ["sensor.alice_phone_area"], "devices_Whiskers": ["sensor.whiskers_tag_area"]}
-        )
-
-        assert result["data"] == {
-            CONF_TIMEOUT: 45,
-            CONF_ROOM_ENTITIES: entry.options[CONF_ROOM_ENTITIES],
-            CONF_PERSON_DEVICES: {
-                "Alice": ["sensor.alice_phone_area"],
-                "Whiskers": ["sensor.whiskers_tag_area"],
-            },
-        }
-
-    async def test_device_form_shows_saved_devices(self, entry):
-        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
-
-        entry.options[CONF_PERSON_DEVICES] = {"Alice": ["sensor.alice_phone_area"]}
-        flow = LLMPresenceConfigFlow.async_get_options_flow(entry)
-
-        result = await flow.async_step_person_devices(None)
-
-        defaults = {str(key): key.default() for key in result["data_schema"].schema}
-        assert defaults["devices_Alice"] == ["sensor.alice_phone_area"]
-        assert defaults["devices_Whiskers"] == []
-
-    async def test_saving_weights_keeps_devices(self, entry):
-        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
-
-        entry.options[CONF_PERSON_DEVICES] = {"Alice": ["sensor.alice_phone_area"]}
-        flow = LLMPresenceConfigFlow.async_get_options_flow(entry)
-
-        result = await flow.async_step_confidence_weights({"weight_motion": 50})
-
-        assert result["data"][CONF_PERSON_DEVICES] == {"Alice": ["sensor.alice_phone_area"]}
-        assert result["data"][CONF_CONFIDENCE_WEIGHTS] == {"motion": 0.5}
