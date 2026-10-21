@@ -20,8 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING:** Entities are recreated under the new domain (new unique IDs), and storage files are now `roomer_history.json`, `roomer_learned_habits.json` and `roomer_events.jsonl`, so learned habits and history start fresh.
 - Docs now lead with the problem (who is in which room, from combined weak signals) rather than the LLM; an LLM provider is still required.
 - Removed emojis from indicator strings in provider code
+- **Confidence scores are higher and mean more.** The confidence combiner now combines agreeing signals instead of dividing their sum by 2.60, so motion plus the AI scores 0.74 instead of 0.37, and conflicting rooms lower the winner's confidence. Raise any `confidence` thresholds you lowered to cope with the old values (`0.6` to `0.7` is a good start). See the Accuracy & limits docs.
+- The Ollama prompt now asks the model for a `CONFIDENCE:` value; `CONFIDENCE: 85` and `85%` are read as 0.85.
+- **BREAKING (blueprints):** Welcome Home Lights and Goodbye Routine trigger on the room sensor changing from or to `away` instead of the unfired `roomer_person_arrived` / `roomer_person_left` events. Goodbye Routine takes a list of room sensors and runs only once all of them are still `away` after the delay. Re-create automations made from it.
+- Follow Me Music's default minimum confidence is now 0.7.
 
 ### Fixed
+- Habits were rarely learned, because correct answers almost never reached the 0.7 learning threshold.
+- The confidence combiner's "multiple signals agree" bonus could never apply.
+- Blueprints used `!input` inside templates without a `variables:` block, so their template conditions (room, confidence, optional inputs) never worked.
+- Goodbye Routine stopped at the first optional input left empty (for example no lights), and failed validation when lights, locks, climate or alarm were left empty.
+- Welcome Home Lights' "only after dark" check could never pass (`after: sunset` and `before: sunrise` in one condition); it now uses `sun.sun` being below the horizon.
+- `automations/vision_on_motion.yaml` referenced `sensor.llm_vision_last_identification`; it is `sensor.vision_last_identification`.
 - Home Assistant 2025.x compatibility: use direct import for `async_track_time_interval` instead of deprecated `hass.helpers.event` access
 
 ## [0.1.0-alpha] - 2025-01-29
