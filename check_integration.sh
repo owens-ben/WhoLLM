@@ -12,12 +12,14 @@ echo "🔍 WhoLLM Integration Check"
 echo "======================================"
 echo ""
 
-# Check symlink
-if [ -L "$INTEGRATION_DST" ]; then
+# Check install (symlink from setup_local_testing.sh, or a copy from scripts/deploy.sh)
+if [ -L "$INTEGRATION_DST" ] && [ -d "$INTEGRATION_DST" ]; then
     echo "✅ Symlink exists"
     echo "   → $(readlink -f "$INTEGRATION_DST")"
+elif [ -d "$INTEGRATION_DST" ]; then
+    echo "✅ Integration directory exists"
 else
-    echo "❌ Symlink missing!"
+    echo "❌ Integration missing at $INTEGRATION_DST"
     exit 1
 fi
 

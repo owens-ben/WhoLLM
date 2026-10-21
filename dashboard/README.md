@@ -42,7 +42,7 @@ Import `whollm-dashboard.yaml` into Home Assistant:
 lovelace:
   mode: yaml
   dashboards:
-    whollm:
+    whollm-dashboard:
       mode: yaml
       title: WhoLLM
       icon: mdi:brain

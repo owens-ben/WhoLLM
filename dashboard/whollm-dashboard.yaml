@@ -11,7 +11,7 @@
 #      lovelace:
 #        mode: yaml
 #        dashboards:
-#          whollm:
+#          whollm-dashboard:
 #            mode: yaml
 #            title: WhoLLM
 #            icon: mdi:brain
@@ -152,7 +152,7 @@ views:
               {% if occupied %}blue{% else %}grey{% endif %}
             tap_action:
               action: navigate
-              navigation_path: /whollm/office
+              navigation_path: /whollm-dashboard/office
             layout: vertical
             fill_container: true
 
@@ -175,7 +175,7 @@ views:
               {% if occupied %}green{% else %}grey{% endif %}
             tap_action:
               action: navigate
-              navigation_path: /whollm/living-room
+              navigation_path: /whollm-dashboard/living-room
             layout: vertical
             fill_container: true
 
@@ -198,7 +198,7 @@ views:
               {% if occupied %}purple{% else %}grey{% endif %}
             tap_action:
               action: navigate
-              navigation_path: /whollm/bedroom
+              navigation_path: /whollm-dashboard/bedroom
             layout: vertical
             fill_container: true
 
@@ -221,7 +221,7 @@ views:
               {% if occupied %}orange{% else %}grey{% endif %}
             tap_action:
               action: navigate
-              navigation_path: /whollm/kitchen
+              navigation_path: /whollm-dashboard/kitchen
             layout: vertical
             fill_container: true
 

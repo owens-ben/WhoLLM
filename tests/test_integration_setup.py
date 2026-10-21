@@ -232,17 +232,30 @@ class TestAsyncReloadEntry:
 
     @pytest.mark.asyncio
     async def test_reload_entry(self, mock_hass, mock_config_entry):
-        """Test that reload calls unload then setup."""
+        """Reload goes through HA's config entry manager."""
         from custom_components.whollm import async_reload_entry
 
-        mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
+        mock_hass.config_entries.async_reload = AsyncMock()
 
-        with patch("custom_components.whollm.async_unload_entry", new_callable=AsyncMock) as mock_unload:
-            with patch("custom_components.whollm.async_setup_entry", new_callable=AsyncMock) as mock_setup:
-                await async_reload_entry(mock_hass, mock_config_entry)
+        await async_reload_entry(mock_hass, mock_config_entry)
 
-                mock_unload.assert_called_once_with(mock_hass, mock_config_entry)
-                mock_setup.assert_called_once_with(mock_hass, mock_config_entry)
+        mock_hass.config_entries.async_reload.assert_called_once_with(mock_config_entry.entry_id)
+
+    @pytest.mark.asyncio
+    async def test_setup_registers_options_listener(self, mock_hass, mock_config_entry):
+        """Changing options reloads the entry so they apply without a restart."""
+        from custom_components.whollm import async_reload_entry, async_setup_entry
+
+        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+            mock_coord_class.return_value.async_config_entry_first_refresh = AsyncMock()
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
+                with patch("custom_components.whollm.VisionIdentifier"):
+                    with patch("custom_components.whollm.CameraTrackingController"):
+                        await async_setup_entry(mock_hass, mock_config_entry)
+
+        mock_config_entry.add_update_listener.assert_called_once_with(async_reload_entry)
+        mock_config_entry.async_on_unload.assert_called_once_with(mock_config_entry.add_update_listener.return_value)
 
 
 class TestServiceHandlers:

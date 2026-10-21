@@ -80,6 +80,7 @@ def _hass_with_coordinator(coordinator=None):
         coordinator = MagicMock()
         coordinator.persons = [{"name": "Ben"}, {"name": "Mary Jane"}]
         coordinator.pets = [{"name": "Whiskers"}]
+        coordinator.rooms = ["office", "kitchen", "living_room", "home-office"]
     hass = MagicMock()
     hass.data = {"whollm": {"entry_1": coordinator, "event_logger": object()}}
     return hass, coordinator
@@ -124,10 +125,12 @@ class TestCorrectRoomService:
 
     @pytest.mark.asyncio
     async def test_correct_room_validates_room(self):
-        """Correct room should validate room name."""
+        """An unknown room is rejected before anything is learned or changed."""
+        from homeassistant.exceptions import ServiceValidationError
+
         from custom_components.whollm.services import async_handle_correct_room
 
-        mock_hass, _ = _hass_with_coordinator()
+        mock_hass, coordinator = _hass_with_coordinator()
 
         call = MagicMock()
         call.data = {
@@ -135,8 +138,41 @@ class TestCorrectRoomService:
             "room": "invalid_room_xyz",
         }
 
-        # Should not raise, but may log warning
-        await async_handle_correct_room(mock_hass, call)
+        with pytest.raises(ServiceValidationError):
+            await async_handle_correct_room(mock_hass, call)
+
+        coordinator.habit_predictor.learn_from_event.assert_not_called()
+        mock_hass.states.async_set.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_correct_room_rejects_unknown_entity(self):
+        """A sensor that isn't a configured person or pet is rejected."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        from custom_components.whollm.services import async_handle_correct_room
+
+        mock_hass, coordinator = _hass_with_coordinator()
+
+        call = MagicMock()
+        call.data = {"entity_id": "sensor.stranger_room", "room": "office"}
+
+        with pytest.raises(ServiceValidationError):
+            await async_handle_correct_room(mock_hass, call)
+
+        coordinator.habit_predictor.learn_from_event.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_correct_room_accepts_display_name_and_away(self):
+        """'Living Room' maps to living_room, configured spellings are kept, and away is always valid."""
+        from custom_components.whollm.services import async_handle_correct_room
+
+        mock_hass, coordinator = _hass_with_coordinator()
+
+        for room, expected in (("Living Room", "living_room"), ("away", "away"), ("home-office", "home-office")):
+            call = MagicMock()
+            call.data = {"entity_id": "sensor.ben_room", "room": room}
+            await async_handle_correct_room(mock_hass, call)
+            assert coordinator.habit_predictor.learn_from_event.call_args.kwargs["room"] == expected
 
     @pytest.mark.asyncio
     async def test_correct_room_without_coordinator(self):

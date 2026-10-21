@@ -21,7 +21,7 @@ source .venv/bin/activate
 
 # Install dependencies (uv resolves a compatible homeassistant faster than pip)
 pip install uv
-uv pip install -r requirements_test.txt
+uv pip install -r requirements_test.txt ruff==0.16.9
 
 # Install pre-commit hooks
 pip install pre-commit

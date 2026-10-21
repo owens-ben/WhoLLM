@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `local/` overlay and `scripts/deploy.sh` for household-specific settings
 
 ### Fixed
+- Options flow crashed on Home Assistant 2025.12+ (it assigned the now read-only `config_entry`)
+- Saving one options section wiped the others, and the forms showed setup values instead of saved options
+- Options changes now apply immediately (the entry reloads) instead of after a restart
+- `correct_room` rejects unknown rooms and sensors instead of learning from them; accepts "Living Room" for `living_room`
+- Lovelace dashboard key in the docs needs a hyphen (`whollm-dashboard`)
 - Lovelace card: the confidence percentage was clipped and never visible; names no longer end in "Room"
 - `refresh`, `correct_room`, `get_history`, `clear_history` and `get_patterns` services were never registered, and `services.py` failed to import after the singleton removal. `get_history` and `get_patterns` now return responses
 - Arrival, departure and room-change events never fired because `NotificationManager` was never created. They now fire, except for the first reading after startup

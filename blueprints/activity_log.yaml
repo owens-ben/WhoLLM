@@ -63,12 +63,15 @@ variables:
   notify_target: !input notify_target
   threshold: !input low_confidence
   only_low: !input only_low_confidence
-  name: "{{ trigger.to_state.name | replace(' Room', '') }}"
-  from_room: "{{ trigger.from_state.state | replace('_', ' ') }}"
-  to_room: "{{ trigger.to_state.state | replace('_', ' ') }}"
-  confidence: "{{ ((trigger.to_state.attributes.get('confidence', 0) | float(0)) * 100) | round(0) | int }}"
+  # from_state is none when the sensor is added, to_state when it's removed
+  name: "{{ trigger.to_state.name | replace(' Room', '') if trigger.to_state else '' }}"
+  from_room: "{{ trigger.from_state.state | replace('_', ' ') if trigger.from_state else 'unknown' }}"
+  to_room: "{{ trigger.to_state.state | replace('_', ' ') if trigger.to_state else 'unknown' }}"
+  confidence: >-
+    {{ ((trigger.to_state.attributes.get('confidence', 0) | float(0)) * 100) | round(0) | int
+       if trigger.to_state else 0 }}
   is_low: "{{ confidence < threshold | int }}"
-  indicators: "{{ trigger.to_state.attributes.get('indicators') or [] }}"
+  indicators: "{{ (trigger.to_state.attributes.get('indicators') or []) if trigger.to_state else [] }}"
   message: >-
     {{ ':warning: ' if is_low else '' }}*{{ name }}*: {{ from_room }} → {{ to_room }}
     ({{ confidence }}%){% if indicators %} · {{ indicators[:4] | join(', ') }}{% endif %}
@@ -76,7 +79,7 @@ variables:
 condition:
   - condition: template
     value_template: >-
-      {{ trigger.from_state is not none
+      {{ trigger.from_state is not none and trigger.to_state is not none
          and trigger.from_state.state not in ['unavailable', 'unknown']
          and trigger.to_state.state not in ['unavailable', 'unknown']
          and (is_low or not only_low) }}

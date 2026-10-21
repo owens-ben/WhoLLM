@@ -23,6 +23,8 @@ HA_CONFIG_DIR="${HA_CONFIG_DIR:-/config}"
 DEST="$HA_SSH:$HA_CONFIG_DIR/custom_components/whollm/"
 
 echo "Deploying to $DEST"
+# rsync creates the last path component only; fresh configs lack custom_components/
+ssh "$HA_SSH" "mkdir -p '$HA_CONFIG_DIR/custom_components'"
 # models/ is excluded so --delete never removes models trained in place
 rsync -av --delete \
     --exclude '__pycache__/' --exclude 'models/' --exclude '.gitkeep' \

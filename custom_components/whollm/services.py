@@ -15,10 +15,11 @@ from typing import TYPE_CHECKING
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import slugify
 
-from .const import DOMAIN
+from .const import DOMAIN, ROOM_AWAY
 
 if TYPE_CHECKING:
     from .coordinator import LLMPresenceCoordinator
@@ -77,14 +78,14 @@ def _get_coordinator(hass: HomeAssistant) -> LLMPresenceCoordinator | None:
     return None
 
 
-def _entity_name_for(coordinator: LLMPresenceCoordinator, entity_id: str) -> str:
+def _entity_name_for(coordinator: LLMPresenceCoordinator, entity_id: str) -> str | None:
     """Map a room sensor entity_id (sensor.ben_room) back to its configured name."""
     object_id = entity_id.split(".")[-1].removesuffix("_room")
     for entity in [*coordinator.persons, *coordinator.pets]:
         name = entity.get("name", "")
         if slugify(name) == object_id:
             return name
-    return object_id.replace("_", " ").title()
+    return None
 
 
 async def async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -119,6 +120,16 @@ async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> N
         return
 
     entity_name = _entity_name_for(coordinator, entity_id)
+    if entity_name is None:
+        raise ServiceValidationError(f"{entity_id} is not a WhoLLM room sensor")
+
+    # Accept "Living Room" for living_room, but keep the configured spelling
+    valid_rooms = [*coordinator.rooms, ROOM_AWAY]
+    by_slug = {slugify(r): r for r in valid_rooms}
+    matched = room if room in valid_rooms else by_slug.get(slugify(room))
+    if matched is None:
+        raise ServiceValidationError(f"Unknown room '{room}'. Configured rooms: {', '.join(valid_rooms)}")
+    room = matched
 
     # Learn from the correction
     coordinator.habit_predictor.learn_from_event(
