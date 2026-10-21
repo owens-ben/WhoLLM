@@ -113,9 +113,10 @@ class HabitPredictor:
         try:
             # Convert tuple keys to strings for JSON serialization
             data = {"patterns": {}}
-            for person, patterns in self.habits.items():
+            # Copy the items: this may run in a worker thread while the loop learns
+            for person, patterns in list(self.habits.items()):
                 data["patterns"][person] = {}
-                for time_range, pattern in patterns.items():
+                for time_range, pattern in list(patterns.items()):
                     if isinstance(time_range, tuple):
                         time_key = f"{time_range[0]}-{time_range[1]}"
                         data["patterns"][person][time_key] = list(pattern)

@@ -71,7 +71,9 @@ class NotificationManager:
         self._previous_rooms[entity_name] = old_room
         self._current_rooms[entity_name] = new_room
         
-        if not self._enabled:
+        # The first observation (e.g. after a restart) only sets the baseline;
+        # firing here would report everyone as arriving on every startup.
+        if old_room is None or not self._enabled:
             return
         
         timestamp = datetime.now().isoformat()

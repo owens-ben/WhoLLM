@@ -7,14 +7,13 @@ Optionally uses vision models to identify specific people/pets.
 
 from __future__ import annotations
 
+import asyncio
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import config_validation as cv
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
+from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
@@ -32,6 +31,12 @@ from .const import (
 from .coordinator import LLMPresenceCoordinator
 from .event_logger import EventLogger
 from .habits import ConfidenceCombiner, HabitPredictor
+from .services import (  # noqa: F401 - schemas re-exported for backwards compatibility
+    CLEANUP_STORAGE_SCHEMA,
+    IDENTIFY_PERSON_SCHEMA,
+    TRACKING_SCHEMA,
+    async_setup_services,
+)
 from .vision import CameraTrackingController, VisionIdentifier
 
 if TYPE_CHECKING:
@@ -40,32 +45,6 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
-
-# Service schemas
-SERVICE_IDENTIFY_PERSON = "identify_person"
-SERVICE_ENABLE_TRACKING = "enable_tracking"
-SERVICE_DISABLE_TRACKING = "disable_tracking"
-SERVICE_CLEANUP_STORAGE = "cleanup_storage"
-
-IDENTIFY_PERSON_SCHEMA = vol.Schema(
-    {
-        vol.Required("camera_entity_id"): cv.entity_id,
-        vol.Optional("detection_type", default="person"): vol.In(["person", "animal"]),
-    }
-)
-
-TRACKING_SCHEMA = vol.Schema(
-    {
-        vol.Required("camera_name"): cv.string,
-    }
-)
-
-CLEANUP_STORAGE_SCHEMA = vol.Schema(
-    {
-        vol.Optional("retention_days"): vol.All(vol.Coerce(int), vol.Range(min=1, max=365)),
-        vol.Optional("max_file_size_mb"): vol.All(vol.Coerce(float), vol.Range(min=1.0, max=1000.0)),
-    }
-)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -128,11 +107,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 result.get("final_size_mb", 0.0),
             )
 
-    # Schedule daily cleanup (runs every 24 hours)
-    async_track_time_interval(
-        hass,
-        periodic_cleanup,
-        timedelta(hours=24),
+    # Schedule daily cleanup (runs every 24 hours), cancelled when the entry unloads
+    entry.async_on_unload(
+        async_track_time_interval(
+            hass,
+            periodic_cleanup,
+            timedelta(hours=24),
+        )
     )
     _LOGGER.info("Scheduled daily periodic cleanup")
 
@@ -157,131 +138,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN]["tracking_controller"] = tracking_controller
 
     # Register services
-    await _async_register_services(hass)
+    await async_setup_services(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Reload when options change so they take effect without a restart
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
+    # Home Assistant does not unload entries on shutdown, so save state on stop too
+    async def _async_save_on_stop(event: Event) -> None:
+        await asyncio.to_thread(coordinator.save_state)
+
+    entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_save_on_stop))
+
     return True
-
-
-async def _async_register_services(hass: HomeAssistant) -> None:
-    """Register Roomer services."""
-
-    async def handle_identify_person(call: ServiceCall) -> dict[str, Any]:
-        """Handle the identify_person service call."""
-        camera_entity_id = call.data["camera_entity_id"]
-        detection_type = call.data.get("detection_type", "person")
-
-        vision_identifier: VisionIdentifier = hass.data[DOMAIN].get("vision_identifier")
-        if not vision_identifier:
-            _LOGGER.error("Vision identifier not initialized")
-            return {"success": False, "error": "Vision not initialized"}
-
-        result = await vision_identifier.identify_from_camera(
-            hass,
-            camera_entity_id,
-            detection_type,
-        )
-
-        # Fire an event with the result
-        hass.bus.async_fire(
-            f"{DOMAIN}_vision_identification",
-            {
-                "camera": camera_entity_id,
-                "detection_type": detection_type,
-                **result,
-            },
-        )
-
-        return result
-
-    async def handle_enable_tracking(call: ServiceCall) -> None:
-        """Handle the enable_tracking service call."""
-        camera_name = call.data["camera_name"]
-
-        tracking_controller: CameraTrackingController = hass.data[DOMAIN].get("tracking_controller")
-        if tracking_controller:
-            await tracking_controller.enable_tracking(camera_name)
-
-    async def handle_disable_tracking(call: ServiceCall) -> None:
-        """Handle the disable_tracking service call."""
-        camera_name = call.data["camera_name"]
-
-        tracking_controller: CameraTrackingController = hass.data[DOMAIN].get("tracking_controller")
-        if tracking_controller:
-            await tracking_controller.disable_tracking(camera_name)
-
-    async def handle_cleanup_storage(call: ServiceCall) -> dict[str, Any]:
-        """Handle the cleanup_storage service call."""
-        event_logger = hass.data[DOMAIN].get("event_logger")
-        if not event_logger:
-            _LOGGER.error("Event logger not initialized")
-            return {"success": False, "error": "Event logger not initialized"}
-
-        # Override retention settings if provided
-        retention_days = call.data.get("retention_days")
-        max_file_size_mb = call.data.get("max_file_size_mb")
-
-        if retention_days is not None:
-            event_logger.retention_days = retention_days
-        if max_file_size_mb is not None:
-            event_logger.max_file_size_bytes = int(max_file_size_mb * 1024 * 1024)
-
-        # Perform cleanup
-        result = event_logger.cleanup()
-
-        # Fire an event with the cleanup result
-        hass.bus.async_fire(
-            f"{DOMAIN}_storage_cleanup",
-            {
-                "deleted_by_time": result.get("deleted_by_time", 0),
-                "deleted_by_size": result.get("deleted_by_size", 0),
-                "total_deleted": result.get("total_deleted", 0),
-                "total_kept": result.get("total_kept", 0),
-                "final_size_mb": result.get("final_size_mb", 0.0),
-            },
-        )
-
-        return {
-            "success": True,
-            "deleted_by_time": result.get("deleted_by_time", 0),
-            "deleted_by_size": result.get("deleted_by_size", 0),
-            "total_deleted": result.get("total_deleted", 0),
-            "total_kept": result.get("total_kept", 0),
-            "final_size_mb": result.get("final_size_mb", 0.0),
-        }
-
-    # Register services if not already registered
-    if not hass.services.has_service(DOMAIN, SERVICE_IDENTIFY_PERSON):
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_IDENTIFY_PERSON,
-            handle_identify_person,
-            schema=IDENTIFY_PERSON_SCHEMA,
-        )
-
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_ENABLE_TRACKING,
-            handle_enable_tracking,
-            schema=TRACKING_SCHEMA,
-        )
-
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_DISABLE_TRACKING,
-            handle_disable_tracking,
-            schema=TRACKING_SCHEMA,
-        )
-
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_CLEANUP_STORAGE,
-            handle_cleanup_storage,
-            schema=CLEANUP_STORAGE_SCHEMA,
-        )
-
-        _LOGGER.info("Registered Roomer services")
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -292,7 +162,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if unload_ok:
         coordinator = hass.data[DOMAIN].get(entry.entry_id)
-        if coordinator and hasattr(coordinator, "provider"):
+        if coordinator:
+            # Persist learned habits and movement history before dropping them
+            await asyncio.to_thread(coordinator.save_state)
             await coordinator.provider.async_close()
         hass.data[DOMAIN].pop(entry.entry_id, None)
 
@@ -300,6 +172,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload config entry."""
-    await async_unload_entry(hass, entry)
-    await async_setup_entry(hass, entry)
+    """Reload config entry.
+
+    Goes through the config entries manager so the entry's async_on_unload
+    callbacks (update listener, periodic cleanup) run before setup again.
+    """
+    await hass.config_entries.async_reload(entry.entry_id)

@@ -4,7 +4,7 @@ refresh:
   fields:
     entity_id:
       name: Entity ID
-      description: Optional entity to refresh (refreshes all if not specified)
+      description: Optional entity to refresh (currently every tracked person and pet is refreshed)
       required: false
       example: sensor.ben_room
       selector:
@@ -114,3 +114,50 @@ cleanup_storage:
           max: 1000
           step: 1
           mode: box
+
+identify_person:
+  name: Identify Person
+  description: Identify which person or pet is visible on a camera using the vision model. Fires roomer_vision_identification with the result.
+  fields:
+    camera_entity_id:
+      name: Camera
+      description: Camera to take a snapshot from
+      required: true
+      example: camera.living_room
+      selector:
+        entity:
+          domain: camera
+    detection_type:
+      name: Detection Type
+      description: Whether to look for a person or an animal
+      required: false
+      default: person
+      selector:
+        select:
+          options:
+            - person
+            - animal
+
+enable_tracking:
+  name: Enable Camera Tracking
+  description: Turn on auto-tracking for a camera (turns on switch.<camera_name>_auto_tracking)
+  fields:
+    camera_name:
+      name: Camera Name
+      description: Camera name as used in its auto-tracking switch entity
+      required: true
+      example: living_room
+      selector:
+        text:
+
+disable_tracking:
+  name: Disable Camera Tracking
+  description: Turn off auto-tracking for a camera (turns off switch.<camera_name>_auto_tracking)
+  fields:
+    camera_name:
+      name: Camera Name
+      description: Camera name as used in its auto-tracking switch entity
+      required: true
+      example: living_room
+      selector:
+        text:
