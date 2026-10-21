@@ -146,15 +146,11 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
 
 ??? question "My settings changes don't seem to take effect"
 
-    **Likely causes**
+    Roomer reloads itself when you save a **Configure** page, and each page keeps what the other pages saved. If a change still doesn't show up:
 
-    - Roomer reloads itself when you save options. If a change still doesn't show, check the Home Assistant log for Roomer errors during the reload.
-    - In the current version, each **Configure** page (General Settings, Room Entity Mapping, Person Device Ownership, Confidence Weights) saves **only its own settings** and discards what the other pages saved earlier. The forms also start from your original setup values, not from your last saved values.
-
-    **What to do**
-
-    1. Check that the Roomer entry shows as loaded under **Settings → Devices & services → Roomer** after saving.
-    2. If you need to change settings on more than one page, be aware that the last page you save is the one that takes effect. Check each page's values before saving.
+    1. Reopen the page and check that it shows the value you saved.
+    2. Check the logs for errors from `custom_components.roomer` during the reload.
+    3. Rooms, people, pets and the server URL can only be set during setup. To change them, delete the Roomer integration and add it again.
 
 ??? question "The dashboard card says \"Custom element doesn't exist: roomer-card\""
 
