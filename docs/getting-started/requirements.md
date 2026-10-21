@@ -56,8 +56,42 @@ models locally on your own hardware.
     can reach Ollama on its own machine. On Home Assistant OS, `localhost` means
     the Home Assistant system itself, so use the IP address of the computer
     running Ollama instead, for example `http://192.168.1.50:11434`. By default
-    Ollama only accepts local connections. Set `OLLAMA_HOST=0.0.0.0` on the
-    Ollama machine so it accepts connections from your network.
+    Ollama only accepts local connections, so you also have to tell it to listen
+    on your network. Give that computer a fixed address in your router
+    (a "DHCP reservation"), so the address in Roomer doesn't go stale.
+
+    === "macOS (the Ollama app)"
+
+        Open **Terminal**, run this, then quit Ollama from the menu bar and
+        open it again:
+
+        ```bash
+        launchctl setenv OLLAMA_HOST "0.0.0.0:11434"
+        ```
+
+        If macOS asks whether Ollama may accept incoming network connections,
+        choose **Allow**. Also stop the Mac from sleeping (**System Settings →
+        Energy**, then turn on preventing automatic sleep). A sleeping Mac stops
+        answering, and Roomer falls back to its simpler built-in rules until it
+        wakes up.
+
+    === "Linux"
+
+        Run `sudo systemctl edit ollama`, add the lines below, save, then run
+        `sudo systemctl restart ollama`:
+
+        ```ini
+        [Service]
+        Environment="OLLAMA_HOST=0.0.0.0:11434"
+        ```
+
+    === "Windows"
+
+        Add a user environment variable named `OLLAMA_HOST` with the value
+        `0.0.0.0:11434` (search for "environment variables" in the Start menu),
+        then quit Ollama from the system tray and start it again.
+
+    Then repeat the check in step 4 above, from another computer.
 
 ### How powerful does it need to be?
 

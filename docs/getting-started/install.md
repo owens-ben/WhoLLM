@@ -3,6 +3,12 @@
 Roomer isn't in the default HACS list yet, so you add it as a **custom
 repository**. If you don't use HACS, you can copy the files in by hand instead.
 
+!!! question "Not sure whether you have HACS?"
+    Look at the sidebar in Home Assistant. If there's an item called **HACS**,
+    you have it, so use the **HACS** tab below. If there isn't, use the
+    **Manual** tab, or set up HACS first by following the guide at
+    [hacs.xyz](https://hacs.xyz/docs/use/). Both ways give you the same Roomer.
+
 === "HACS"
 
     1. In Home Assistant, open **HACS** from the sidebar.

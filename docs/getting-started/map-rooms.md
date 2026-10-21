@@ -152,6 +152,10 @@ room or area name. Roomer also reads the room from an `area_id`, `area_name`,
   `device_room` and `confidence` is 0.9. If a person's devices disagree (a phone
   left on the desk while the watch moves with them), the room most devices report
   wins, then the device that changed most recently, at 0.7.
+- **Roomer trusts the device.** It reports where the *device* is, not where the
+  person is. A phone charging in the bedroom keeps its owner in the bedroom.
+  Assign a second device they carry, such as a watch. When one person's devices
+  name different rooms, the one that moved most recently wins.
 - **When there's no room to read,** such as `unknown`, `unavailable` or
   `not_home`, Roomer carries on with its normal steps for that person.
 - **Home or away still applies.** If a home/away tracker went `not_home` *after*
