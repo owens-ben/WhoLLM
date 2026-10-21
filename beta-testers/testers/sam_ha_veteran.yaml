@@ -1,0 +1,142 @@
+# Beta Tester: Sam
+# Setup: Long-time HA hobbyist, two-storey family home, Bermuda BLE + mmWave + cheap PIRs
+# Focus: Real-world mixed signals, people without phones, a dog, Ollama offline at night
+# Persona prompt for interactive testing: .claude/agents/ha-alpha-tester.md
+
+profile:
+  name: "Sam"
+  description: "HA user since 2019: Zigbee2MQTT, Bermuda BLE area sensors, one mmWave, LLM on a PC that sleeps at night"
+  focus: "mixed_signals_family"
+
+home_config:
+  rooms:
+    - living_room
+    - kitchen
+    - entry
+    - office
+    - bedroom
+    - kids_room
+    - bathroom
+
+  persons:
+    - name: "Sam"
+    - name: "Jo"
+    - name: "Kai"
+
+  pets:
+    - name: "Biscuit"
+      type: "dog"
+
+  entities:
+    living_room:
+      - entity_id: "binary_sensor.living_room_fp2_presence"
+        hint_type: "motion"
+      - entity_id: "media_player.living_room_tv"
+        hint_type: "media"
+      - entity_id: "light.living_room"
+        hint_type: "light"
+    kitchen:
+      - entity_id: "binary_sensor.kitchen_pir"
+        hint_type: "motion"
+      - entity_id: "light.kitchen"
+        hint_type: "light"
+    entry:
+      - entity_id: "binary_sensor.front_door"
+        hint_type: "door"
+      - entity_id: "binary_sensor.entry_pir"
+        hint_type: "motion"
+    office:
+      - entity_id: "binary_sensor.office_pir"
+        hint_type: "motion"
+      - entity_id: "binary_sensor.sam_desktop_active"
+        hint_type: "computer"
+      - entity_id: "light.office"
+        hint_type: "light"
+    bedroom:
+      - entity_id: "binary_sensor.bedroom_pir"
+        hint_type: "motion"
+      - entity_id: "light.bedroom"
+        hint_type: "light"
+    kids_room:
+      - entity_id: "binary_sensor.kids_room_pir"
+        hint_type: "motion"
+      - entity_id: "light.kids_room"
+        hint_type: "light"
+    bathroom:
+      - entity_id: "binary_sensor.bathroom_pir"
+        hint_type: "motion"
+
+  person_devices:
+    Sam:
+      - "device_tracker.sam_phone"
+      - "binary_sensor.sam_desktop_active"
+      - "sensor.sam_phone_area"        # Bermuda: state is a room name, e.g. "Office"
+    Jo:
+      - "device_tracker.jo_phone"
+      - "sensor.jo_phone_area"         # Bermuda
+    Kai:
+      - "media_player.kai_tablet"      # never leaves the living room
+
+roomer_config:
+  provider: "ollama"
+  model: "llama3.2"
+  poll_interval: 10
+  vision_enabled: false
+
+test_scenarios:
+  - name: "Desktop in use"
+    description: "Sam's PC is active with office motion; strongest per-person signal"
+    steps:
+      - set: "binary_sensor.sam_desktop_active=on, binary_sensor.office_pir=on, light.office=on"
+        wait: 15
+    expected:
+      sam_room: "office"
+      min_confidence: 0.7
+
+  - name: "Bermuda area sensor"
+    description: "Jo's phone area reports 'Kitchen' with kitchen motion. Known gap: Roomer ignores text-state area sensors unless wrapped in a template binary_sensor"
+    steps:
+      - set: "sensor.jo_phone_area=Kitchen, binary_sensor.kitchen_pir=on"
+        wait: 15
+    expected:
+      jo_room: "kitchen"
+      min_confidence: 0.5
+
+  - name: "Kid without a phone"
+    description: "Only anonymous motion in the kids' room; Roomer shouldn't confidently place Kai there"
+    steps:
+      - set: "binary_sensor.kids_room_pir=on, media_player.kai_tablet=off"
+        wait: 15
+    expected:
+      kai_max_confidence: 0.6
+
+  - name: "Dog sets off downstairs PIRs"
+    description: "Kitchen and entry motion while both adults' phones are away; no person should be placed downstairs"
+    steps:
+      - set: "device_tracker.sam_phone=not_home, device_tracker.jo_phone=not_home, binary_sensor.kitchen_pir=on, binary_sensor.entry_pir=on"
+        wait: 15
+    expected:
+      sam_room: "away"
+      jo_room: "away"
+
+  - name: "Sitting still on the couch"
+    description: "PIRs idle but FP2 mmWave presence on and the TV playing"
+    steps:
+      - set: "binary_sensor.living_room_fp2_presence=on, media_player.living_room_tv=playing, binary_sensor.kitchen_pir=off"
+        wait: 15
+    expected:
+      jo_room: "living_room"
+      min_confidence: 0.5
+
+  - name: "Ollama offline at night"
+    description: "LLM unreachable; fallback should still give a sensible low-confidence guess, not crash"
+    precondition: "Stop the Ollama host before running"
+    steps:
+      - set: "binary_sensor.bedroom_pir=on, light.bedroom=off"
+        wait: 40
+    expected:
+      sam_max_confidence: 0.6
+
+success_criteria:
+  pass_rate: 0.6
+  avg_confidence: 0.5

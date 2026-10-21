@@ -1,6 +1,6 @@
 # Roomer Beta Tester Agents
 
-This directory contains 5 simulated beta tester profiles with varied home setups for comprehensive testing.
+This directory contains 6 simulated beta tester profiles with varied home setups for comprehensive testing.
 
 ## Tester Profiles
 
@@ -11,6 +11,7 @@ This directory contains 5 simulated beta tester profiles with varied home setups
 | Carol | Smart home enthusiast | Dense sensors, cameras |
 | Dan | Minimal setup | Edge cases, fallbacks |
 | Eve | Remote worker | Device tracker, away detection |
+| Sam | HA veteran, family of 3 + dog, Bermuda BLE + mmWave | Mixed real-world signals, no-phone kid, LLM offline |
 
 ## Usage
 
@@ -31,3 +32,9 @@ Each tester validates:
 - Device tracker integration (Eve)
 - Multi-person scenarios (Bob)
 - Camera AI detection (Carol)
+
+## Interactive alpha tester
+
+`.claude/agents/ha-alpha-tester.md` defines **Sam**, a long-time Home Assistant hobbyist persona for Claude Code. Sam reads the README and docs like a real user, walks the install and setup against the home in `testers/sam_ha_veteran.yaml`, and reports back like a detailed community-forum post with numbered findings.
+
+Ask Claude Code to "use the ha-alpha-tester agent to review the latest release" (or the docs, the card, a PR).
