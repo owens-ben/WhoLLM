@@ -57,7 +57,4 @@ for a good guess.
     Roomer is in alpha. It works, but expect rough edges, and check
     [Accuracy & limits](using/accuracy.md) to see what it can and can't do.
 
-Roomer was previously called **WhoLLM**. If you're upgrading, read
-[Migrating from WhoLLM](migrating.md).
-
 [Get started](getting-started/how-it-works.md){ .md-button .md-button--primary }

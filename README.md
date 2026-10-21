@@ -10,8 +10,6 @@
 
 > **Status: Alpha** — Running, but expect rough edges.
 
-> **Formerly WhoLLM.** The rename to Roomer (domain `roomer`) is breaking — see [Migrating from WhoLLM](https://owens-ben.github.io/roomer/migrating/).
-
 ## 📖 [Read the documentation →](https://owens-ben.github.io/roomer/)
 
 ---

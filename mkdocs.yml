@@ -75,7 +75,6 @@ nav:
       - Services & events: using/services-events.md
       - Accuracy & limits: using/accuracy.md
       - Troubleshooting: using/troubleshooting.md
-  - Migrating from WhoLLM: migrating.md
   - Contributing:
       - Architecture: contributing/architecture.md
       - Dev setup: contributing/dev-setup.md

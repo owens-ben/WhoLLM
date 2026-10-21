@@ -144,21 +144,6 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
     3. Make sure those same devices are mapped to the right room under **Room Entity Mapping**.
     4. Add more per-person signals. This is the single biggest improvement for multi-person homes.
 
-??? question "My entities end in `_2` after migrating from WhoLLM"
-
-    For example, `sensor.alice_room_2` instead of `sensor.alice_room`.
-
-    **Cause:** the old WhoLLM entities are still in Home Assistant's entity registry and are holding the original entity IDs, so the new Roomer entities got a `_2` suffix.
-
-    **Fix**
-
-    1. Go to **Settings → Devices & services → Entities** and search for your person's name (or filter by the old `whollm` integration).
-    2. Select the old WhoLLM entities (often shown as unavailable or "not provided") and **Remove** them.
-    3. Open each new `…_2` entity, click the gear icon, and change its **Entity ID** back to the original (for example `sensor.alice_room`).
-    4. Your automations and dashboards that use the original IDs will work again.
-
-    See [Migrating from WhoLLM](../migrating.md) for the full migration steps.
-
 ??? question "My settings changes don't seem to take effect"
 
     **Likely causes**
