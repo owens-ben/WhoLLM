@@ -1,8 +1,8 @@
 <h1 align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
-    <img src="docs/assets/banner-light.svg" alt="Roomer — know who's in which room" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/owens-ben/roomer/main/docs/assets/banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/owens-ben/roomer/main/docs/assets/banner-light.svg">
+    <img src="https://raw.githubusercontent.com/owens-ben/roomer/main/docs/assets/banner-light.svg" alt="Roomer — know who's in which room" width="100%">
   </picture>
 </h1>
 

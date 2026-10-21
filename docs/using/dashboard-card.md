@@ -91,11 +91,11 @@ Those are all the options; the card's colours, fonts and layout are fixed.
 
 ### What the card shows
 
-- **Header** shows the title and how many people are home (anyone not `away`, `not_home` or `unknown`).
+- **Header** shows the title and how many people are home (anyone not `away`, `not_home`, `unknown` or `unavailable`).
 - **Name** comes from `name:` if you set it, otherwise the matching person entity's name, otherwise the sensor's friendly name without "Room".
 - **Picture**: the card looks for `person.<name>` (for `sensor.alice_room` that is `person.alice`, or the `person:` you set). If that person has a picture, it is shown in a blue ring; otherwise the card shows their initials on a coloured circle.
 - **Room** is the sensor's state with underscores turned into spaces, for example "Living room".
-- Rows for people who are `away`, `not_home` or `unknown` have a dashed outline and no confidence chip.
+- Rows for people who are `away`, `not_home`, `unknown` or `unavailable` have a dashed outline and no confidence chip.
 - **Footer** says when the most recently updated sensor last changed, for example "Updated 12s ago".
 - An entity that doesn't exist shows as `Entity not found: <entity_id>`.
 
