@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="470" viewBox="0 0 1100 470" role="img" aria-labelledby="t d">
+<title id="t">WhoLLM overview</title>
+<desc id="d">Weak signals such as motion, PC state, media players, lights, phone presence and cameras go into WhoLLM, which checks the phone, asks a local LLM and weighs the evidence, then publishes a room and confidence per person.</desc>
+<defs><marker id="arr64748b" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker><marker id="arr818cf8" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#818cf8"/></marker></defs>
+<rect width="1100" height="470" rx="18" fill="#0f172a"/>
+<text x="40" y="44" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#64748b" text-anchor="start" letter-spacing="1.5">MANY WEAK SIGNALS</text>
+<text x="430" y="44" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#64748b" text-anchor="start" letter-spacing="1.5">WHOLLM</text>
+<text x="790" y="44" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#64748b" text-anchor="start" letter-spacing="1.5">ONE ANSWER PER PERSON</text>
+<rect x="40" y="66" width="340" height="52" rx="12" fill="#16213b" stroke="#2a3a5c" stroke-width="1.5"/>
+<rect x="40" y="66" width="6" height="52" rx="3" fill="#34d399" stroke="none" stroke-width="0"/>
+<text x="66" y="99" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#e2e8f0" text-anchor="start">🚶</text>
+<text x="100" y="90" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#e2e8f0" text-anchor="start">Office motion sensor</text>
+<text x="100" y="108" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#64748b" text-anchor="start">motion</text>
+<rect x="282" y="79" width="86" height="26" rx="13.0" fill="#0b3b2e" stroke="#34d399" stroke-width="1"/>
+<text x="325.0" y="96.32" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#34d399" text-anchor="middle">on</text>
+<rect x="40" y="130" width="340" height="52" rx="12" fill="#16213b" stroke="#2a3a5c" stroke-width="1.5"/>
+<rect x="40" y="130" width="6" height="52" rx="3" fill="#34d399" stroke="none" stroke-width="0"/>
+<text x="66" y="163" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#e2e8f0" text-anchor="start">🖥️</text>
+<text x="100" y="154" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#e2e8f0" text-anchor="start">Alice's PC</text>
+<text x="100" y="172" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#64748b" text-anchor="start">computer</text>
+<rect x="282" y="143" width="86" height="26" rx="13.0" fill="#0b3b2e" stroke="#34d399" stroke-width="1"/>
+<text x="325.0" y="160.32" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#34d399" text-anchor="middle">on</text>
+<rect x="40" y="194" width="340" height="52" rx="12" fill="#16213b" stroke="#2a3a5c" stroke-width="1.5"/>
+<rect x="40" y="194" width="6" height="52" rx="3" fill="#34d399" stroke="none" stroke-width="0"/>
+<text x="66" y="227" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#e2e8f0" text-anchor="start">📺</text>
+<text x="100" y="218" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#e2e8f0" text-anchor="start">Living-room TV</text>
+<text x="100" y="236" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#64748b" text-anchor="start">media</text>
+<rect x="282" y="207" width="86" height="26" rx="13.0" fill="#0b3b2e" stroke="#34d399" stroke-width="1"/>
+<text x="325.0" y="224.32" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#34d399" text-anchor="middle">playing</text>
+<rect x="40" y="258" width="340" height="52" rx="12" fill="#16213b" stroke="#2a3a5c" stroke-width="1.5"/>
+<rect x="40" y="258" width="6" height="52" rx="3" fill="#34d399" stroke="none" stroke-width="0"/>
+<text x="66" y="291" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#e2e8f0" text-anchor="start">📱</text>
+<text x="100" y="282" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#e2e8f0" text-anchor="start">Alice's phone</text>
+<text x="100" y="300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#64748b" text-anchor="start">presence</text>
+<rect x="282" y="271" width="86" height="26" rx="13.0" fill="#0b3b2e" stroke="#34d399" stroke-width="1"/>
+<text x="325.0" y="288.32" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#34d399" text-anchor="middle">home</text>
+<rect x="40" y="322" width="340" height="52" rx="12" fill="#111c33" stroke="#2a3a5c" stroke-width="1.5"/>
+<rect x="40" y="322" width="6" height="52" rx="3" fill="#64748b" stroke="none" stroke-width="0"/>
+<text x="66" y="355" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#e2e8f0" text-anchor="start">💡</text>
+<text x="100" y="346" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#94a3b8" text-anchor="start">Kitchen light</text>
+<text x="100" y="364" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#64748b" text-anchor="start">light</text>
+<rect x="282" y="335" width="86" height="26" rx="13.0" fill="#1e293b" stroke="#64748b" stroke-width="1"/>
+<text x="325.0" y="352.32" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#94a3b8" text-anchor="middle">off</text>
+<rect x="40" y="386" width="340" height="52" rx="12" fill="#111c33" stroke="#2a3a5c" stroke-width="1.5"/>
+<rect x="40" y="386" width="6" height="52" rx="3" fill="#64748b" stroke="none" stroke-width="0"/>
+<text x="66" y="419" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#e2e8f0" text-anchor="start">📷</text>
+<text x="100" y="410" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#94a3b8" text-anchor="start">Hallway camera</text>
+<text x="100" y="428" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#64748b" text-anchor="start">camera</text>
+<rect x="282" y="399" width="86" height="26" rx="13.0" fill="#1e293b" stroke="#64748b" stroke-width="1"/>
+<text x="325.0" y="416.32" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#94a3b8" text-anchor="middle">no person</text>
+<path d="M380,92.0 H400 V412.0 H380" fill="none" stroke="#2a3a5c" stroke-width="1.5"/>
+<line x1="380" y1="92.0" x2="400" y2="92.0" stroke="#2a3a5c" stroke-width="1.5"/>
+<line x1="380" y1="156.0" x2="400" y2="156.0" stroke="#2a3a5c" stroke-width="1.5"/>
+<line x1="380" y1="220.0" x2="400" y2="220.0" stroke="#2a3a5c" stroke-width="1.5"/>
+<line x1="380" y1="284.0" x2="400" y2="284.0" stroke="#2a3a5c" stroke-width="1.5"/>
+<line x1="380" y1="348.0" x2="400" y2="348.0" stroke="#2a3a5c" stroke-width="1.5"/>
+<line x1="380" y1="412.0" x2="400" y2="412.0" stroke="#2a3a5c" stroke-width="1.5"/>
+<line x1="400" y1="252.0" x2="428" y2="252.0" stroke="#818cf8" stroke-width="2.2" marker-end="url(#arr818cf8)"/>
+<rect x="430" y="66" width="300" height="372" rx="16" fill="#111c33" stroke="#4f46e5" stroke-width="2"/>
+<rect x="450" y="88" width="260" height="92" rx="12" fill="#16213b" stroke="#2a3a5c" stroke-width="1.5"/>
+<circle cx="478" cy="134" r="15" fill="#fbbf24"/>
+<text x="478" y="139" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="800" fill="#0f172a" text-anchor="middle">1</text>
+<text x="504" y="128" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#e2e8f0" text-anchor="start">Check the phone</text>
+<text x="504" y="150" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#94a3b8" text-anchor="start">not_home → away, 95% confidence</text>
+<line x1="580" y1="180" x2="580" y2="200" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr64748b)"/>
+<rect x="450" y="200" width="260" height="92" rx="12" fill="#16213b" stroke="#2a3a5c" stroke-width="1.5"/>
+<circle cx="478" cy="246" r="15" fill="#818cf8"/>
+<text x="478" y="251" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="800" fill="#0f172a" text-anchor="middle">2</text>
+<text x="504" y="240" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#e2e8f0" text-anchor="start">Ask a local LLM</text>
+<text x="504" y="262" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#94a3b8" text-anchor="start">Ollama on your own hardware</text>
+<line x1="580" y1="292" x2="580" y2="312" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr64748b)"/>
+<rect x="450" y="312" width="260" height="92" rx="12" fill="#16213b" stroke="#2a3a5c" stroke-width="1.5"/>
+<circle cx="478" cy="358" r="15" fill="#34d399"/>
+<text x="478" y="363" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="800" fill="#0f172a" text-anchor="middle">3</text>
+<text x="504" y="352" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#e2e8f0" text-anchor="start">Weigh the evidence</text>
+<text x="504" y="374" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#94a3b8" text-anchor="start">per-signal weights + learned habits</text>
+<line x1="730" y1="252.0" x2="788" y2="252.0" stroke="#818cf8" stroke-width="2.2" marker-end="url(#arr818cf8)"/>
+<rect x="790" y="66" width="270" height="372" rx="16" fill="#111c33" stroke="#2a3a5c" stroke-width="1.5"/>
+<text x="810" y="98" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#94a3b8" text-anchor="start">sensor.alice_room</text>
+<text x="810" y="146" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="40" font-weight="800" fill="#60a5fa" text-anchor="start">office</text>
+<text x="810" y="182" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#94a3b8" text-anchor="start">confidence</text>
+<text x="1040" y="182" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#e2e8f0" text-anchor="end">82%</text>
+<rect x="810" y="192" width="230" height="8" rx="4" fill="#1e293b" stroke="none" stroke-width="0"/>
+<rect x="810" y="192" width="188.6" height="8" rx="4" fill="#34d399" stroke="none" stroke-width="0"/>
+<text x="810" y="232" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#94a3b8" text-anchor="start">indicators</text>
+<rect x="810" y="244" width="168" height="24" rx="12.0" fill="#10264a" stroke="#60a5fa" stroke-width="1"/>
+<text x="894.0" y="259.96" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#60a5fa" text-anchor="middle">motion: office_motion</text>
+<rect x="810" y="276" width="142" height="24" rx="12.0" fill="#10264a" stroke="#60a5fa" stroke-width="1"/>
+<text x="881.0" y="291.96" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#60a5fa" text-anchor="middle">computer: alice_pc</text>
+<rect x="960" y="276" width="80" height="24" rx="12.0" fill="#10264a" stroke="#60a5fa" stroke-width="1"/>
+<text x="1000.0" y="291.96" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#60a5fa" text-anchor="middle">LLM: office</text>
+<line x1="810" y1="322" x2="1040" y2="322" stroke="#2a3a5c" stroke-width="1"/>
+<text x="810" y="352" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#e2e8f0" text-anchor="start">alice_in_office</text>
+<rect x="996" y="337" width="44" height="22" rx="11.0" fill="#0b3b2e" stroke="#34d399" stroke-width="1"/>
+<text x="1018.0" y="352.14" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#34d399" text-anchor="middle">on</text>
+<text x="810" y="388" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#94a3b8" text-anchor="start">alice_in_kitchen</text>
+<rect x="996" y="373" width="44" height="22" rx="11.0" fill="#1e293b" stroke="#64748b" stroke-width="1"/>
+<text x="1018.0" y="388.14" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#94a3b8" text-anchor="middle">off</text>
+<text x="810" y="424" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#64748b" text-anchor="start">binary_sensor.* · one per person × room</text>
+<text x="40" y="458" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748b" text-anchor="start">Illustrative example. No single sensor is definitive; together they are usually enough for a good guess.</text>
+</svg>
