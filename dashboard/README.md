@@ -2,7 +2,7 @@
 
 A beautiful, modern dashboard for visualizing LLM-powered room presence detection.
 
-![Dashboard Preview](preview.png)
+![WhoLLM dashboard](../docs/images/dashboard.jpg)
 
 ## Features
 

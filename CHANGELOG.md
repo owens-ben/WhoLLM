@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive README with badges, troubleshooting, and examples
 
 ### Changed
+- README rewritten to match the code (real defaults, attributes, services, providers, roadmap) with dashboard and card screenshots
 - CI now fails on ruff lint/format errors (ruff pinned to 0.16.9); integration code is lint-clean
 - Test dependencies moved to `requirements_test.txt` (plain `homeassistant` instead of the pytest plugin, which the tests don't use)
 - Removed emojis from indicator strings in provider code
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `local/` overlay and `scripts/deploy.sh` for household-specific settings
 
 ### Fixed
+- Lovelace card: the confidence percentage was clipped and never visible; names no longer end in "Room"
 - `refresh`, `correct_room`, `get_history`, `clear_history` and `get_patterns` services were never registered, and `services.py` failed to import after the singleton removal. `get_history` and `get_patterns` now return responses
 - Arrival, departure and room-change events never fired because `NotificationManager` was never created. They now fire, except for the first reading after startup
 - Room transition history was never recorded. It's now saved every 10 transitions and on unload; the periodic save also no longer runs on every transition once the buffer is full

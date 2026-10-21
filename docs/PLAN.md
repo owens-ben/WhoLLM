@@ -56,6 +56,8 @@ Monitoring: a private Slack channel, `#whollm`, receives every room change throu
 
 ## Phase 3 — Features (prove locally, then generalize)
 
+Code that exists but isn't connected yet (found while updating the README): `zones.py` (multi-zone, PR #4) is never used, `ml_predictor.py` is never created, and the OpenAI and Anthropic providers aren't registered because they need an API-key step in setup. The standalone dashboard's header still says "LLM Room Presence".
+
 Each feature first runs on the local HA, then lands in the repo as a PR with tests, config options and docs.
 
 1. **Event-driven updates:** use `async_track_state_change_event` on the mapped entities, debounce, and keep polling as a fallback. Switch `iot_class` to `local_push`. This has the biggest effect on latency and LLM load.
