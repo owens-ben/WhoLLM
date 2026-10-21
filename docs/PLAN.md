@@ -31,16 +31,21 @@
 | Fix `llm_presence` → `whollm` in scripts and `.gitignore` | Rename the old events file on the HA box |
 | Add `local/` to `.gitignore` and document the "local overlay" pattern in DEVELOPMENT.md | `local/` holds the docker `.env`, model `.pkl` files, room and person YAML exports, and the deploy script |
 
+**Status:** done on `claude/elegant-volta-kxqqvb`.
+
 **Deliverable:** one PR named "generalize paths & dashboard config", plus a local `local/deploy.sh` that rsyncs `custom_components/whollm` to the HA box and restarts HA.
 
 ## Phase 1 — Make the repo healthy (Track B)
 
+0. **Connect the unused code.** `services.py` is never imported, and it calls `get_habit_predictor` and `get_history_tracker`, which the refactor in 72f4f70 deleted. As a result `correct_room`, `get_history`, `refresh` and the other services are never registered, and 13 tests fail. `NotificationManager` is also never created, so the `whollm_person_arrived/left/room_changed` events never fire and the welcome/goodbye blueprints can't trigger.
 1. Run `ruff check --fix` and `ruff format`, then remove `continue-on-error` from the lint job.
 2. Fix the test setup so `pytest-homeassistant-custom-component` installs. Pin it in a `requirements_test.txt`, and add a SessionStart hook so cloud sessions can run the tests.
 3. Make sure hassfest and HACS validation (`validate.yml`) pass.
 4. Bring the CHANGELOG up to date and cut `v0.2.0-alpha`.
 
 ## Phase 2 — Run locally and collect data (Track A)
+
+Monitoring: a private Slack channel, `#whollm`, receives every room change through the **WhoLLM - Activity Log** blueprint (`blueprints/activity_log.yaml`).
 
 1. Deploy the current `main` to HA with `local/deploy.sh` and set up the real rooms, people and devices through the UI.
 2. Let `event_logger` collect at least two weeks of `whollm_events.jsonl`. Record correct/incorrect feedback (`whollm_feedback.jsonl`).
