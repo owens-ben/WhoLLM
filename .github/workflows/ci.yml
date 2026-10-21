@@ -1,0 +1,184 @@
+name: CI
+
+# One workflow for everything except the docs site (docs.yml).
+# Jobs only run when the files they check change; "CI OK" always reports, so
+# it is the single check to mark as required in branch protection.
+#
+# No schedule on purpose: GitHub disables a scheduled workflow (push and PR
+# triggers included) after 60 days without repo activity, which is how the old
+# validate.yml silently stopped running.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      python: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.python == 'true' }}
+      integration: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.integration == 'true' }}
+      e2e: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.e2e == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'push'
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name != 'workflow_dispatch'
+        with:
+          filters: |
+            python:
+              - "**/*.py"
+              - "custom_components/**"
+              - "tests/**"
+              - pyproject.toml
+              - requirements_test.txt
+              - .github/workflows/ci.yml
+            integration:
+              - "custom_components/**"
+              - hacs.json
+              - README.md
+              - .github/workflows/ci.yml
+            e2e:
+              - "dashboard/**"
+              - "e2e/**"
+              - package.json
+              - package-lock.json
+              - playwright.config.ts
+              - .github/workflows/ci.yml
+
+  lint:
+    name: Lint (ruff)
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # Keep the version in step with .pre-commit-config.yaml.
+      - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.17.1"
+          args: check --output-format=github
+      - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.17.1"
+          args: format --check --diff
+
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # pytest-homeassistant-custom-component resolves to the newest Home
+        # Assistant release that supports the running Python:
+        #   3.14 -> current HA releases
+        #   3.13 -> HA releases up to 2026.2 (older installs still in use)
+        python-version: ["3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+      - name: Install dependencies
+        run: pip install -r requirements_test.txt
+      - name: Run tests
+        run: pytest --cov=custom_components/roomer --cov-report=term-missing:skip-covered
+
+  hassfest:
+    name: Hassfest
+    needs: changes
+    if: needs.changes.outputs.integration == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS
+    needs: changes
+    if: needs.changes.outputs.integration == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # Not submitted to home-assistant/brands yet.
+          ignore: brands
+
+  e2e:
+    name: Dashboard e2e (Playwright)
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Drive the Google Chrome that ships on GitHub's Ubuntu runners instead of
+      # downloading Playwright's browser build.
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          PW_CHANNEL: chrome
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+
+  ci-ok:
+    name: CI OK
+    if: always()
+    needs: [changes, lint, test, hassfest, hacs, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check job results
+        env:
+          FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          echo "Job results: ${{ join(needs.*.result, ', ') }}"
+          if [ "$FAILED" = "true" ]; then
+            exit 1
+          fi

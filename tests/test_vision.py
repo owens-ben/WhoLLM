@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-import base64
 
 
 @pytest.fixture
@@ -131,8 +131,9 @@ class TestImageCompression:
 
         # Create a simple test image using PIL if available
         try:
-            from PIL import Image
             from io import BytesIO
+
+            from PIL import Image
 
             # Create a simple test image
             img = Image.new("RGB", (1920, 1080), color="red")
@@ -159,7 +160,7 @@ class TestImageCompression:
 
         with patch("custom_components.roomer.vision.BytesIO", side_effect=ImportError):
             # Should return original data
-            result = await identifier._compress_image(fake_image)
+            await identifier._compress_image(fake_image)
             # In actual code, ImportError is caught differently
             # This tests the fallback path
 

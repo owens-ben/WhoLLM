@@ -2,33 +2,31 @@
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock
+
+import pytest
 
 from custom_components.roomer.const import (
+    CONF_CONFIDENCE_WEIGHTS,
+    CONF_LEARNING_ENABLED,
     CONF_MODEL,
+    CONF_PERSON_DEVICES,
     CONF_PERSONS,
     CONF_PETS,
     CONF_POLL_INTERVAL,
     CONF_PROVIDER,
+    CONF_ROOM_ENTITIES,
     CONF_ROOMS,
     CONF_URL,
-    CONF_ROOM_ENTITIES,
-    CONF_PERSON_DEVICES,
-    CONF_LEARNING_ENABLED,
-    CONF_CONFIDENCE_WEIGHTS,
     DEFAULT_CONFIDENCE_WEIGHTS,
     DEFAULT_MODEL,
-    DEFAULT_POLL_INTERVAL,
     DEFAULT_PROVIDER,
     DEFAULT_URL,
-    DOMAIN,
     ENTITY_HINT_COMPUTER,
-    ENTITY_HINT_MOTION,
     ENTITY_HINT_MEDIA,
+    ENTITY_HINT_MOTION,
 )
 from custom_components.roomer.providers.base import PresenceGuess
 
@@ -136,9 +134,10 @@ class TestEndToEndCoordinatorFlow:
 
         Note: This test validates learning logic without full HA setup.
         """
-        from custom_components.roomer.habits import HabitPredictor
         from pathlib import Path
         from tempfile import TemporaryDirectory
+
+        from custom_components.roomer.habits import HabitPredictor
 
         with TemporaryDirectory() as tmpdir:
             predictor = HabitPredictor(config_path=Path(tmpdir))
@@ -159,9 +158,10 @@ class TestRoomTransitionDetection:
 
         Tests the transition detection logic in isolation.
         """
-        from custom_components.roomer.event_logger import EventLogger
-        from tempfile import TemporaryDirectory
         from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from custom_components.roomer.event_logger import EventLogger
 
         with TemporaryDirectory() as tmpdir:
             logger = EventLogger(str(Path(tmpdir) / "events.jsonl"))
@@ -282,8 +282,9 @@ class TestHabitLearningIntegration:
 
     def test_habit_pattern_learning_flow(self):
         """Test the full habit learning flow."""
-        from custom_components.roomer.habits import HabitPredictor
         from datetime import datetime
+
+        from custom_components.roomer.habits import HabitPredictor
 
         with TemporaryDirectory() as tmpdir:
             predictor = HabitPredictor(config_path=Path(tmpdir))

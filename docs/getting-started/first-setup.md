@@ -123,8 +123,7 @@ Choose names carefully, because they become entity IDs. `Alice` becomes
 ## Screen 5: Room Entity Mapping
 
 Now tell Roomer which sensors and devices belong to each room. There is one
-picker per room you chose. The pickers may show technical labels such as
-`entities_office`, where the part after `entities_` is the room.
+picker per room you chose, labelled with the room's name.
 
 You can pick entities from these types: binary sensors, sensors, lights,
 switches, media players, device trackers and cameras.

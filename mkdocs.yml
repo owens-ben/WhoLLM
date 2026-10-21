@@ -7,21 +7,25 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+  font:
+    text: DM Sans
+    code: JetBrains Mono
   icon:
-    logo: material/home-account
     repo: fontawesome/brands/github
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: teal
-      accent: amber
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: teal
-      accent: amber
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
@@ -33,6 +37,9 @@ theme:
     - search.suggest
     - content.code.copy
     - content.action.edit
+
+extra_css:
+  - stylesheets/extra.css
 
 markdown_extensions:
   - admonition
@@ -68,7 +75,6 @@ nav:
       - Services & events: using/services-events.md
       - Accuracy & limits: using/accuracy.md
       - Troubleshooting: using/troubleshooting.md
-  - Migrating from WhoLLM: migrating.md
   - Contributing:
       - Architecture: contributing/architecture.md
       - Dev setup: contributing/dev-setup.md

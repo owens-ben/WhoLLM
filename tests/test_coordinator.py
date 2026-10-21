@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from datetime import timedelta
 
 from custom_components.roomer.const import (
-    CONF_ROOM_ENTITIES,
     CONF_PERSON_DEVICES,
-    ENTITY_HINT_COMPUTER,
+    CONF_ROOM_ENTITIES,
     ENTITY_HINT_MEDIA,
     ENTITY_HINT_MOTION,
 )

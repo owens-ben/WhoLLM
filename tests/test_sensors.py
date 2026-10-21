@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from datetime import datetime
 
 from custom_components.roomer.const import (
     ATTR_CONFIDENCE,
@@ -12,7 +12,6 @@ from custom_components.roomer.const import (
     ATTR_RAW_RESPONSE,
     DOMAIN,
 )
-from custom_components.roomer.providers.base import PresenceGuess
 
 
 class TestLLMPresenceSensor:

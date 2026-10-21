@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import json
-import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from custom_components.roomer.event_logger import (
-    EventLogger,
-    DEFAULT_RETENTION_DAYS,
     DEFAULT_MAX_FILE_SIZE_MB,
+    DEFAULT_RETENTION_DAYS,
+    EventLogger,
 )
 
 
@@ -33,9 +34,17 @@ def event_logger(temp_log_file):
     )
 
 
-def _sync_write_presence(logger, entity_name="Alice", entity_type="person",
-                          room="office", confidence=0.8, raw_response="office",
-                          indicators=None, sensor_context=None, detection_method="llm"):
+def _sync_write_presence(
+    logger,
+    entity_name="Alice",
+    entity_type="person",
+    room="office",
+    confidence=0.8,
+    raw_response="office",
+    indicators=None,
+    sensor_context=None,
+    detection_method="llm",
+):
     """Synchronous helper to write a presence event for tests."""
     event = {
         "timestamp": datetime.now().isoformat(),

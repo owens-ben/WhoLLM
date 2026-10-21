@@ -2,27 +2,30 @@
 
 from __future__ import annotations
 
-import pytest
+import json
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from homeassistant import config_entries
+import pytest
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.roomer.const import (
+    CONF_CONFIDENCE_WEIGHTS,
+    CONF_LEARNING_ENABLED,
     CONF_MODEL,
+    CONF_PERSON_DEVICES,
     CONF_PERSONS,
     CONF_PETS,
     CONF_POLL_INTERVAL,
     CONF_PROVIDER,
-    CONF_ROOMS,
-    CONF_URL,
     CONF_ROOM_ENTITIES,
-    CONF_LEARNING_ENABLED,
-    DEFAULT_MODEL,
-    DEFAULT_POLL_INTERVAL,
-    DEFAULT_PROVIDER,
-    DEFAULT_URL,
+    CONF_ROOMS,
+    CONF_TIMEOUT,
+    CONF_URL,
+    DEFAULT_CONFIDENCE_WEIGHTS,
     DOMAIN,
+    VALID_ROOMS,
 )
 
 
@@ -287,8 +290,8 @@ class TestConfigFlowRoomEntitiesStep:
         # Simulate entity selection
         result = await flow.async_step_room_entities(
             user_input={
-                "entities_office": ["switch.office_pc", "binary_sensor.office_motion"],
-                "entities_bedroom": [],
+                "office": ["switch.office_pc", "binary_sensor.office_motion"],
+                "bedroom": [],
             }
         )
 
@@ -356,47 +359,209 @@ class TestGuessEntityHint:
         assert _guess_entity_hint("sensor.unknown_sensor") == "appliance"
 
 
+OPTIONS_ENTRY_DATA = {
+    CONF_PROVIDER: "ollama",
+    CONF_URL: "http://localhost:11434",
+    CONF_MODEL: "llama3.2",
+    CONF_POLL_INTERVAL: 30,
+    CONF_ROOMS: ["office", "bedroom", "garage"],
+    CONF_PERSONS: [{"name": "Alice"}, {"name": "Bob"}],
+    CONF_PETS: [],
+    CONF_ROOM_ENTITIES: {
+        "office": [{"entity_id": "binary_sensor.office_motion", "hint_type": "motion"}],
+    },
+    CONF_PERSON_DEVICES: {},
+    CONF_LEARNING_ENABLED: True,
+}
+
+
+@pytest.fixture
+async def options_entry(hass, enable_custom_integrations):
+    """Add a Roomer config entry (not set up) and the entities the forms reference."""
+    entry = MockConfigEntry(domain=DOMAIN, version=2, data=OPTIONS_ENTRY_DATA)
+    entry.add_to_hass(hass)
+    for entity_id in (
+        "binary_sensor.office_motion",
+        "switch.office_pc",
+        "light.bedroom",
+        "switch.garage_door",
+        "device_tracker.alice_phone",
+        "device_tracker.bob_phone",
+    ):
+        hass.states.async_set(entity_id, "off")
+    return entry
+
+
+async def _save_section(hass, entry, section: str, user_input: dict) -> dict:
+    """Open the options flow, pick a menu section and submit it."""
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] == FlowResultType.MENU
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": section})
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == section
+    result = await hass.config_entries.options.async_configure(result["flow_id"], user_input)
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    return result
+
+
+async def _open_section(hass, entry, section: str) -> dict:
+    """Open an options section form and return its schema defaults by key."""
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], {"next_step_id": section})
+    defaults = {str(key): key.default() for key in result["data_schema"].schema}
+    hass.config_entries.options.async_abort(result["flow_id"])
+    return defaults
+
+
 class TestOptionsFlow:
-    """Test the options flow for reconfiguration.
+    """Test the options flow end to end through Home Assistant."""
 
-    Note: Options flow tests require proper Home Assistant test fixtures.
-    These tests validate the flow structure conceptually.
-    """
+    async def test_options_flow_does_not_take_config_entry_arg(self):
+        """The options flow relies on HA's config_entry property (2024.11+ pattern)."""
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow, LLMPresenceOptionsFlow
 
-    def test_options_flow_config_structure(self):
-        """Test that options can be defined with proper config keys."""
-        # Verify config keys exist
-        assert CONF_POLL_INTERVAL is not None
-        assert CONF_LEARNING_ENABLED is not None
+        flow = LLMPresenceConfigFlow.async_get_options_flow(MagicMock())
+        assert isinstance(flow, LLMPresenceOptionsFlow)
+        assert "config_entry" not in LLMPresenceOptionsFlow.__dict__
 
-        # Test valid config structure
-        valid_config = {
-            CONF_PROVIDER: "ollama",
-            CONF_URL: "http://localhost:11434",
-            CONF_POLL_INTERVAL: 30,
-            CONF_ROOMS: ["office", "bedroom"],
-            CONF_PERSONS: [{"name": "Alice"}],
-            CONF_PETS: [],
-            CONF_ROOM_ENTITIES: {},
-        }
+    async def test_sections_saved_in_sequence_are_all_kept(self, hass, options_entry):
+        """Saving one section must not wipe what other sections saved."""
+        await _save_section(
+            hass,
+            options_entry,
+            "general",
+            {CONF_POLL_INTERVAL: 60, CONF_TIMEOUT: 45, CONF_LEARNING_ENABLED: False},
+        )
+        await _save_section(
+            hass,
+            options_entry,
+            "room_entities",
+            {
+                "office": ["binary_sensor.office_motion", "switch.office_pc"],
+                "bedroom": ["light.bedroom"],
+                "garage": [],
+            },
+        )
+        await _save_section(
+            hass,
+            options_entry,
+            "person_devices",
+            {"Alice": ["device_tracker.alice_phone"], "Bob": ["device_tracker.bob_phone"]},
+        )
+        await _save_section(hass, options_entry, "confidence_weights", {"weight_camera": 90, "weight_motion": 40})
 
-        assert valid_config[CONF_PROVIDER] == "ollama"
-        assert valid_config[CONF_POLL_INTERVAL] == 30
-
-    def test_options_flow_general_settings_keys(self):
-        """Test general settings keys are available."""
-        # Verify key config options
-        assert CONF_POLL_INTERVAL is not None
-        assert CONF_LEARNING_ENABLED is not None
-
-        # Test valid option values
-        options = {
-            CONF_POLL_INTERVAL: 60,
-            CONF_LEARNING_ENABLED: False,
-        }
-
+        options = options_entry.options
         assert options[CONF_POLL_INTERVAL] == 60
+        assert options[CONF_TIMEOUT] == 45
         assert options[CONF_LEARNING_ENABLED] is False
+        assert [e["entity_id"] for e in options[CONF_ROOM_ENTITIES]["office"]] == [
+            "binary_sensor.office_motion",
+            "switch.office_pc",
+        ]
+        assert options[CONF_ROOM_ENTITIES]["bedroom"] == [{"entity_id": "light.bedroom", "hint_type": "light"}]
+        assert "garage" not in options[CONF_ROOM_ENTITIES]
+        assert options[CONF_PERSON_DEVICES] == {
+            "Alice": ["device_tracker.alice_phone"],
+            "Bob": ["device_tracker.bob_phone"],
+        }
+        assert options[CONF_CONFIDENCE_WEIGHTS]["camera"] == pytest.approx(0.90)
+        assert options[CONF_CONFIDENCE_WEIGHTS]["motion"] == pytest.approx(0.40)
+        # Types without a slider keep their current value
+        assert options[CONF_CONFIDENCE_WEIGHTS]["climate"] == DEFAULT_CONFIDENCE_WEIGHTS["climate"]
+
+    async def test_resaving_a_section_keeps_the_others(self, hass, options_entry):
+        """Saving the same section twice only changes that section."""
+        await _save_section(hass, options_entry, "person_devices", {"Alice": ["device_tracker.alice_phone"]})
+        await _save_section(
+            hass,
+            options_entry,
+            "general",
+            {CONF_POLL_INTERVAL: 20, CONF_TIMEOUT: 30, CONF_LEARNING_ENABLED: True},
+        )
+        await _save_section(
+            hass,
+            options_entry,
+            "general",
+            {CONF_POLL_INTERVAL: 90, CONF_TIMEOUT: 30, CONF_LEARNING_ENABLED: True},
+        )
+
+        assert options_entry.options[CONF_POLL_INTERVAL] == 90
+        assert options_entry.options[CONF_PERSON_DEVICES] == {"Alice": ["device_tracker.alice_phone"]}
+
+    async def test_forms_default_to_last_saved_options(self, hass, options_entry):
+        """Forms show the last saved values, falling back to setup data."""
+        defaults = await _open_section(hass, options_entry, "general")
+        assert defaults[CONF_POLL_INTERVAL] == 30  # from entry.data
+        assert defaults[CONF_LEARNING_ENABLED] is True
+
+        defaults = await _open_section(hass, options_entry, "room_entities")
+        assert defaults["office"] == ["binary_sensor.office_motion"]  # from entry.data
+
+        await _save_section(
+            hass,
+            options_entry,
+            "general",
+            {CONF_POLL_INTERVAL: 120, CONF_TIMEOUT: 60, CONF_LEARNING_ENABLED: False},
+        )
+        await _save_section(
+            hass,
+            options_entry,
+            "room_entities",
+            {"office": ["switch.office_pc"], "bedroom": ["light.bedroom"], "garage": []},
+        )
+        await _save_section(hass, options_entry, "person_devices", {"Bob": ["device_tracker.bob_phone"]})
+        await _save_section(hass, options_entry, "confidence_weights", {"weight_door": 75})
+
+        defaults = await _open_section(hass, options_entry, "general")
+        assert defaults == {CONF_POLL_INTERVAL: 120, CONF_TIMEOUT: 60, CONF_LEARNING_ENABLED: False}
+
+        defaults = await _open_section(hass, options_entry, "room_entities")
+        assert defaults == {"office": ["switch.office_pc"], "bedroom": ["light.bedroom"], "garage": []}
+
+        defaults = await _open_section(hass, options_entry, "person_devices")
+        assert defaults == {"Alice": [], "Bob": ["device_tracker.bob_phone"]}
+
+        defaults = await _open_section(hass, options_entry, "confidence_weights")
+        assert defaults["weight_door"] == 75
+        assert defaults["weight_camera"] == round(DEFAULT_CONFIDENCE_WEIGHTS["camera"] * 100)
+
+    async def test_room_entities_skips_missing_entities(self, hass, options_entry):
+        """Entities that don't exist are dropped and empty rooms removed."""
+        await _save_section(
+            hass,
+            options_entry,
+            "room_entities",
+            {"office": ["switch.does_not_exist"], "bedroom": ["light.bedroom"], "garage": []},
+        )
+
+        assert options_entry.options[CONF_ROOM_ENTITIES] == {
+            "bedroom": [{"entity_id": "light.bedroom", "hint_type": "light"}],
+        }
+
+
+class TestOptionsFlowLabels:
+    """Static form keys must have labels so the UI doesn't show raw keys."""
+
+    @staticmethod
+    def _load(path: str) -> dict:
+        return json.loads((Path(__file__).parent.parent / "custom_components" / "roomer" / path).read_text())
+
+    @pytest.mark.parametrize("path", ["strings.json", "translations/en.json"])
+    def test_weight_labels_present(self, path):
+        from custom_components.roomer.config_flow import WEIGHT_HINT_TYPES
+
+        labels = self._load(path)["options"]["step"]["confidence_weights"]["data"]
+        for hint_type in WEIGHT_HINT_TYPES:
+            assert f"weight_{hint_type}" in labels
+
+    @pytest.mark.parametrize("path", ["strings.json", "translations/en.json"])
+    @pytest.mark.parametrize("section", ["config", "options"])
+    def test_builtin_room_labels_present(self, path, section):
+        labels = self._load(path)[section]["step"]["room_entities"]["data"]
+        for room in VALID_ROOMS:
+            if room in ("away", "unknown"):
+                continue
+            assert room in labels
 
 
 class TestConfigFlowEdgeCases:
@@ -430,9 +595,7 @@ class TestConfigFlowEdgeCases:
             CONF_MODEL: "llama3.2",
         }
 
-        result = await flow.async_step_rooms(
-            user_input={CONF_ROOMS: [], "custom_rooms": "  garage  ,   Game Room  ,  "}
-        )
+        await flow.async_step_rooms(user_input={CONF_ROOMS: [], "custom_rooms": "  garage  ,   Game Room  ,  "})
 
         assert "garage" in flow._data[CONF_ROOMS]
         assert "game_room" in flow._data[CONF_ROOMS]
@@ -450,7 +613,7 @@ class TestConfigFlowEdgeCases:
             CONF_MODEL: "llama3.2",
         }
 
-        result = await flow.async_step_rooms(user_input={CONF_ROOMS: ["office"], "custom_rooms": "office, bedroom"})
+        await flow.async_step_rooms(user_input={CONF_ROOMS: ["office"], "custom_rooms": "office, bedroom"})
 
         # office should not be duplicated
         assert flow._data[CONF_ROOMS].count("office") == 1

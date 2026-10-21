@@ -52,6 +52,7 @@ def get_history_tracker(hass: HomeAssistant) -> HistoryTracker | None:
             return tracker
     return None
 
+
 # Service names
 SERVICE_REFRESH = "refresh"
 SERVICE_CORRECT_ROOM = "correct_room"
