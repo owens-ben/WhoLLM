@@ -339,7 +339,9 @@ class RoomerCard extends HTMLElement {
   static getStubConfig(hass) {
     let entities = ['sensor.example_room'];
     if (hass && hass.states) {
-      const found = Object.keys(hass.states).filter((id) => /^sensor\..+_room$/.test(id)).slice(0, 3);
+      const found = Object.keys(hass.states)
+        .filter((id) => /^sensor\..+_room$/.test(id) && 'entity_type' in (hass.states[id].attributes || {}))
+        .slice(0, 3);
       if (found.length) entities = found;
     }
     return {
