@@ -122,16 +122,16 @@ single person. **Nothing else in the house, such as someone else's motion or PC,
 can pull them into another room.** The entity does not need to be mapped under
 Room Entity Mapping.
 
-| Tool | Typical entity to assign | Reports |
+| Tool | Entity to assign | Reports |
 |---|---|---|
-| Bermuda | `sensor.<device>_area` | `Office` |
-| ESPresense (`mqtt_room`) | `sensor.<device>` | `office` |
-| ESPresense Companion | `device_tracker.<device>` | `office` |
-| room-assistant | `sensor.<device>_room` | `office` |
+| [Bermuda](https://github.com/agittins/bermuda) | The device's **Area** sensor, such as `sensor.alice_phone_area` | The area's name, such as `Office` |
+| ESPresense or room-assistant, through Home Assistant's [`mqtt_room`](https://www.home-assistant.io/integrations/mqtt_room/) sensor | The `mqtt_room` sensor you create for each device | The room name the node reports, such as `office` |
 
 Your entity names will differ. What matters is that the entity's state is a
 room or area name. Roomer also reads the room from an `area_id`, `area_name`,
-`area` or `room` attribute.
+`area` or `room` attribute, so Bermuda's Area sensor works either way. Bermuda
+also creates a home/away `device_tracker` for each device. Assign that too, so
+Roomer can tell when someone has left.
 
 - **The names must match your Roomer rooms.** Capitals, spaces and dashes don't
   matter, so `Living Room`, `living-room` and `living_room` are the same. If a
@@ -152,8 +152,9 @@ room or area name. Roomer also reads the room from an `area_id`, `area_name`,
   the room device last changed, the person is `away`. If the room device changed
   more recently, the room wins. Bluetooth usually sees someone arrive before
   Wi-Fi does, and a room sensor can keep its last room for a while after someone
-  leaves. Set a timeout in your Bluetooth tool (for example `away_timeout` for
-  ESPresense) so it stops reporting a room once the device is gone.
+  leaves. Set a timeout in your Bluetooth tool (for example `away_timeout` on an
+  `mqtt_room` sensor, which switches it to `not_home`) so it stops reporting a
+  room once the device is gone.
 - **GPS trackers only decide home or away.** A phone's GPS tracker reports Home
   Assistant *zones*, so a work zone called `Office` is never read as the office
   room.

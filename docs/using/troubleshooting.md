@@ -113,7 +113,7 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
     3. The name matches one of your Roomer rooms. Capitals, spaces and dashes don't matter, but `Master Bedroom` does not match a room called `bedroom`. In **Settings → System → Logs**, search for `doesn't match any Roomer room`. The warning names the entity, the value it reported and your rooms.
     4. It isn't a GPS tracker. A phone's GPS `device_tracker` reports zones, which are never read as rooms.
 
-    **The person stays in their last room after leaving:** some tools keep reporting the last room until a timeout. Set one (for example `away_timeout` in ESPresense), or assign a home/away `device_tracker` too, since `away` wins when it changed after the room did.
+    **The person stays in their last room after leaving:** some tools keep reporting the last room until a timeout. Set one (for example `away_timeout` on an `mqtt_room` sensor), or assign a home/away `device_tracker` too, since `away` wins when it changed after the room did.
 
 ??? question "Ollama is unreachable or slow (timeouts)"
 

@@ -77,7 +77,7 @@ class TestDeviceRoomLocator:
         assert locator.read(make_state("sensor.kid_tablet_area", "Kids Room")).room == "kids-room"
 
     def test_device_tracker_with_room_state(self):
-        """ESPresense companion style: a device_tracker whose state is the room."""
+        """A device_tracker whose state is the room name."""
         locator = DeviceRoomLocator(ROOMS)
         assert locator.read(make_state("device_tracker.bob_watch", "kitchen")).room == "kitchen"
 
