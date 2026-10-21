@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from custom_components.roomer.const import VALID_ROOMS
 from custom_components.roomer.providers.base import PresenceGuess
@@ -142,8 +143,9 @@ class TestNetworkFailures:
     @pytest.mark.asyncio
     async def test_ollama_connection_refused(self):
         """Test handling when Ollama connection is refused."""
-        from custom_components.roomer.providers.ollama import OllamaProvider
         import aiohttp
+
+        from custom_components.roomer.providers.ollama import OllamaProvider
 
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
@@ -255,9 +257,10 @@ class TestMalformedData:
 
     def test_json_decode_error_in_event_logger(self):
         """Test event logger handles malformed JSON gracefully."""
-        from custom_components.roomer.event_logger import EventLogger
-        from tempfile import TemporaryDirectory
         from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from custom_components.roomer.event_logger import EventLogger
 
         with TemporaryDirectory() as tmpdir:
             log_path = Path(tmpdir) / "events.jsonl"
@@ -367,8 +370,9 @@ class TestConcurrencyEdgeCases:
     @pytest.mark.asyncio
     async def test_concurrent_vision_requests(self):
         """Test multiple concurrent vision identification requests."""
-        from custom_components.roomer.vision import VisionIdentifier
         import asyncio
+
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 
@@ -398,11 +402,12 @@ class TestMemoryAndCleanup:
 
     def test_event_logger_cleanup_very_old_events(self):
         """Test cleanup of very old events."""
-        from custom_components.roomer.event_logger import EventLogger
-        from tempfile import TemporaryDirectory
-        from pathlib import Path
-        from datetime import timedelta
         import json
+        from datetime import timedelta
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from custom_components.roomer.event_logger import EventLogger
 
         with TemporaryDirectory() as tmpdir:
             log_path = Path(tmpdir) / "events.jsonl"
@@ -441,9 +446,10 @@ class TestMemoryAndCleanup:
 
     def test_habit_predictor_clear_all(self):
         """Test clearing all learned patterns."""
-        from custom_components.roomer.habits import HabitPredictor
-        from tempfile import TemporaryDirectory
         from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        from custom_components.roomer.habits import HabitPredictor
 
         with TemporaryDirectory() as tmpdir:
             predictor = HabitPredictor(config_path=Path(tmpdir))

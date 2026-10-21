@@ -530,4 +530,3 @@ class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
                 "hint": "Adjust how much each signal type contributes to presence detection. Higher = more influence.",
             },
         )
-

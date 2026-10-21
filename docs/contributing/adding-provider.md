@@ -13,11 +13,11 @@ The value every provider returns:
 ```python
 @dataclass
 class PresenceGuess:
-    room: str                 # one of the configured rooms, or "unknown"
-    confidence: float         # 0.0 to 1.0
-    raw_response: str         # what the model said (shown as a sensor attribute)
-    indicators: list[str]     # human-readable signals that support the guess
-    source: str = "llm"       # llm, device_tracker, habit, sensor
+    room: str  # one of the configured rooms, or "unknown"
+    confidence: float  # 0.0 to 1.0
+    raw_response: str  # what the model said (shown as a sensor attribute)
+    indicators: list[str]  # human-readable signals that support the guess
+    source: str = "llm"  # llm, device_tracker, habit, sensor
 
     def to_dict(self) -> dict[str, Any]: ...
 ```
@@ -83,6 +83,7 @@ _PROVIDERS: dict[str, type[BaseLLMProvider]] = {
     "ollama": OllamaProvider,
     "crewai": CrewAIProvider,
 }
+
 
 def get_provider(provider_type: str, url: str, model: str, **kwargs) -> BaseLLMProvider:
     ...
@@ -159,6 +160,7 @@ class MyServerProvider(BaseLLMProvider):
         system_prompt = self._get_system_prompt(entity_name, entity_type, rooms)
 
         try:
+
             async def _do_request():
                 session = self._get_session()
                 async with session.post(
@@ -169,7 +171,9 @@ class MyServerProvider(BaseLLMProvider):
                     if resp.status != 200:
                         # ClientResponseError is a ClientError, so this is retried
                         raise aiohttp.ClientResponseError(
-                            resp.request_info, resp.history, status=resp.status,
+                            resp.request_info,
+                            resp.history,
+                            status=resp.status,
                         )
                     return await resp.json()
 
@@ -331,7 +335,11 @@ async def test_deduce_presence_falls_back_on_network_error(sample_context):
     provider._call_with_retry = AsyncMock(side_effect=aiohttp.ClientError("boom"))
 
     result = await provider.deduce_presence(
-        MagicMock(), sample_context, "Alice", "person", VALID_ROOMS,
+        MagicMock(),
+        sample_context,
+        "Alice",
+        "person",
+        VALID_ROOMS,
     )
 
     assert isinstance(result, PresenceGuess)

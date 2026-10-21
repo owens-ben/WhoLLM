@@ -2,27 +2,21 @@
 
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from homeassistant import config_entries
+import pytest
 from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.roomer.const import (
+    CONF_LEARNING_ENABLED,
     CONF_MODEL,
     CONF_PERSONS,
     CONF_PETS,
     CONF_POLL_INTERVAL,
     CONF_PROVIDER,
+    CONF_ROOM_ENTITIES,
     CONF_ROOMS,
     CONF_URL,
-    CONF_ROOM_ENTITIES,
-    CONF_LEARNING_ENABLED,
-    DEFAULT_MODEL,
-    DEFAULT_POLL_INTERVAL,
-    DEFAULT_PROVIDER,
-    DEFAULT_URL,
-    DOMAIN,
 )
 
 

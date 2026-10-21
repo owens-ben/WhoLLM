@@ -20,33 +20,33 @@ DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI API provider for presence detection.
-    
+
     Uses the OpenAI Chat Completions API (compatible with many services).
     """
 
     def __init__(self, url: str, model: str, **kwargs) -> None:
         """Initialize the OpenAI provider.
-        
+
         Args:
             url: API endpoint URL (default: OpenAI's API)
             model: Model name (e.g., gpt-4o-mini, gpt-4o)
             api_key: Required API key for authentication
         """
         super().__init__(url or DEFAULT_OPENAI_URL, model or DEFAULT_OPENAI_MODEL, **kwargs)
-        
+
         self.api_key = kwargs.get("api_key")
         if not self.api_key:
             raise ValueError("OpenAI provider requires an api_key")
-        
+
         # Use /chat/completions endpoint
         self.endpoint = f"{self.url.rstrip('/')}/chat/completions"
 
     async def _call_api(self, messages: list[dict]) -> dict:
         """Call the OpenAI API.
-        
+
         Args:
             messages: List of message dicts with role and content
-            
+
         Returns:
             API response dict
         """
@@ -54,14 +54,14 @@ class OpenAIProvider(BaseLLMProvider):
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        
+
         payload = {
             "model": self.model,
             "messages": messages,
             "temperature": 0.3,  # Low temperature for consistent responses
             "max_tokens": 150,  # Short response needed
         }
-        
+
         session = self._get_session()
         async with session.post(
             self.endpoint,
@@ -73,7 +73,9 @@ class OpenAIProvider(BaseLLMProvider):
                 error_text = await response.text()
                 _LOGGER.error("OpenAI API error %d: %s", response.status, error_text)
                 raise aiohttp.ClientResponseError(
-                    response.request_info, response.history, status=response.status,
+                    response.request_info,
+                    response.history,
+                    status=response.status,
                 )
 
             return await response.json()
@@ -89,7 +91,7 @@ class OpenAIProvider(BaseLLMProvider):
         """Query OpenAI to deduce room presence."""
         # Build the prompt
         prompt = self._format_context_for_prompt(context, entity_name, entity_type)
-        
+
         messages = [
             {
                 "role": "system",
@@ -104,18 +106,18 @@ Only use room names from the provided list. If uncertain, use "unknown" with low
             },
             {"role": "user", "content": prompt},
         ]
-        
+
         try:
             response = await self._call_api(messages)
-            
+
             # Extract response content
             content = response.get("choices", [{}])[0].get("message", {}).get("content", "")
-            
+
             _LOGGER.debug("OpenAI response for %s: %s", entity_name, content[:100])
-            
+
             # Parse the response
             room, confidence, reason = parse_llm_response(content, rooms)
-            
+
             return PresenceGuess(
                 room=room,
                 confidence=confidence,
@@ -123,7 +125,7 @@ Only use room names from the provided list. If uncertain, use "unknown" with low
                 indicators=[reason] if reason else [],
                 source="openai",
             )
-            
+
         except Exception as err:
             _LOGGER.warning("OpenAI API error for %s: %s", entity_name, err)
             return self._create_fallback_guess(context, entity_name, entity_type, rooms, str(err))
@@ -141,7 +143,7 @@ Only use room names from the provided list. If uncertain, use "unknown" with low
 
     async def get_available_models(self) -> list[str]:
         """Get list of available OpenAI models.
-        
+
         Returns commonly used models - actual availability depends on API key.
         """
         # OpenAI doesn't have a simple models endpoint like Ollama

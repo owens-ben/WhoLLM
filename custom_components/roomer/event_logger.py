@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_LOG_PATH = "/config/roomer_events.jsonl"
 
 # Storage management defaults
-from .const import DEFAULT_RETENTION_DAYS, DEFAULT_MAX_FILE_SIZE_MB
+from .const import DEFAULT_MAX_FILE_SIZE_MB, DEFAULT_RETENTION_DAYS
 
 DEFAULT_MAX_FILE_SIZE_BYTES = DEFAULT_MAX_FILE_SIZE_MB * 1024 * 1024
 
