@@ -777,8 +777,8 @@
                     <span>Ollama</span>
                 </div>
                 <div class="status-item">
-                    <span>&#x1f550;</span>
-                    <span id="last-update">--:--:--</span>
+                    <span class="muted-label" style="color: var(--muted);">Updated</span>
+                    <span id="last-update" class="time">--:--:--</span>
                 </div>
             </div>
         </header>
@@ -787,11 +787,9 @@
         <section class="auth-section" id="auth-section">
             <h2>Sign in to Home Assistant</h2>
             <p>Connect using your Home Assistant account. No tokens to copy — just sign in once and stay connected.</p>
-            <div class="manual-toggle" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 1.5rem;">
-                <div class="form-group" style="text-align: left; max-width: 500px; margin: 0 auto;">
-                    <label for="ha-url">Home Assistant URL</label>
-                    <input type="text" id="ha-url" value="" placeholder="http://192.168.0.233:8123">
-                </div>
+            <div class="form-group url-group">
+                <label for="ha-url">Home Assistant URL</label>
+                <input type="text" id="ha-url" value="" placeholder="http://192.168.0.233:8123">
             </div>
             <button type="button" class="btn btn-large" id="signin-btn">
                 Sign in with Home Assistant
@@ -814,9 +812,9 @@
         <section class="connected-section" id="connected-section" style="display: none;">
             <div class="inner">
                 <div class="status">
-                    <span class="status-dot online" style="width: 12px; height: 12px;"></span>
+                    <span class="status-dot online"></span>
                     <span>Connected to Home Assistant</span>
-                    <span id="auth-method" style="color: var(--text-muted); font-size: 0.8rem;"></span>
+                    <span id="auth-method"></span>
                 </div>
                 <button type="button" class="btn btn-secondary" id="disconnect-btn">
                     Sign out
@@ -832,11 +830,10 @@
             </section>
 
             <!-- Room Overview -->
-            <section class="card" style="margin-bottom: 2rem;">
+            <section class="card" style="margin-bottom: 1.5rem;">
                 <div class="card-header">
                     <div class="card-title">
-                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.2);">&#x1f3e0;</div>
-                        <span>Room Overview</span>
+                        <h2 class="card-title">Room overview</h2>
                     </div>
                 </div>
                 <div class="rooms-grid" id="rooms-grid">
@@ -845,32 +842,31 @@
             </section>
 
             <!-- Vision Identification -->
-            <section class="card" style="margin-bottom: 2rem;" id="vision-section">
+            <section class="card" style="margin-bottom: 1.5rem;" id="vision-section">
                 <div class="card-header">
                     <div class="card-title">
-                        <div class="card-icon" style="background: rgba(236, 72, 153, 0.2);">&#x1f4f7;</div>
-                        <span>Vision Identification</span>
+                        <h2 class="card-title">Vision identification</h2>
                     </div>
-                    <button class="btn btn-secondary" id="trigger-vision-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    <button class="btn btn-secondary btn-small" id="trigger-vision-btn">
                         Identify Now
                     </button>
                 </div>
-                <div id="vision-result" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div id="vision-result" class="vision-grid">
                     <div>
-                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Last Identified</div>
-                        <div id="vision-identified" style="font-size: 1.75rem; font-weight: 600; color: var(--accent-primary);">
+                        <div class="label">Last identified</div>
+                        <div id="vision-identified" class="vision-identified">
                             --
                         </div>
-                        <div id="vision-confidence" style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">
+                        <div id="vision-confidence" class="vision-meta">
                             Confidence: --
                         </div>
-                        <div id="vision-time" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">
+                        <div id="vision-time" class="vision-time">
                             --
                         </div>
                     </div>
                     <div>
-                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Description</div>
-                        <div id="vision-description" class="llm-response" style="max-height: 100px; font-size: 0.8rem;">
+                        <div class="label">Description</div>
+                        <div id="vision-description" class="llm-response vision-description">
                             No vision identification yet. Click "Identify Now" or wait for motion detection.
                         </div>
                     </div>
@@ -883,8 +879,7 @@
                 <section class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <div class="card-icon" style="background: rgba(139, 92, 246, 0.2);">&#x1f916;</div>
-                            <span>LLM Analysis</span>
+                            <h2 class="card-title">LLM analysis</h2>
                         </div>
                     </div>
                     <div class="llm-response" id="llm-response">
@@ -896,8 +891,7 @@
                 <section class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <div class="card-icon" style="background: rgba(6, 182, 212, 0.2);">&#x1f4dc;</div>
-                            <span>Recent Activity</span>
+                            <h2 class="card-title">Recent activity</h2>
                         </div>
                     </div>
                     <div class="timeline" id="timeline">
@@ -1188,7 +1182,6 @@
         function renderRoomsGrid() {
             el.roomsGrid.innerHTML = CONFIG.rooms.map(room => `
                 <div class="room-tile" data-room="${room}" id="room-${room}">
-                    <div class="room-icon">${CONFIG.roomIcons[room] || '\u{1f3e0}'}</div>
                     <div class="room-name">${room.replace('_', ' ')}</div>
                     <div class="room-status">Empty</div>
                 </div>
@@ -1256,6 +1249,15 @@
             );
             if (visionSensor) updateVisionDisplay(visionSensor);
 
+            // Profile pictures from person.* entities (matched by friendly name)
+            const pictures = {};
+            states.forEach(s => {
+                if (s.entity_id.startsWith('person.') && s.attributes?.entity_picture) {
+                    const fn = (s.attributes.friendly_name || s.entity_id.slice(7)).toLowerCase();
+                    pictures[fn] = s.attributes.entity_picture;
+                }
+            });
+
             const roomOccupancy = {};
             CONFIG.rooms.forEach(room => roomOccupancy[room] = []);
 
@@ -1269,13 +1271,14 @@
                 const rawResponse = sensor.attributes.raw_response || '';
                 const entityType = sensor.attributes.entity_type || 'person';
                 const lastChanged = sensor.last_changed;
+                const picture = sensor.attributes.entity_picture || pictures[name.toLowerCase()] || null;
 
-                const data = { name, room, confidence, indicators, rawResponse, entityType, lastChanged };
+                const data = { name, room, confidence, indicators, rawResponse, entityType, lastChanged, picture };
 
                 if (isFirstLoad && room && room !== 'unknown') {
                     const icon = entityType === 'pet' ? '\u{1f43e}' : '\u{1f464}';
                     addTimelineEvent({
-                        message: `${icon} <strong>${name}</strong> detected in <span style="color: var(--room-${room?.replace('_', '-') || 'unknown'})">${room?.replace('_', ' ')}</span>`,
+                        message: `${icon} <strong>${name}</strong> detected in <span class="room-ref">${room?.replace('_', ' ')}</span>`,
                         type: 'initial_state',
                         entity: name,
                         from: null,
@@ -1284,7 +1287,7 @@
                 } else if (state.previousRooms[name] && state.previousRooms[name] !== room) {
                     const icon = entityType === 'pet' ? '\u{1f43e}' : '\u{1f464}';
                     addTimelineEvent({
-                        message: `${icon} <strong>${name}</strong> moved from <span style="color: var(--room-${state.previousRooms[name]?.replace('_', '-') || 'unknown'})">${state.previousRooms[name]?.replace('_', ' ')}</span> &rarr; <span style="color: var(--room-${room?.replace('_', '-') || 'unknown'})">${room?.replace('_', ' ')}</span>`,
+                        message: `${icon} <strong>${name}</strong> moved from <span class="room-ref">${state.previousRooms[name]?.replace('_', ' ')}</span> &rarr; <span class="room-ref">${room?.replace('_', ' ')}</span>`,
                         type: 'room_change',
                         entity: name,
                         from: state.previousRooms[name],
@@ -1320,7 +1323,7 @@
                             <div class="loading-spinner"></div>
                             <span>Waiting for Roomer data...</span>
                         </div>
-                        <p style="margin-top: 1rem; color: var(--text-muted); text-align: center;">
+                        <p class="empty-note">
                             Make sure the Roomer integration is configured in Home Assistant.
                         </p>
                     </div>
@@ -1328,32 +1331,32 @@
                 return;
             }
 
-            el.personsGrid.innerHTML = Object.entries(allEntities).map(([name, data]) => {
+            el.personsGrid.innerHTML = Object.entries(allEntities).map(([name, data], i) => {
                 const isPerson = data.entityType === 'person';
-                const cardClass = isPerson ? 'person-card' : 'pet-card';
-                const icon = isPerson ? '\u{1f464}' : '\u{1f43e}';
+                const isAway = data.room === 'away' || data.room === 'not_home';
+                const cardClass = (isPerson ? 'person-card' : 'pet-card') + (isAway ? ' away' : '');
                 const confidencePercent = Math.round(data.confidence * 100);
+                const tier = confidenceTier(data.confidence);
 
                 return `
                     <div class="card ${cardClass}">
                         <div class="card-header">
                             <div class="card-title">
-                                <div class="card-icon">${icon}</div>
+                                ${renderAvatar(name, data.picture, i)}
                                 <span>${name}</span>
                             </div>
-                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                            <span class="card-kind">
                                 ${isPerson ? 'Person' : 'Pet'}
                             </span>
                         </div>
-                        <div class="person-location" style="color: var(--room-${data.room?.replace('_', '-') || 'unknown'});">
-                            ${CONFIG.roomIcons[data.room] || '\u2753'} ${data.room?.replace('_', ' ') || 'Unknown'}
+                        <div class="person-location">
+                            ${data.room?.replace('_', ' ') || 'Unknown'}
                         </div>
-                        <div class="confidence-bar">
+                        <div class="confidence-bar ${tier.cls}" aria-hidden="true">
                             <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
                         </div>
                         <div class="confidence-text">
-                            <span>Confidence</span>
-                            <span>${confidencePercent}%</span>
+                            <span class="chip ${tier.chip}">${tier.label} &middot; ${confidencePercent}%</span>
                         </div>
                         ${data.indicators && data.indicators.length > 0 ? `
                             <div class="indicators">
@@ -1365,6 +1368,21 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function confidenceTier(c) {
+            if (c >= 0.8) return { label: 'Sure', chip: 'chip-sure', cls: 'conf-sure' };
+            if (c >= 0.5) return { label: 'Pretty sure', chip: 'chip-pretty', cls: 'conf-pretty' };
+            return { label: 'Guessing', chip: 'chip-guess', cls: 'conf-guess' };
+        }
+
+        function renderAvatar(name, picture, index) {
+            if (picture) {
+                const src = String(picture).replace(/"/g, '&quot;');
+                return `<img class="avatar picture" src="${src}" alt="">`;
+            }
+            const initials = name.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+            return `<div class="avatar tint-${(index % 3) + 1}" aria-hidden="true">${initials}</div>`;
         }
 
         function updateRoomTiles(roomOccupancy) {
@@ -1413,7 +1431,7 @@
         function renderTimeline() {
             if (state.timeline.length === 0) {
                 el.timeline.innerHTML = `
-                    <div style="color: var(--text-muted); text-align: center; padding: 1rem;">
+                    <div class="timeline-empty">
                         <p>No room changes detected yet.</p>
                         <p style="font-size: 0.8rem; margin-top: 0.5rem;">Events will appear here when someone moves between rooms.</p>
                     </div>
@@ -1447,16 +1465,9 @@
             }
 
             const identEl = document.getElementById('vision-identified');
-            const personColors = ['var(--room-office)', 'var(--room-bedroom)', 'var(--room-kitchen)', 'var(--room-living)'];
-            const personIndex = Object.keys(state.persons).indexOf(identified.toLowerCase());
-            const petIndex = Object.keys(state.pets).indexOf(identified.toLowerCase());
-            if (personIndex >= 0) {
-                identEl.style.color = personColors[personIndex % personColors.length];
-            } else if (petIndex >= 0) {
-                identEl.style.color = personColors[(petIndex + Object.keys(state.persons).length) % personColors.length];
-            } else {
-                identEl.style.color = 'var(--accent-primary)';
-            }
+            const known = [...Object.keys(state.persons), ...Object.keys(state.pets)]
+                .some(n => n.toLowerCase() === identified.toLowerCase());
+            identEl.style.color = known ? 'var(--primary-ink)' : 'var(--muted)';
 
             if (identified !== 'none' && identified !== 'unknown' && attrs.timestamp) {
                 const newTime = new Date(attrs.timestamp).getTime();
