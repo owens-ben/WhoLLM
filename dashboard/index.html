@@ -31,6 +31,8 @@
             /* Semantic error colour (not part of the palette, contrast-checked) */
             --danger-ink: #9A3324;
             --danger-tint: #F6E1DA;
+            /* "Guessing" chip ink: muted-on-line is 4.47:1 in light, so use body ink there */
+            --guess-ink: #4A4033;
 
             --font-display: 'Bricolage Grotesque', 'DM Sans', system-ui, sans-serif;
             --font-text: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -60,6 +62,7 @@
                 --tint3: #2D2A21;
                 --danger-ink: #E8A493;
                 --danger-tint: #33231F;
+                --guess-ink: #A39C91;
             }
         }
 
@@ -227,7 +230,6 @@
 
         .avatar.picture {
             object-fit: cover;
-            box-shadow: none;
             outline: 3px solid var(--primary);
             outline-offset: 0;
             border: 2px solid var(--surface);
@@ -287,7 +289,7 @@
 
         .chip-sure { background: var(--tint2); color: var(--secondary-ink); }
         .chip-pretty { background: var(--tint3); color: var(--highlight-ink); }
-        .chip-guess { background: var(--line); color: var(--muted); }
+        .chip-guess { background: var(--line); color: var(--guess-ink); }
 
         .indicators {
             display: flex;
@@ -763,7 +765,7 @@
                 </svg>
                 <div>
                     <h1>Roomer</h1>
-                    <p class="subtitle">Intelligent presence detection powered by local AI</p>
+                    <p class="subtitle">Know who's in which room.</p>
                 </div>
             </div>
 
@@ -777,7 +779,7 @@
                     <span>Ollama</span>
                 </div>
                 <div class="status-item">
-                    <span class="muted-label" style="color: var(--muted);">Updated</span>
+                    <span style="color: var(--muted);">Updated</span>
                     <span id="last-update" class="time">--:--:--</span>
                 </div>
             </div>
@@ -1465,9 +1467,8 @@
             }
 
             const identEl = document.getElementById('vision-identified');
-            const known = [...Object.keys(state.persons), ...Object.keys(state.pets)]
-                .some(n => n.toLowerCase() === identified.toLowerCase());
-            identEl.style.color = known ? 'var(--primary-ink)' : 'var(--muted)';
+            const unidentified = identified === 'none' || identified === 'unknown';
+            identEl.style.color = unidentified ? 'var(--muted)' : 'var(--primary-ink)';
 
             if (identified !== 'none' && identified !== 'unknown' && attrs.timestamp) {
                 const newTime = new Date(attrs.timestamp).getTime();
