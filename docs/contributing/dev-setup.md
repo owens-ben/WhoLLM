@@ -148,7 +148,7 @@ INFO (MainThread) [custom_components.roomer] Setting up Roomer integration
 4. To test config-flow changes, delete the Roomer integration under **Settings → Devices & Services**, restart and add it again.
 
 !!! note
-    The integration does not register an options update listener. After you change options in the UI, use **Reload** on the integration (or restart) before the coordinator picks them up.
+    Saving options triggers the update listener registered in `async_setup_entry`, which reloads the entry through `hass.config_entries.async_reload()`. Code changes still need a restart.
 
 ### Troubleshooting a local install
 

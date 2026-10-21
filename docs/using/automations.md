@@ -5,6 +5,7 @@ Roomer's entities work like any other Home Assistant sensor, so you can use them
 !!! tip "Which entity should I trigger on?"
     - **"Alice walks into the office"** → `binary_sensor.alice_in_office` turning `on`.
     - **"Alice moved rooms"** or **"Alice left / got home"** → a state change of `sensor.alice_room`.
+    - **"Anyone moved rooms / got home / left"** → the [`roomer_room_changed`, `roomer_person_arrived` and `roomer_person_left` events](services-events.md#arrival-departure-and-room-change-events).
 
     See [Entities](entities.md) for the full list.
 
@@ -101,8 +102,26 @@ action:
 
 For "Alice left", use `to: "away"` instead and change the message.
 
-!!! warning "Not yet available: `roomer_person_arrived` and related events"
-    Roomer defines `roomer_person_arrived`, `roomer_person_left` and `roomer_room_changed` events, but the current version **does not fire them**, so automations that trigger on them never run. Use the room sensor's state, as above, until that is fixed. The planned event fields are listed on [Services & events](services-events.md).
+### Using the arrival event instead
+
+Roomer also fires `roomer_person_arrived` when someone goes from `away` to a room, and `roomer_person_left` when they go the other way. One automation can then cover everyone:
+
+```yaml
+alias: "Someone is home"
+mode: queued
+trigger:
+  - platform: event
+    event_type: roomer_person_arrived
+action:
+  - service: notify.mobile_app_your_phone   # change to your notify service
+    data:
+      title: "Welcome home"
+      message: >
+        {{ trigger.event.data.entity_name }} just got home and is in the
+        {{ trigger.event.data.room | replace('_', ' ') }}.
+```
+
+To limit it to one person, add `event_data: {entity_name: Alice}` under the trigger. The events don't fire at startup, and an event trigger can't use `for:`. See [Services & events](services-events.md#arrival-departure-and-room-change-events) for the details and the fields each event carries.
 
 ## Example 3: "you've been at your desk too long"
 
@@ -174,7 +193,7 @@ A blueprint is a ready-made automation where you only fill in a form. Roomer shi
 | **Roomer - Welcome Home Lights** | Turns on lights (optionally only after dark) when a person arrives home, then off again after five minutes | A person's room sensor changing from `away` to a room |
 | **Roomer - Goodbye Routine** | After a delay, turns off lights, locks doors, sets the thermostat and arms the alarm, if everyone you picked is still away | Any of the chosen room sensors changing from a room to `away` |
 
-All four trigger on the room sensor's state, so they work without the `roomer_person_arrived` / `roomer_person_left` events (which Roomer doesn't fire yet). Only room changes trigger them: updates where just the `confidence` attribute changes are ignored.
+All four trigger on the room sensor's state rather than on the `roomer_person_arrived` / `roomer_person_left` events, so they behave the same whichever you use in your own automations. Only room changes trigger them: updates where just the `confidence` attribute changes are ignored.
 
 Notes on each:
 

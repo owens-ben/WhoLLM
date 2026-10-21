@@ -24,9 +24,8 @@ To change mappings later, or to assign devices to people, use Roomer's options:
     The "Roomer Options" menu showing the four choices: General Settings, Room Entity Mapping, Person Device Ownership, Confidence Weights.
 
 !!! warning "Current limitations of the options screens (alpha)"
-    - **Changes apply after a reload.** After saving, go to **Settings →
-      Devices & services → Roomer**, open the **⋮** menu and select **Reload**,
-      or restart Home Assistant.
+    - **Saving reloads Roomer.** Your room sensors briefly become
+      unavailable while it restarts with the new settings.
     - **Only the most recently saved options section takes effect.** Saving one
       section replaces anything you saved in a different section. Everything
       else goes back to what you chose in the setup wizard. The forms also show

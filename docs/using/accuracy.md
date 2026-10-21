@@ -98,10 +98,10 @@ So a confident, correct answer usually sits between 0.7 and 0.95, and values aro
 !!! info "For the curious"
     - Agreement is rewarded by the combination itself, so there is no separate bonus. When two or more strong signals (weight 0.5 or more) agree, "Multiple signals agree" is added to the `indicators` attribute.
     - No single signal can make a room certain: each one is capped at 0.99, even if you set its weight to 100%.
-    - Habits are learned only from decisions with confidence of 0.7 or more, in two-hour time-of-day slots. In the current version they are kept in memory and start over when Home Assistant restarts.
+    - Habits are learned only from decisions with confidence of 0.7 or more, in two-hour time-of-day slots. They are saved to `/config/roomer_learned_habits.json` and kept across restarts.
     - The code is in `custom_components/roomer/habits.py` (`ConfidenceCombiner`), and `tests/test_confidence_scoring.py` has worked examples. See [Architecture](../contributing/architecture.md).
 
-You can change the weights under **Settings → Devices & services → Roomer → Configure → Confidence Weights**. Each is a percentage, so 85% means 0.85. Reload the integration afterwards (**⋮ → Reload** on the Roomer entry) for the change to take effect, and see the warning about saving options in [Troubleshooting](troubleshooting.md).
+You can change the weights under **Settings → Devices & services → Roomer → Configure → Confidence Weights**. Each is a percentage, so 85% means 0.85. Roomer reloads itself when you save, so the change takes effect straight away. See the warning about saving options in [Troubleshooting](troubleshooting.md).
 
 ## Tips to improve accuracy
 

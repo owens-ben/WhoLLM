@@ -1,5 +1,7 @@
 """Constants for Roomer integration."""
 
+from datetime import timedelta
+
 DOMAIN = "roomer"
 
 # Configuration keys
@@ -113,6 +115,7 @@ DEFAULT_MAX_FILE_SIZE_MB = 100
 # Learning configuration
 CONF_LEARNING_ENABLED = "learning_enabled"
 DEFAULT_LEARNING_ENABLED = True
+HABIT_SAVE_INTERVAL = timedelta(minutes=15)
 
 # Notification configuration
 CONF_NOTIFICATIONS_ENABLED = "notifications_enabled"

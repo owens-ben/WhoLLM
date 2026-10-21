@@ -179,6 +179,8 @@ class TestCoordinatorRoomTransition:
             coordinator._previous_rooms = {"Alice": "bedroom"}
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
+            coordinator.history_tracker = MagicMock()
+            coordinator.notification_manager = MagicMock()
 
             # Move Alice to office
             await coordinator._check_room_transition("Alice", "office", 0.9)
@@ -204,6 +206,8 @@ class TestCoordinatorRoomTransition:
             coordinator._previous_rooms = {"Alice": "office"}
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
+            coordinator.history_tracker = MagicMock()
+            coordinator.notification_manager = MagicMock()
 
             # Alice stays in office
             await coordinator._check_room_transition("Alice", "office", 0.9)
@@ -221,6 +225,8 @@ class TestCoordinatorRoomTransition:
             coordinator._previous_rooms = {"Alice": "office"}
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
+            coordinator.history_tracker = MagicMock()
+            coordinator.notification_manager = MagicMock()
 
             # Unknown room result
             await coordinator._check_room_transition("Alice", "unknown", 0.3)

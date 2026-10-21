@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed emojis from indicator strings in provider code
 - **Confidence scores are higher and mean more.** The confidence combiner now combines agreeing signals instead of dividing their sum by 2.60, so motion plus the AI scores 0.74 instead of 0.37, and conflicting rooms lower the winner's confidence. Raise any `confidence` thresholds you lowered to cope with the old values (`0.6` to `0.7` is a good start). See the Accuracy & limits docs.
 - The Ollama prompt now asks the model for a `CONFIDENCE:` value; `CONFIDENCE: 85` and `85%` are read as 0.85.
-- **BREAKING (blueprints):** Welcome Home Lights and Goodbye Routine trigger on the room sensor changing from or to `away` instead of the unfired `roomer_person_arrived` / `roomer_person_left` events. Goodbye Routine takes a list of room sensors and runs only once all of them are still `away` after the delay. Re-create automations made from it.
+- **BREAKING (blueprints):** Welcome Home Lights and Goodbye Routine trigger on the room sensor changing from or to `away` instead of the `roomer_person_arrived` / `roomer_person_left` events. Goodbye Routine takes a list of room sensors and runs only once all of them are still `away` after the delay. Re-create automations made from it.
 - Follow Me Music's default minimum confidence is now 0.7.
 
 ### Fixed

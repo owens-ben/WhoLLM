@@ -14,7 +14,7 @@ If you are new to Home Assistant integration development, three HA concepts carr
 
 | File | What it does |
 | --- | --- |
-| [`__init__.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/__init__.py) | Integration entry point. `async_setup_entry` builds the `EventLogger`, `HabitPredictor`, `ConfidenceCombiner` and the coordinator, runs the first refresh, schedules daily storage cleanup, creates the vision helpers, registers the `identify_person`, `enable_tracking`, `disable_tracking` and `cleanup_storage` services, and forwards setup to the `sensor` and `binary_sensor` platforms. |
+| [`__init__.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/__init__.py) | Integration entry point. `async_setup_entry` builds the `EventLogger`, `HabitPredictor`, `ConfidenceCombiner` and the coordinator, runs the first refresh, schedules daily storage cleanup, creates the vision helpers, registers services through `services.py`, forwards setup to the `sensor` and `binary_sensor` platforms, and registers the options update listener. |
 | [`coordinator.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/coordinator.py) | `LLMPresenceCoordinator`, the core polling loop, plus `DeviceTrackerHelper` (works out "home / away / unknown" from a person's `device_tracker.*` entities). |
 | [`config_flow.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/config_flow.py) | `LLMPresenceConfigFlow` (setup wizard: provider → model → rooms → persons → room entities) and `LLMPresenceOptionsFlow` (general settings, room entities, person devices, confidence weights). |
 | [`const.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/const.py) | Config keys, defaults, entity hint types, `DEFAULT_CONFIDENCE_WEIGHTS`, provider names and `SUPPORTED_PROVIDERS`. |
@@ -23,12 +23,12 @@ If you are new to Home Assistant integration development, three HA concepts carr
 | [`sensor.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/sensor.py) | `LLMPresenceSensor` (one "*Name* Room" sensor per person or pet) and `LLMVisionSensor` (last vision identification, driven by an HA event rather than the coordinator). |
 | [`binary_sensor.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/binary_sensor.py) | `LLMPresenceRoomBinarySensor`: one occupancy binary sensor for every person or pet × room combination. |
 | [`vision.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/vision.py) | `VisionIdentifier` (takes a camera snapshot, sends it to an Ollama vision model, parses who it sees) and `CameraTrackingController` (switches camera auto-tracking on and off). |
-| [`history.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/history.py) | `HistoryTracker`: room-transition history, daily timelines, room statistics and simple pattern detection. Not wired into the coordinator today; see [Storage files](#storage-files). |
-| [`notifications.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/notifications.py) | `NotificationManager`: fires `roomer_person_arrived`, `roomer_person_left` and `roomer_room_changed` events on room changes. Not called by the coordinator today; see [Not yet wired in](#not-yet-wired-in). |
+| [`history.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/history.py) | `HistoryTracker`: room-transition history, daily timelines, room statistics and simple pattern detection. Owned by the coordinator, which records every transition; read by the `get_history`, `get_patterns` and `clear_history` services. |
+| [`notifications.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/notifications.py) | `NotificationManager`: fires `roomer_person_arrived`, `roomer_person_left` and `roomer_room_changed` events on room changes. Owned by the coordinator and called from `_check_room_transition()`. The first room it sees for someone only sets a baseline. |
 | [`zones.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/zones.py) | `ZoneManager`: maps device-tracker states to HA zones (home, work, ...). Not used by the coordinator, which uses `DeviceTrackerHelper` instead. |
 | [`ml_predictor.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/ml_predictor.py) | `MLPredictor`: loads per-person scikit-learn models and predicts a room with an uncertainty flag. Not wired in; see [`ml_predictor.py`](#ml_predictorpy). |
-| [`services.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/services.py) | Handlers for `refresh`, `correct_room`, `get_history`, `clear_history` and `get_patterns`. Nothing imports this module yet, so these services are never registered; see [Not yet wired in](#not-yet-wired-in). |
-| [`services.yaml`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/services.yaml) | Service descriptions shown in the HA UI. |
+| [`services.py`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/services.py) | Schemas and handlers for all nine services, and `async_setup_services()`, which registers them (once, even with several entries). Handlers find the coordinator's `HabitPredictor` and `HistoryTracker` through `hass.data["roomer"][entry_id]`; the vision helpers and event logger come from their fixed keys. |
+| [`services.yaml`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/services.yaml) | Service descriptions shown in the HA UI. Must list exactly the services `services.py` registers; `tests/test_wiring.py` checks this. |
 | [`strings.json`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/strings.json), `translations/` | UI text for the config and options flows. |
 | [`manifest.json`](https://github.com/owens-ben/roomer/blob/main/custom_components/roomer/manifest.json) | Integration metadata read by HA and HACS: domain `roomer`, version, `iot_class: local_polling`, requirements. |
 
@@ -48,11 +48,14 @@ If you are new to Home Assistant integration development, three HA concepts carr
 When HA loads a Roomer config entry, `async_setup_entry` in `__init__.py`:
 
 1. Builds one `EventLogger` (with the configured retention days and maximum file size), one `HabitPredictor` and one `ConfidenceCombiner`.
-2. Creates the `LLMPresenceCoordinator` with those injected. The coordinator constructor reads its settings with `_get_config()` (options first, then data, then the default) and gets an LLM client from `get_provider()`.
+2. Creates the `LLMPresenceCoordinator` with those injected. The coordinator creates its own `HistoryTracker` and `NotificationManager` unless they are passed in. The coordinator constructor reads its settings with `_get_config()` (options first, then data, then the default) and gets an LLM client from `get_provider()`.
 3. Awaits `coordinator.async_config_entry_first_refresh()`, so setup fails cleanly if the first poll raises.
 4. Stores the coordinator in `hass.data["roomer"][entry.entry_id]`, and the event logger, vision identifier and tracking controller under fixed keys in `hass.data["roomer"]`.
 5. Runs `event_logger.cleanup()` once, then schedules it every 24 hours.
-6. Registers services and forwards to the `sensor` and `binary_sensor` platforms.
+6. Registers services (`services.async_setup_services()`) and forwards to the `sensor` and `binary_sensor` platforms.
+7. Registers an update listener that calls `hass.config_entries.async_reload()` when options change, and a `homeassistant_stop` listener that calls `coordinator.save_state()`.
+
+The cleanup timer and both listeners are passed to `entry.async_on_unload()`, so they are removed when the entry unloads or reloads. `async_unload_entry` calls `coordinator.save_state()` (habits and history) before dropping the coordinator.
 
 ## The update cycle
 
@@ -99,8 +102,8 @@ A few details that are easy to miss when reading the code:
 - **The device-tracker check is persons only, and only for "away".** If every `device_tracker.*` in the person's `person_devices` reports something other than `home`, the person is marked `away` at `DEVICE_TRACKER_AWAY_CONFIDENCE` (0.95) and the LLM is never called. If any tracker says `home`, or all are unavailable, the normal pipeline runs.
 - **The LLM is one vote, not the answer.** `ConfidenceCombiner.combine()` treats each active indicator's weight (from `confidence_weights`, see `DEFAULT_CONFIDENCE_WEIGHTS` in `const.py`), `llm_confidence × weights["llm_reasoning"]` for the LLM's room and `habit_confidence × weights["habit"]` for the habit room as independent evidence, keeping the strongest per hint type per room (owned devices count separately). Each room's support is a noisy-OR, `1 − ∏(1 − w)`, and the winner's confidence is its support × (1 − `CONFLICT_PENALTY` × runner-up support), with `CONFLICT_PENALTY = 0.5`. The combiner can and does overrule the LLM.
 - **Providers never raise on network errors.** `OllamaProvider.deduce_presence()` catches errors and returns `_create_fallback_guess()`, a rule-based guess (PC on → that room, media playing → that room, otherwise a default room) at 0.3–0.55 confidence. `UpdateFailed` is only raised for unexpected errors elsewhere in the cycle.
-- **Habit learning is in memory.** `learn_from_event()` updates `HabitPredictor.habits`, but `save_learned_patterns()` is only called from `clear_patterns()`, so learned habits are not written to disk during normal operation and are lost on restart.
-- **"Transitions" are only logged.** `_check_room_transition()` compares against `self._previous_rooms` and writes a `room_transition` record through `EventLogger`. It does **not** fire HA events or notifications.
+- **Habits are saved in batches.** `learn_from_event()` updates `HabitPredictor.habits` in memory and marks them dirty. At the end of an update cycle, `_async_maybe_save_habits()` writes them to disk if they changed and `HABIT_SAVE_INTERVAL` (15 minutes) has passed. They are also saved by `save_state()` on unload and on HA stop, and straight after a `correct_room` call.
+- **Transitions fan out to three places.** `_check_room_transition()` compares against `self._previous_rooms`. When the room changed it writes a `room_transition` record through `EventLogger` and calls `HistoryTracker.record_transition()`. It then calls `NotificationManager.update_room()`, which fires the arrival, departure or room-change event. An `unknown` result is ignored entirely, so it never counts as a departure.
 
 ### Shape of `coordinator.data`
 
@@ -143,7 +146,7 @@ sequenceDiagram
 
 Entity IDs are built from the configured names, not the domain. The sensor's unique ID is `roomer_{type}_{name_slug}_room` and its name is "*Name* Room". The binary sensor's unique ID is `roomer_{type}_{name_slug}_{room_slug}` and its name is "*Name* in *Room*". Binary sensors use `BinarySensorDeviceClass.OCCUPANCY`.
 
-`LLMVisionSensor` is the exception: it does not subscribe to the coordinator. It listens for the `roomer_vision_identification` event, which the `identify_person` service handler in `__init__.py` fires.
+`LLMVisionSensor` is the exception: it does not subscribe to the coordinator. It listens for the `roomer_vision_identification` event, which the `identify_person` service handler in `services.py` fires.
 
 ## Storage files
 
@@ -152,8 +155,8 @@ All storage paths are hard-coded relative to `/config`, the HA config directory 
 | File | Written by | Contents | Written during normal operation? |
 | --- | --- | --- | --- |
 | `/config/roomer_events.jsonl` | `EventLogger` (`DEFAULT_LOG_PATH`) | One JSON object per line: presence events (with `time_features` and a compact `sensor_summary`), `room_transition` events and `vision_identification` events. Trimmed by `cleanup()` on startup, daily and through the `cleanup_storage` service. | Yes, on every poll for every person and pet. |
-| `/config/roomer_learned_habits.json` | `HabitPredictor.save_learned_patterns()` | Per-person `"start-end"` hour slots → `[room, confidence, count]`. Loaded on startup. | No: only `clear_patterns()` saves it today. |
-| `/config/roomer_history.json` | `HistoryTracker._save_history()` | Room-transition history per entity. | No: `HistoryTracker` is not instantiated by the integration. |
+| `/config/roomer_learned_habits.json` | `HabitPredictor.save_learned_patterns()` | Per-person `"start-end"` hour slots → `[room, confidence, count]`. Loaded on startup. | Yes, at most every 15 minutes while habits change, plus on unload, HA stop and `correct_room`. |
+| `/config/roomer_history.json` | `HistoryTracker.save_history()` | Room-transition history per entity. Loaded on startup. | Yes, every 10 transitions, on `clear_history`, on unload and on HA stop. |
 | `/config/roomer_feedback.jsonl` | `MLPredictor.record_feedback()` | User corrections for future training runs. | No: `MLPredictor` is not instantiated by the integration. |
 
 Tests avoid touching `/config` by passing a temporary `config_path` to `HabitPredictor` and `HistoryTracker`, or a temporary `log_path` to `EventLogger`. See the `habit_predictor` fixture in `tests/conftest.py` and the `EventLogger` tests in `tests/test_edge_cases.py`.
@@ -166,10 +169,8 @@ Tests avoid touching `/config` by passing a temporary `config_path` to `HabitPre
 
 ## Not yet wired in
 
-Several modules are complete and tested but nothing calls them from the running integration. Keep this in mind before you document or rely on their behaviour:
+A few modules are complete and tested but nothing calls them from the running integration. Keep this in mind before you document or rely on their behaviour:
 
-- **`notifications.py`**: `NotificationManager.update_room()` is never called, so the `roomer_person_arrived`, `roomer_person_left` and `roomer_room_changed` events are not currently fired. The coordinator's `_check_room_transition()` only logs to the JSONL file.
-- **`services.py`**: never imported. It also imports `get_habit_predictor` from `habits.py` and `get_history_tracker` from `history.py`, and neither function exists, so importing it raises `ImportError`. As a result `roomer.refresh`, `correct_room`, `get_history`, `clear_history` and `get_patterns` are described in `services.yaml` but not registered.
-- **`history.py`**, **`zones.py`**, **`ml_predictor.py`**: used only by their tests.
+- **`zones.py`**, **`ml_predictor.py`**: used only by their tests.
 
 Wiring any of these into `LLMPresenceCoordinator._process_entity()` or `async_setup_entry()` is a good first contribution.
