@@ -1,1 +1,1 @@
-"""Tests for WhoLLM integration."""
+"""Tests for Roomer integration."""

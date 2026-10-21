@@ -33,7 +33,7 @@ home_config:
   person_devices:
     Dan: []  # No device trackers configured!
 
-whollm_config:
+roomer_config:
   provider: "ollama"
   model: "qwen2.5:3b"
   poll_interval: 30

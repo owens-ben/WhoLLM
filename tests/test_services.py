@@ -1,7 +1,7 @@
 """
 Tests for Home Assistant services (TDD).
 
-These tests verify WhoLLM services for manual control and data access.
+These tests verify Roomer services for manual control and data access.
 """
 
 import pytest
@@ -13,12 +13,12 @@ class TestServiceRegistration:
 
     def test_services_module_exists(self):
         """Services module should exist."""
-        from custom_components.whollm import services
+        from custom_components.roomer import services
         assert services is not None
 
     def test_service_constants_defined(self):
         """Service names should be defined as constants."""
-        from custom_components.whollm.services import (
+        from custom_components.roomer.services import (
             SERVICE_REFRESH,
             SERVICE_CORRECT_ROOM,
             SERVICE_GET_HISTORY,
@@ -39,13 +39,13 @@ class TestRefreshService:
     @pytest.mark.asyncio
     async def test_refresh_triggers_update(self):
         """Refresh should trigger coordinator update."""
-        from custom_components.whollm.services import async_handle_refresh
+        from custom_components.roomer.services import async_handle_refresh
         
         mock_coordinator = MagicMock()
         mock_coordinator.async_request_refresh = AsyncMock()
         
         mock_hass = MagicMock()
-        mock_hass.data = {"whollm": {"coordinator": mock_coordinator}}
+        mock_hass.data = {"roomer": {"coordinator": mock_coordinator}}
         
         call = MagicMock()
         call.data = {}
@@ -57,13 +57,13 @@ class TestRefreshService:
     @pytest.mark.asyncio
     async def test_refresh_with_entity_filter(self):
         """Refresh should support entity filter."""
-        from custom_components.whollm.services import async_handle_refresh
+        from custom_components.roomer.services import async_handle_refresh
         
         mock_coordinator = MagicMock()
         mock_coordinator.async_request_refresh = AsyncMock()
         
         mock_hass = MagicMock()
-        mock_hass.data = {"whollm": {"coordinator": mock_coordinator}}
+        mock_hass.data = {"roomer": {"coordinator": mock_coordinator}}
         
         call = MagicMock()
         call.data = {"entity_id": "sensor.ben_room"}
@@ -80,7 +80,7 @@ class TestCorrectRoomService:
     @pytest.mark.asyncio
     async def test_correct_room_updates_state(self):
         """Correct room should update entity state."""
-        from custom_components.whollm.services import async_handle_correct_room
+        from custom_components.roomer.services import async_handle_correct_room
         
         mock_hass = MagicMock()
         mock_hass.states.async_set = MagicMock()
@@ -89,7 +89,7 @@ class TestCorrectRoomService:
         mock_predictor = MagicMock()
         mock_predictor.learn_from_event = MagicMock()
         
-        with patch("custom_components.whollm.services.get_habit_predictor", return_value=mock_predictor):
+        with patch("custom_components.roomer.services.get_habit_predictor", return_value=mock_predictor):
             call = MagicMock()
             call.data = {
                 "entity_id": "sensor.ben_room",
@@ -104,7 +104,7 @@ class TestCorrectRoomService:
     @pytest.mark.asyncio
     async def test_correct_room_validates_room(self):
         """Correct room should validate room name."""
-        from custom_components.whollm.services import async_handle_correct_room
+        from custom_components.roomer.services import async_handle_correct_room
         
         mock_hass = MagicMock()
         
@@ -124,7 +124,7 @@ class TestGetHistoryService:
     @pytest.mark.asyncio
     async def test_get_history_returns_data(self):
         """Get history should return transition data."""
-        from custom_components.whollm.services import async_handle_get_history
+        from custom_components.roomer.services import async_handle_get_history
         
         mock_tracker = MagicMock()
         mock_tracker.get_recent_transitions.return_value = [
@@ -133,7 +133,7 @@ class TestGetHistoryService:
         
         mock_hass = MagicMock()
         
-        with patch("custom_components.whollm.services.get_history_tracker", return_value=mock_tracker):
+        with patch("custom_components.roomer.services.get_history_tracker", return_value=mock_tracker):
             call = MagicMock()
             call.data = {"entity_name": "Ben", "limit": 10}
             
@@ -145,14 +145,14 @@ class TestGetHistoryService:
     @pytest.mark.asyncio
     async def test_get_history_respects_limit(self):
         """Get history should respect limit parameter."""
-        from custom_components.whollm.services import async_handle_get_history
+        from custom_components.roomer.services import async_handle_get_history
         
         mock_tracker = MagicMock()
         mock_tracker.get_recent_transitions.return_value = []
         
         mock_hass = MagicMock()
         
-        with patch("custom_components.whollm.services.get_history_tracker", return_value=mock_tracker):
+        with patch("custom_components.roomer.services.get_history_tracker", return_value=mock_tracker):
             call = MagicMock()
             call.data = {"entity_name": "Ben", "limit": 5}
             
@@ -167,14 +167,14 @@ class TestClearHistoryService:
     @pytest.mark.asyncio
     async def test_clear_history_for_entity(self):
         """Clear history should clear for specific entity."""
-        from custom_components.whollm.services import async_handle_clear_history
+        from custom_components.roomer.services import async_handle_clear_history
         
         mock_tracker = MagicMock()
         mock_tracker.clear_history = MagicMock()
         
         mock_hass = MagicMock()
         
-        with patch("custom_components.whollm.services.get_history_tracker", return_value=mock_tracker):
+        with patch("custom_components.roomer.services.get_history_tracker", return_value=mock_tracker):
             call = MagicMock()
             call.data = {"entity_name": "Ben"}
             
@@ -185,14 +185,14 @@ class TestClearHistoryService:
     @pytest.mark.asyncio
     async def test_clear_history_all(self):
         """Clear history should clear all when no entity specified."""
-        from custom_components.whollm.services import async_handle_clear_history
+        from custom_components.roomer.services import async_handle_clear_history
         
         mock_tracker = MagicMock()
         mock_tracker.clear_history = MagicMock()
         
         mock_hass = MagicMock()
         
-        with patch("custom_components.whollm.services.get_history_tracker", return_value=mock_tracker):
+        with patch("custom_components.roomer.services.get_history_tracker", return_value=mock_tracker):
             call = MagicMock()
             call.data = {}
             
@@ -207,7 +207,7 @@ class TestGetPatternsService:
     @pytest.mark.asyncio
     async def test_get_patterns_returns_data(self):
         """Get patterns should return detected patterns."""
-        from custom_components.whollm.services import async_handle_get_patterns
+        from custom_components.roomer.services import async_handle_get_patterns
         
         mock_tracker = MagicMock()
         mock_tracker.detect_patterns.return_value = [
@@ -216,7 +216,7 @@ class TestGetPatternsService:
         
         mock_hass = MagicMock()
         
-        with patch("custom_components.whollm.services.get_history_tracker", return_value=mock_tracker):
+        with patch("custom_components.roomer.services.get_history_tracker", return_value=mock_tracker):
             call = MagicMock()
             call.data = {"entity_name": "Ben"}
             
@@ -231,7 +231,7 @@ class TestServiceSchemas:
 
     def test_correct_room_schema(self):
         """Correct room schema should require entity_id and room."""
-        from custom_components.whollm.services import CORRECT_ROOM_SCHEMA
+        from custom_components.roomer.services import CORRECT_ROOM_SCHEMA
         import voluptuous as vol
         
         # Valid data should pass
@@ -244,7 +244,7 @@ class TestServiceSchemas:
 
     def test_get_history_schema(self):
         """Get history schema should require entity_name."""
-        from custom_components.whollm.services import GET_HISTORY_SCHEMA
+        from custom_components.roomer.services import GET_HISTORY_SCHEMA
         import voluptuous as vol
         
         # Valid data should pass

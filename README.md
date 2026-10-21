@@ -1,7 +1,7 @@
-# WhoLLM
+# Roomer
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/v/release/owens-ben/WhoLLM?include_prereleases)](https://github.com/owens-ben/WhoLLM/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/owens-ben/Roomer?include_prereleases)](https://github.com/owens-ben/Roomer/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
 
@@ -23,7 +23,7 @@ Without person-level tracking, you can't:
 
 ## The Solution
 
-WhoLLM uses a local LLM to reason across multiple weak signals—the same way humans do:
+Roomer uses a local LLM to reason across multiple weak signals—the same way humans do:
 
 ```
 Motion in office
@@ -65,14 +65,14 @@ No single sensor is definitive. Together, they're enough for a good guess.
 ### Via HACS (Recommended)
 
 1. Open HACS → Integrations → ⋮ Menu → Custom repositories
-2. Add `https://github.com/owens-ben/WhoLLM` as an Integration
-3. Search for "WhoLLM" and install
+2. Add `https://github.com/owens-ben/Roomer` as an Integration
+3. Search for "Roomer" and install
 4. Restart Home Assistant
-5. Go to Settings → Devices & Services → Add Integration → WhoLLM
+5. Go to Settings → Devices & Services → Add Integration → Roomer
 
 ### Manual Installation
 
-1. Download the `custom_components/whollm` folder from this repository
+1. Download the `custom_components/roomer` folder from this repository
 2. Copy it to your Home Assistant `config/custom_components/` directory
 3. Restart Home Assistant
 4. Add the integration via Settings → Devices & Services
@@ -140,33 +140,33 @@ Example: `binary_sensor.alice_in_office`, `binary_sensor.fido_in_living_room`
 
 ## Services
 
-### `whollm.identify_person`
+### `roomer.identify_person`
 
 Trigger vision-based identification from a camera.
 
 ```yaml
-service: whollm.identify_person
+service: roomer.identify_person
 data:
   camera_entity_id: camera.living_room
   detection_type: person  # or "animal"
 ```
 
-### `whollm.enable_tracking` / `whollm.disable_tracking`
+### `roomer.enable_tracking` / `roomer.disable_tracking`
 
 Control camera auto-tracking for PTZ cameras.
 
 ```yaml
-service: whollm.enable_tracking
+service: roomer.enable_tracking
 data:
   camera_name: e1_zoom
 ```
 
-### `whollm.request_vision_update`
+### `roomer.request_vision_update`
 
 Manually trigger vision identification for all configured cameras.
 
 ```yaml
-service: whollm.request_vision_update
+service: roomer.request_vision_update
 ```
 
 ---
@@ -265,7 +265,7 @@ The LLM is taking too long to respond. Try:
 
 Check Home Assistant logs:
 ```
-Settings → System → Logs → Filter by "whollm"
+Settings → System → Logs → Filter by "roomer"
 ```
 
 Common issues:

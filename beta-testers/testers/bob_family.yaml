@@ -75,7 +75,7 @@ home_config:
     Jake:
       - "device_tracker.jake_phone"
 
-whollm_config:
+roomer_config:
   provider: "ollama"
   model: "qwen2.5:3b"
   poll_interval: 20

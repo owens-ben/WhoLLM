@@ -1,4 +1,4 @@
-"""Integration tests for WhoLLM end-to-end flows."""
+"""Integration tests for Roomer end-to-end flows."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from custom_components.whollm.const import (
+from custom_components.roomer.const import (
     CONF_MODEL,
     CONF_PERSONS,
     CONF_PETS,
@@ -30,7 +30,7 @@ from custom_components.whollm.const import (
     ENTITY_HINT_MOTION,
     ENTITY_HINT_MEDIA,
 )
-from custom_components.whollm.providers.base import PresenceGuess
+from custom_components.roomer.providers.base import PresenceGuess
 
 
 @pytest.fixture
@@ -117,7 +117,7 @@ class TestEndToEndCoordinatorFlow:
         # This test validates the coordinator flow conceptually
         # Full integration testing requires HA test fixtures
 
-        from custom_components.whollm.providers.base import PresenceGuess
+        from custom_components.roomer.providers.base import PresenceGuess
 
         # Test that PresenceGuess can be created and used
         guess = PresenceGuess(
@@ -136,7 +136,7 @@ class TestEndToEndCoordinatorFlow:
 
         Note: This test validates learning logic without full HA setup.
         """
-        from custom_components.whollm.habits import HabitPredictor
+        from custom_components.roomer.habits import HabitPredictor
         from pathlib import Path
         from tempfile import TemporaryDirectory
 
@@ -159,7 +159,7 @@ class TestRoomTransitionDetection:
 
         Tests the transition detection logic in isolation.
         """
-        from custom_components.whollm.event_logger import EventLogger
+        from custom_components.roomer.event_logger import EventLogger
         from tempfile import TemporaryDirectory
         from pathlib import Path
 
@@ -188,7 +188,7 @@ class TestProviderFallback:
     @pytest.mark.asyncio
     async def test_fallback_on_provider_error(self, mock_hass, full_config_entry):
         """Test that Ollama provider returns fallback on error."""
-        from custom_components.whollm.providers.ollama import OllamaProvider
+        from custom_components.roomer.providers.ollama import OllamaProvider
 
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
@@ -215,7 +215,7 @@ class TestSensorEntityIntegration:
 
     def test_sensor_receives_coordinator_data(self, mock_hass, full_config_entry):
         """Test that sensors receive data from coordinator updates."""
-        from custom_components.whollm.sensor import LLMPresenceSensor
+        from custom_components.roomer.sensor import LLMPresenceSensor
 
         mock_coordinator = MagicMock()
         mock_coordinator.data = {
@@ -242,7 +242,7 @@ class TestSensorEntityIntegration:
 
     def test_binary_sensor_reflects_room_state(self, mock_hass, full_config_entry):
         """Test that binary sensors reflect correct room state."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         mock_coordinator = MagicMock()
         mock_coordinator.data = {
@@ -282,7 +282,7 @@ class TestHabitLearningIntegration:
 
     def test_habit_pattern_learning_flow(self):
         """Test the full habit learning flow."""
-        from custom_components.whollm.habits import HabitPredictor
+        from custom_components.roomer.habits import HabitPredictor
         from datetime import datetime
 
         with TemporaryDirectory() as tmpdir:
@@ -314,7 +314,7 @@ class TestConfidenceCombiningIntegration:
 
     def test_multiple_signals_boost_confidence(self):
         """Test that multiple agreeing signals boost confidence."""
-        from custom_components.whollm.habits import ConfidenceCombiner
+        from custom_components.roomer.habits import ConfidenceCombiner
 
         combiner = ConfidenceCombiner()
 

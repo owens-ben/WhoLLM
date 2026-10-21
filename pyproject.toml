@@ -3,7 +3,7 @@ requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "whollm"
+name = "roomer"
 version = "0.1.0"
 description = "Home Assistant integration for LLM-based person presence detection"
 readme = "README.md"
@@ -38,9 +38,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/owens-ben/WhoLLM"
-Repository = "https://github.com/owens-ben/WhoLLM"
-Issues = "https://github.com/owens-ben/WhoLLM/issues"
+Homepage = "https://github.com/owens-ben/Roomer"
+Repository = "https://github.com/owens-ben/Roomer"
+Issues = "https://github.com/owens-ben/Roomer/issues"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -67,7 +67,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["custom_components.whollm"]
+known-first-party = ["custom_components.roomer"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -77,7 +77,7 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 
 [tool.coverage.run]
-source = ["custom_components/whollm"]
+source = ["custom_components/roomer"]
 omit = ["tests/*"]
 
 [tool.coverage.report]

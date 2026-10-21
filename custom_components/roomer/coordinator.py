@@ -1,4 +1,4 @@
-"""Data update coordinator for WhoLLM."""
+"""Data update coordinator for Roomer."""
 
 from __future__ import annotations
 
@@ -192,7 +192,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
         _LOGGER.info(
-            "WhoLLM coordinator initialized: provider=%s, rooms=%d, room_entities=%d configured",
+            "Roomer coordinator initialized: provider=%s, rooms=%d, room_entities=%d configured",
             self.provider_type,
             len(self.rooms),
             len(self.room_entities),
@@ -232,7 +232,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 results["pets"][pet_name] = guess
 
             elapsed = time.time() - start_time
-            _LOGGER.debug("Finished fetching whollm data in %.3f seconds (success: True)", elapsed)
+            _LOGGER.debug("Finished fetching roomer data in %.3f seconds (success: True)", elapsed)
 
             return results
 

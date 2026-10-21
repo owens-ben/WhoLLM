@@ -1,12 +1,12 @@
-"""Tests for WhoLLM binary sensor entities."""
+"""Tests for Roomer binary sensor entities."""
 
 from __future__ import annotations
 
 import pytest
 from unittest.mock import MagicMock
 
-from custom_components.whollm.const import ATTR_CONFIDENCE, DOMAIN
-from custom_components.whollm.providers.base import PresenceGuess
+from custom_components.roomer.const import ATTR_CONFIDENCE, DOMAIN
+from custom_components.roomer.providers.base import PresenceGuess
 
 
 class TestLLMPresenceRoomBinarySensor:
@@ -14,7 +14,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_initialization_person(self, mock_coordinator):
         """Test binary sensor initializes correctly for person."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -32,7 +32,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_initialization_pet(self, mock_coordinator):
         """Test binary sensor initializes correctly for pet."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -46,7 +46,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_is_on_when_in_room(self, mock_coordinator):
         """Test is_on returns True when entity is in room."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -59,7 +59,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_is_on_false_when_not_in_room(self, mock_coordinator):
         """Test is_on returns False when entity is not in room."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -72,7 +72,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_is_on_none_when_no_data(self, mock_coordinator):
         """Test is_on returns None when no coordinator data."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         mock_coordinator.data = None
 
@@ -87,7 +87,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_is_on_none_for_unknown_entity(self, mock_coordinator):
         """Test is_on returns None for unknown entity."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -100,7 +100,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_extra_state_attributes_when_in_room(self, mock_coordinator):
         """Test attributes when entity is in the sensor's room."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -117,7 +117,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_extra_state_attributes_when_not_in_room(self, mock_coordinator):
         """Test attributes when entity is NOT in the sensor's room."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -134,7 +134,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_extra_state_attributes_empty_when_no_data(self, mock_coordinator):
         """Test attributes are empty when no data."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         mock_coordinator.data = None
 
@@ -149,7 +149,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_pet_in_correct_room(self, mock_coordinator):
         """Test pet sensor shows correct room state."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         # Whiskers is in bedroom
         sensor_bedroom = LLMPresenceRoomBinarySensor(
@@ -171,7 +171,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_handle_coordinator_update(self, mock_coordinator):
         """Test coordinator update callback."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -187,7 +187,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_room_name_formatting(self, mock_coordinator):
         """Test room name formatting with underscores."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -201,7 +201,7 @@ class TestLLMPresenceRoomBinarySensor:
 
     def test_entity_name_with_spaces(self, mock_coordinator):
         """Test entity name with spaces is slugified."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,
@@ -219,7 +219,7 @@ class TestBinarySensorSetupEntry:
     @pytest.mark.asyncio
     async def test_async_setup_entry_creates_entities(self, mock_coordinator):
         """Test that setup creates binary sensors for all person/room combinations."""
-        from custom_components.whollm.binary_sensor import async_setup_entry
+        from custom_components.roomer.binary_sensor import async_setup_entry
 
         hass = MagicMock()
         hass.data = {DOMAIN: {"test_entry_id": mock_coordinator}}
@@ -258,7 +258,7 @@ class TestBinarySensorSetupEntry:
     @pytest.mark.asyncio
     async def test_async_setup_entry_with_empty_pets(self, mock_coordinator):
         """Test setup with no pets configured."""
-        from custom_components.whollm.binary_sensor import async_setup_entry
+        from custom_components.roomer.binary_sensor import async_setup_entry
 
         mock_coordinator.pets = []  # No pets
 
@@ -281,7 +281,7 @@ class TestBinarySensorSetupEntry:
     @pytest.mark.asyncio
     async def test_async_setup_entry_with_single_room(self, mock_coordinator):
         """Test setup with only one room configured."""
-        from custom_components.whollm.binary_sensor import async_setup_entry
+        from custom_components.roomer.binary_sensor import async_setup_entry
 
         mock_coordinator.rooms = ["office"]  # Only one room
         mock_coordinator.pets = []
@@ -308,7 +308,7 @@ class TestBinarySensorDeviceClass:
 
     def test_device_class_is_occupancy(self, mock_coordinator):
         """Test that sensors have OCCUPANCY device class."""
-        from custom_components.whollm.binary_sensor import LLMPresenceRoomBinarySensor
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
         from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
         sensor = LLMPresenceRoomBinarySensor(

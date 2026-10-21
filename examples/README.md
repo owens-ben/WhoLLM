@@ -1,10 +1,10 @@
-# WhoLLM Examples
+# Roomer Examples
 
-This directory contains example configurations for using the WhoLLM integration.
+This directory contains example configurations for using the Roomer integration.
 
 ## Files
 
-- `example_automation.yaml` - Example automations using WhoLLM sensors
+- `example_automation.yaml` - Example automations using Roomer sensors
 
 ## Usage
 

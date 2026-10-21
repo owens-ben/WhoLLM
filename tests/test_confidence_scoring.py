@@ -15,14 +15,14 @@ class TestConfidenceWeights:
 
     def test_light_confidence_minimum(self):
         """Light-only indicators should have at least 35% base confidence."""
-        from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS, ENTITY_HINT_LIGHT
+        from custom_components.roomer.const import DEFAULT_CONFIDENCE_WEIGHTS, ENTITY_HINT_LIGHT
         
         # Light confidence should be at least 0.35
         assert DEFAULT_CONFIDENCE_WEIGHTS[ENTITY_HINT_LIGHT] >= 0.35
 
     def test_motion_higher_than_light(self):
         """Motion sensors should have higher confidence than lights."""
-        from custom_components.whollm.const import (
+        from custom_components.roomer.const import (
             DEFAULT_CONFIDENCE_WEIGHTS,
             ENTITY_HINT_LIGHT,
             ENTITY_HINT_MOTION,
@@ -32,13 +32,13 @@ class TestConfidenceWeights:
 
     def test_computer_very_high_confidence(self):
         """Computer/PC indicators should have very high confidence."""
-        from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS, ENTITY_HINT_COMPUTER
+        from custom_components.roomer.const import DEFAULT_CONFIDENCE_WEIGHTS, ENTITY_HINT_COMPUTER
         
         assert DEFAULT_CONFIDENCE_WEIGHTS[ENTITY_HINT_COMPUTER] >= 0.85
 
     def test_camera_highest_confidence(self):
         """Camera AI detection should have highest confidence."""
-        from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS, ENTITY_HINT_CAMERA
+        from custom_components.roomer.const import DEFAULT_CONFIDENCE_WEIGHTS, ENTITY_HINT_CAMERA
         
         assert DEFAULT_CONFIDENCE_WEIGHTS[ENTITY_HINT_CAMERA] >= 0.90
 
@@ -48,8 +48,8 @@ class TestMultipleIndicators:
 
     def test_multiple_indicators_increase_confidence(self):
         """Multiple indicators in same room should increase confidence."""
-        from custom_components.whollm.habits import ConfidenceCombiner
-        from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS
+        from custom_components.roomer.habits import ConfidenceCombiner
+        from custom_components.roomer.const import DEFAULT_CONFIDENCE_WEIGHTS
         
         combiner = ConfidenceCombiner(DEFAULT_CONFIDENCE_WEIGHTS)
         
@@ -89,8 +89,8 @@ class TestMultipleIndicators:
 
     def test_conflicting_indicators_resolved(self):
         """Conflicting indicators should be resolved by weight."""
-        from custom_components.whollm.habits import ConfidenceCombiner
-        from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS
+        from custom_components.roomer.habits import ConfidenceCombiner
+        from custom_components.roomer.const import DEFAULT_CONFIDENCE_WEIGHTS
         
         combiner = ConfidenceCombiner(DEFAULT_CONFIDENCE_WEIGHTS)
         
@@ -120,7 +120,7 @@ class TestTimeDecay:
 
     def test_recent_motion_high_confidence(self):
         """Recent motion (<1 min) should have high confidence."""
-        from custom_components.whollm.habits import calculate_time_decay
+        from custom_components.roomer.habits import calculate_time_decay
         
         # Motion 30 seconds ago
         decay = calculate_time_decay(seconds_ago=30, sensor_type="motion")
@@ -128,7 +128,7 @@ class TestTimeDecay:
 
     def test_old_motion_lower_confidence(self):
         """Old motion (>5 min) should have lower confidence."""
-        from custom_components.whollm.habits import calculate_time_decay
+        from custom_components.roomer.habits import calculate_time_decay
         
         # Motion 10 minutes ago
         decay = calculate_time_decay(seconds_ago=600, sensor_type="motion")
@@ -136,7 +136,7 @@ class TestTimeDecay:
 
     def test_light_no_decay(self):
         """Lights don't decay - if on, they're on."""
-        from custom_components.whollm.habits import calculate_time_decay
+        from custom_components.roomer.habits import calculate_time_decay
         
         # Light on for 30 minutes
         decay = calculate_time_decay(seconds_ago=1800, sensor_type="light")
@@ -148,14 +148,14 @@ class TestConfidenceCombiner:
 
     def test_combiner_exists(self):
         """ConfidenceCombiner should exist and be importable."""
-        from custom_components.whollm.habits import ConfidenceCombiner
+        from custom_components.roomer.habits import ConfidenceCombiner
         
         assert ConfidenceCombiner is not None
 
     def test_combiner_returns_tuple(self):
         """Combiner should return (room, confidence, explanation)."""
-        from custom_components.whollm.habits import ConfidenceCombiner
-        from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS
+        from custom_components.roomer.habits import ConfidenceCombiner
+        from custom_components.roomer.const import DEFAULT_CONFIDENCE_WEIGHTS
         
         combiner = ConfidenceCombiner(DEFAULT_CONFIDENCE_WEIGHTS)
         
@@ -177,8 +177,8 @@ class TestConfidenceCombiner:
 
     def test_llm_fallback_when_no_sensors(self):
         """Without sensor data, should use LLM prediction."""
-        from custom_components.whollm.habits import ConfidenceCombiner
-        from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS
+        from custom_components.roomer.habits import ConfidenceCombiner
+        from custom_components.roomer.const import DEFAULT_CONFIDENCE_WEIGHTS
         
         combiner = ConfidenceCombiner(DEFAULT_CONFIDENCE_WEIGHTS)
         
@@ -200,8 +200,8 @@ class TestConfidenceBounds:
 
     def test_confidence_max_100(self):
         """Confidence should never exceed 1.0 (100%)."""
-        from custom_components.whollm.habits import ConfidenceCombiner
-        from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS
+        from custom_components.roomer.habits import ConfidenceCombiner
+        from custom_components.roomer.const import DEFAULT_CONFIDENCE_WEIGHTS
         
         combiner = ConfidenceCombiner(DEFAULT_CONFIDENCE_WEIGHTS)
         
@@ -227,8 +227,8 @@ class TestConfidenceBounds:
 
     def test_confidence_min_0(self):
         """Confidence should never be negative."""
-        from custom_components.whollm.habits import ConfidenceCombiner
-        from custom_components.whollm.const import DEFAULT_CONFIDENCE_WEIGHTS
+        from custom_components.roomer.habits import ConfidenceCombiner
+        from custom_components.roomer.const import DEFAULT_CONFIDENCE_WEIGHTS
         
         combiner = ConfidenceCombiner(DEFAULT_CONFIDENCE_WEIGHTS)
         

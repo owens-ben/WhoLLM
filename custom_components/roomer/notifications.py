@@ -1,4 +1,4 @@
-"""Notification system for WhoLLM.
+"""Notification system for Roomer.
 
 Fires Home Assistant events when people arrive, leave, or change rooms.
 Events can be used to trigger automations.
@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 # Event types
-EVENT_PERSON_ARRIVED = "whollm_person_arrived"
-EVENT_PERSON_LEFT = "whollm_person_left"
-EVENT_ROOM_CHANGED = "whollm_room_changed"
+EVENT_PERSON_ARRIVED = "roomer_person_arrived"
+EVENT_PERSON_LEFT = "roomer_person_left"
+EVENT_ROOM_CHANGED = "roomer_room_changed"
 
 # Special room values
 ROOM_AWAY = "away"

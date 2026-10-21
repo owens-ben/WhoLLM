@@ -1,4 +1,4 @@
-"""Binary sensor platform for WhoLLM."""
+"""Binary sensor platform for Roomer."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up WhoLLM binary sensors from a config entry."""
+    """Set up Roomer binary sensors from a config entry."""
     coordinator: LLMPresenceCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities: list[BinarySensorEntity] = []

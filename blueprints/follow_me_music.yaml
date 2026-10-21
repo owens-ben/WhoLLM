@@ -1,19 +1,19 @@
 blueprint:
-  name: WhoLLM - Follow Me Music
+  name: Roomer - Follow Me Music
   description: >-
     Transfer music playback to follow a person as they move between rooms.
     When they enter a new room, pause the old speaker and resume on the new one.
   domain: automation
-  author: WhoLLM
-  source_url: https://github.com/owens-ben/WhoLLM/blob/main/blueprints/follow_me_music.yaml
+  author: Roomer
+  source_url: https://github.com/owens-ben/Roomer/blob/main/blueprints/follow_me_music.yaml
   input:
     person_sensor:
       name: Person Room Sensor
-      description: The WhoLLM room sensor to follow
+      description: The Roomer room sensor to follow
       selector:
         entity:
           domain: sensor
-          integration: whollm
+          integration: roomer
     room_speaker_map:
       name: Room to Speaker Mapping
       description: >-

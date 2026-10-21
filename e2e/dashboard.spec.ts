@@ -17,7 +17,7 @@ test.describe('Dashboard loads', () => {
   test('footer renders with GitHub link', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('footer')).toBeVisible();
-    await expect(page.locator('footer a')).toHaveAttribute('href', 'https://github.com/owens-ben/WhoLLM');
+    await expect(page.locator('footer a')).toHaveAttribute('href', 'https://github.com/owens-ben/Roomer');
   });
 });
 

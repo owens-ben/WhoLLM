@@ -1,4 +1,4 @@
-"""WhoLLM integration for Home Assistant.
+"""Roomer integration for Home Assistant.
 
 Uses local LLMs (Ollama) to intelligently deduce room presence
 based on sensor data (lights, motion, media, device trackers).
@@ -69,14 +69,14 @@ CLEANUP_STORAGE_SCHEMA = vol.Schema(
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up WhoLLM from YAML configuration."""
+    """Set up Roomer from YAML configuration."""
     hass.data.setdefault(DOMAIN, {})
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up WhoLLM from a config entry."""
-    _LOGGER.info("Setting up WhoLLM integration")
+    """Set up Roomer from a config entry."""
+    _LOGGER.info("Setting up Roomer integration")
 
     # Instantiate shared components (no global singletons)
     retention_days = entry.options.get(CONF_RETENTION_DAYS, entry.data.get(CONF_RETENTION_DAYS, DEFAULT_RETENTION_DAYS))
@@ -165,7 +165,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_register_services(hass: HomeAssistant) -> None:
-    """Register WhoLLM services."""
+    """Register Roomer services."""
 
     async def handle_identify_person(call: ServiceCall) -> dict[str, Any]:
         """Handle the identify_person service call."""
@@ -281,12 +281,12 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             schema=CLEANUP_STORAGE_SCHEMA,
         )
 
-        _LOGGER.info("Registered WhoLLM services")
+        _LOGGER.info("Registered Roomer services")
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    _LOGGER.info("Unloading WhoLLM integration")
+    _LOGGER.info("Unloading Roomer integration")
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 

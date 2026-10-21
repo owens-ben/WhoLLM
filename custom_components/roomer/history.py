@@ -1,4 +1,4 @@
-"""History and movement pattern tracking for WhoLLM.
+"""History and movement pattern tracking for Roomer.
 
 Tracks room transitions and provides movement history/patterns.
 """
@@ -54,7 +54,7 @@ class HistoryTracker:
             max_history: Maximum number of transitions to keep
         """
         self._config_path = config_path or Path("/config")
-        self._history_path = self._config_path / "whollm_history.json"
+        self._history_path = self._config_path / "roomer_history.json"
         self._max_history = max_history
         
         # In-memory history (deque for efficient append/pop)

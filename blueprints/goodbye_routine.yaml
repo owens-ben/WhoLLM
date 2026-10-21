@@ -1,11 +1,11 @@
 blueprint:
-  name: WhoLLM - Goodbye Routine
+  name: Roomer - Goodbye Routine
   description: >-
     Run actions when someone leaves home. Turn off lights, lock doors,
     set thermostat to away mode, etc.
   domain: automation
-  author: WhoLLM
-  source_url: https://github.com/owens-ben/WhoLLM/blob/main/blueprints/goodbye_routine.yaml
+  author: Roomer
+  source_url: https://github.com/owens-ben/Roomer/blob/main/blueprints/goodbye_routine.yaml
   input:
     turn_off_lights:
       name: Turn Off Lights
@@ -58,7 +58,7 @@ blueprint:
 
 trigger:
   - platform: event
-    event_type: whollm_person_left
+    event_type: roomer_person_left
 
 action:
   - delay:

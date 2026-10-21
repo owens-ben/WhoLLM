@@ -1,7 +1,7 @@
 """
 Tests for device tracker integration (TDD).
 
-These tests verify that WhoLLM correctly uses device_tracker entities
+These tests verify that Roomer correctly uses device_tracker entities
 to determine if a person is home or away.
 """
 
@@ -14,14 +14,14 @@ class TestDeviceTrackerSupport:
 
     def test_config_accepts_device_tracker_mapping(self):
         """Config should accept person-to-device_tracker mappings."""
-        from custom_components.whollm.const import CONF_PERSON_DEVICES
+        from custom_components.roomer.const import CONF_PERSON_DEVICES
         
         # Config should have a constant for person devices
         assert CONF_PERSON_DEVICES == "person_devices"
 
     def test_device_tracker_home_state(self):
         """Device tracker 'home' state should indicate person is present."""
-        from custom_components.whollm.coordinator import DeviceTrackerHelper
+        from custom_components.roomer.coordinator import DeviceTrackerHelper
         
         helper = DeviceTrackerHelper()
         
@@ -34,7 +34,7 @@ class TestDeviceTrackerSupport:
 
     def test_device_tracker_not_home_state(self):
         """Device tracker 'not_home' state should indicate person is away."""
-        from custom_components.whollm.coordinator import DeviceTrackerHelper
+        from custom_components.roomer.coordinator import DeviceTrackerHelper
         
         helper = DeviceTrackerHelper()
         
@@ -46,7 +46,7 @@ class TestDeviceTrackerSupport:
 
     def test_device_tracker_zone_state(self):
         """Device tracker with zone name should indicate person is home."""
-        from custom_components.whollm.coordinator import DeviceTrackerHelper
+        from custom_components.roomer.coordinator import DeviceTrackerHelper
         
         helper = DeviceTrackerHelper()
         
@@ -59,7 +59,7 @@ class TestDeviceTrackerSupport:
 
     def test_multiple_device_trackers_any_home(self):
         """If any device tracker shows home, person is considered home."""
-        from custom_components.whollm.coordinator import DeviceTrackerHelper
+        from custom_components.roomer.coordinator import DeviceTrackerHelper
         
         helper = DeviceTrackerHelper()
         
@@ -76,7 +76,7 @@ class TestDeviceTrackerSupport:
 
     def test_multiple_device_trackers_all_away(self):
         """If all device trackers show away, person is considered away."""
-        from custom_components.whollm.coordinator import DeviceTrackerHelper
+        from custom_components.roomer.coordinator import DeviceTrackerHelper
         
         helper = DeviceTrackerHelper()
         
@@ -92,7 +92,7 @@ class TestDeviceTrackerSupport:
 
     def test_away_detection_high_confidence(self):
         """Away detection from device tracker should have high confidence."""
-        from custom_components.whollm.coordinator import DeviceTrackerHelper
+        from custom_components.roomer.coordinator import DeviceTrackerHelper
         
         helper = DeviceTrackerHelper()
         
@@ -102,7 +102,7 @@ class TestDeviceTrackerSupport:
 
     def test_device_tracker_unavailable(self):
         """Unavailable device tracker should not affect home/away status."""
-        from custom_components.whollm.coordinator import DeviceTrackerHelper
+        from custom_components.roomer.coordinator import DeviceTrackerHelper
         
         helper = DeviceTrackerHelper()
         
@@ -115,7 +115,7 @@ class TestDeviceTrackerSupport:
 
     def test_coordinator_uses_device_tracker(self):
         """Coordinator should check device tracker before making predictions."""
-        from custom_components.whollm.coordinator import LLMPresenceCoordinator
+        from custom_components.roomer.coordinator import LLMPresenceCoordinator
         
         # This test verifies the integration point exists
         # The actual implementation will use DeviceTrackerHelper
@@ -128,7 +128,7 @@ class TestDeviceTrackerConfigFlow:
 
     def test_person_devices_in_config_schema(self):
         """Config schema should include person_devices field."""
-        from custom_components.whollm.const import CONF_PERSON_DEVICES
+        from custom_components.roomer.const import CONF_PERSON_DEVICES
         
         # The constant should exist
         assert CONF_PERSON_DEVICES is not None
@@ -136,7 +136,7 @@ class TestDeviceTrackerConfigFlow:
     def test_device_tracker_entities_selectable(self):
         """Device tracker entities should be selectable in config."""
         # This is more of an integration test, but we verify the pattern
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
         
         # Config flow should exist and handle device trackers
         assert LLMPresenceConfigFlow is not None
@@ -147,13 +147,13 @@ class TestAwayPrediction:
 
     def test_away_room_value(self):
         """Away should be represented as 'away' room value."""
-        from custom_components.whollm.const import ROOM_AWAY
+        from custom_components.roomer.const import ROOM_AWAY
         
         assert ROOM_AWAY == "away"
 
     def test_presence_guess_supports_away(self):
         """PresenceGuess should support away as a valid room."""
-        from custom_components.whollm.providers.base import PresenceGuess
+        from custom_components.roomer.providers.base import PresenceGuess
         
         guess = PresenceGuess(
             room="away",

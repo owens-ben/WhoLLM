@@ -1,6 +1,6 @@
 # Development Setup Guide
 
-This guide will help you set up the WhoLLM integration for local testing in your Home Assistant instance.
+This guide will help you set up the Roomer integration for local testing in your Home Assistant instance.
 
 ## Prerequisites
 
@@ -25,14 +25,14 @@ This allows you to edit code and see changes after restart:
 
 ```bash
 # Find your HA config directory first, then:
-ln -s /path/to/whollm/custom_components/whollm /path/to/your/ha/config/custom_components/whollm
+ln -s /path/to/roomer/custom_components/roomer /path/to/your/ha/config/custom_components/roomer
 ```
 
 ### Option B: Copy Files
 
 ```bash
 # Copy the integration folder
-cp -r /path/to/whollm/custom_components/whollm /path/to/your/ha/config/custom_components/
+cp -r /path/to/roomer/custom_components/roomer /path/to/your/ha/config/custom_components/
 ```
 
 ## Step 3: Verify Structure
@@ -43,7 +43,7 @@ Your Home Assistant config directory should have this structure:
 config/
 ├── configuration.yaml
 ├── custom_components/
-│   └── whollm/
+│   └── roomer/
 │       ├── __init__.py
 │       ├── manifest.json
 │       ├── config_flow.py
@@ -69,7 +69,7 @@ Add this to your `configuration.yaml` to see detailed logs:
 logger:
   default: info
   logs:
-    custom_components.whollm: debug
+    custom_components.roomer: debug
 ```
 
 ## Step 5: Restart Home Assistant
@@ -85,11 +85,11 @@ Restart Home Assistant to load the custom integration:
 After restart, check the logs for:
 
 ```
-INFO (MainThread) [custom_components.whollm] Setting up WhoLLM integration
+INFO (MainThread) [custom_components.roomer] Setting up Roomer integration
 ```
 
 If you see errors, check:
-- The `custom_components/whollm` folder exists
+- The `custom_components/roomer` folder exists
 - All Python files are present
 - `manifest.json` is valid JSON
 - Dependencies are installed (aiohttp)
@@ -98,7 +98,7 @@ If you see errors, check:
 
 1. Go to **Settings** → **Devices & Services**
 2. Click **+ Add Integration**
-3. Search for **"WhoLLM"**
+3. Search for **"Roomer"**
 4. Follow the setup wizard:
    - Enter Ollama URL (default: `http://localhost:11434`)
    - Select poll interval
@@ -114,8 +114,8 @@ After configuration, check that entities are created:
 - `binary_sensor.{person_name}_in_{room}` - Binary sensors for each person × room combination
 
 You can verify in:
-- **Settings** → **Devices & Services** → **WhoLLM**
-- **Developer Tools** → **States** (search for `whollm`)
+- **Settings** → **Devices & Services** → **Roomer**
+- **Developer Tools** → **States** (search for `roomer`)
 
 ## Troubleshooting
 
@@ -124,17 +124,17 @@ You can verify in:
 1. **Check logs** for import errors:
    ```bash
    # In Home Assistant logs
-   grep -i "whollm" home-assistant.log
+   grep -i "roomer" home-assistant.log
    ```
 
 2. **Verify manifest.json**:
    ```bash
-   python3 -m json.tool custom_components/whollm/manifest.json
+   python3 -m json.tool custom_components/roomer/manifest.json
    ```
 
 3. **Check Python syntax**:
    ```bash
-   python3 -m py_compile custom_components/whollm/*.py
+   python3 -m py_compile custom_components/roomer/*.py
    ```
 
 ### Dependencies Not Installed
@@ -161,7 +161,7 @@ If you see `ModuleNotFoundError: No module named 'aiohttp'`:
 1. **Edit files** in your development directory
 2. **Restart Home Assistant** to reload changes
 3. **Check logs** for any new errors
-4. **Reload integration** if needed: Settings → Devices & Services → WhoLLM → Reload
+4. **Reload integration** if needed: Settings → Devices & Services → Roomer → Reload
 
 ## Development Tips
 
@@ -182,12 +182,12 @@ docker restart homeassistant
 
 ```bash
 # Follow Home Assistant logs
-tail -f /path/to/ha/config/home-assistant.log | grep whollm
+tail -f /path/to/ha/config/home-assistant.log | grep roomer
 ```
 
 ### Test Configuration Flow
 
-1. Remove integration: Settings → Devices & Services → WhoLLM → Delete
+1. Remove integration: Settings → Devices & Services → Roomer → Delete
 2. Restart HA
 3. Add integration again to test config flow changes
 

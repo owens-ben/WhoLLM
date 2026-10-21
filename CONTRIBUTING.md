@@ -1,11 +1,11 @@
-# Contributing to WhoLLM
+# Contributing to Roomer
 
-Thank you for your interest in contributing to WhoLLM!
+Thank you for your interest in contributing to Roomer!
 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/WhoLLM.git`
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/Roomer.git`
 3. Create a branch: `git checkout -b feature/your-feature-name`
 4. Make your changes
 5. Run tests: `pytest tests/`
@@ -50,7 +50,7 @@ pre-commit install
 ## Reporting Issues
 
 - Check existing issues before creating a new one
-- Include Home Assistant version, WhoLLM version, and relevant logs
+- Include Home Assistant version, Roomer version, and relevant logs
 - Provide steps to reproduce the issue
 
 ## Areas for Contribution

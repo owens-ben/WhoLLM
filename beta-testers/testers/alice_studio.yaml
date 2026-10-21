@@ -41,7 +41,7 @@ home_config:
     Alice:
       - "device_tracker.alice_phone"
 
-whollm_config:
+roomer_config:
   provider: "ollama"
   model: "qwen2.5:3b"
   poll_interval: 15

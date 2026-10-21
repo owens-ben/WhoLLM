@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from custom_components.whollm.providers.base import PresenceGuess, BaseLLMProvider
-from custom_components.whollm.providers.ollama import OllamaProvider
-from custom_components.whollm.const import VALID_ROOMS
+from custom_components.roomer.providers.base import PresenceGuess, BaseLLMProvider
+from custom_components.roomer.providers.ollama import OllamaProvider
+from custom_components.roomer.const import VALID_ROOMS
 
 
 class TestPresenceGuess:
@@ -180,7 +180,7 @@ class TestOllamaProvider:
         """Test successful connection test."""
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
-        with patch("custom_components.whollm.providers.ollama.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.ollama.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.__aenter__ = AsyncMock(return_value=mock_response)
@@ -201,7 +201,7 @@ class TestOllamaProvider:
         """Test failed connection test."""
         provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
-        with patch("custom_components.whollm.providers.ollama.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.providers.ollama.aiohttp.ClientSession") as mock_session:
             # Make the context manager raise an exception
             mock_session.return_value.__aenter__ = AsyncMock(side_effect=Exception("Connection refused"))
 

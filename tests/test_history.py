@@ -15,7 +15,7 @@ class TestHistoryTracker:
 
     def test_tracker_initialization(self):
         """Tracker should initialize without errors."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))
@@ -23,7 +23,7 @@ class TestHistoryTracker:
 
     def test_record_transition(self):
         """Should record room transitions."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))
@@ -42,7 +42,7 @@ class TestHistoryTracker:
 
     def test_no_duplicate_transitions(self):
         """Same room transitions should not be recorded."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))
@@ -59,7 +59,7 @@ class TestHistoryTracker:
 
     def test_get_recent_transitions_limit(self):
         """Should respect limit parameter."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))
@@ -79,7 +79,7 @@ class TestHistoryTracker:
 
     def test_entity_filter(self):
         """Should filter by entity name."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))
@@ -100,7 +100,7 @@ class TestRoomStatistics:
 
     def test_get_room_statistics(self):
         """Should calculate room statistics."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))
@@ -124,7 +124,7 @@ class TestPatternDetection:
 
     def test_detect_patterns_requires_data(self):
         """Pattern detection requires minimum history."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))
@@ -137,7 +137,7 @@ class TestPatternDetection:
 
     def test_clear_history(self):
         """Should clear history."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))
@@ -157,7 +157,7 @@ class TestHistoryPersistence:
 
     def test_save_and_load(self):
         """History should persist across restarts."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create tracker and add data
@@ -178,7 +178,7 @@ class TestDailyTimeline:
 
     def test_get_daily_timeline_empty(self):
         """Should return empty list for no data."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))
@@ -188,7 +188,7 @@ class TestDailyTimeline:
 
     def test_get_daily_timeline_with_data(self):
         """Should return timeline entries."""
-        from custom_components.whollm.history import HistoryTracker
+        from custom_components.roomer.history import HistoryTracker
         
         with tempfile.TemporaryDirectory() as tmpdir:
             tracker = HistoryTracker(config_path=Path(tmpdir))

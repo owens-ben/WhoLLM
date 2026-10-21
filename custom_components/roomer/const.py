@@ -1,6 +1,6 @@
-"""Constants for WhoLLM integration."""
+"""Constants for Roomer integration."""
 
-DOMAIN = "whollm"
+DOMAIN = "roomer"
 
 # Configuration keys
 CONF_PROVIDER = "provider"

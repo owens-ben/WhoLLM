@@ -1,4 +1,4 @@
-"""Tests for WhoLLM config flow."""
+"""Tests for Roomer config flow."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.whollm.const import (
+from custom_components.roomer.const import (
     CONF_MODEL,
     CONF_PERSONS,
     CONF_PETS,
@@ -30,7 +30,7 @@ from custom_components.whollm.const import (
 def mock_setup_entry():
     """Override async_setup_entry."""
     with patch(
-        "custom_components.whollm.async_setup_entry",
+        "custom_components.roomer.async_setup_entry",
         return_value=True,
     ) as mock_setup:
         yield mock_setup
@@ -42,7 +42,7 @@ class TestConfigFlowUserStep:
     @pytest.mark.asyncio
     async def test_user_step_shows_form(self):
         """Test that user step shows the provider configuration form."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -57,12 +57,12 @@ class TestConfigFlowUserStep:
     @pytest.mark.asyncio
     async def test_user_step_connection_failure(self):
         """Test error handling when provider connection fails."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
 
-        with patch("custom_components.whollm.config_flow.get_provider") as mock_get:
+        with patch("custom_components.roomer.config_flow.get_provider") as mock_get:
             mock_provider = MagicMock()
             mock_provider.test_connection = AsyncMock(return_value=False)
             mock_get.return_value = mock_provider
@@ -81,12 +81,12 @@ class TestConfigFlowUserStep:
     @pytest.mark.asyncio
     async def test_user_step_success_proceeds_to_model(self):
         """Test successful connection proceeds to model selection."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
 
-        with patch("custom_components.whollm.config_flow.get_provider") as mock_get:
+        with patch("custom_components.roomer.config_flow.get_provider") as mock_get:
             mock_provider = MagicMock()
             mock_provider.test_connection = AsyncMock(return_value=True)
             mock_provider.get_available_models = AsyncMock(return_value=["llama3.2", "mistral"])
@@ -110,7 +110,7 @@ class TestConfigFlowModelStep:
     @pytest.mark.asyncio
     async def test_model_step_shows_available_models(self):
         """Test that model step shows available models."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -126,7 +126,7 @@ class TestConfigFlowModelStep:
     @pytest.mark.asyncio
     async def test_model_step_proceeds_to_rooms(self):
         """Test selecting model proceeds to room configuration."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -145,7 +145,7 @@ class TestConfigFlowRoomsStep:
     @pytest.mark.asyncio
     async def test_rooms_step_shows_form(self):
         """Test that rooms step shows room selection form."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -164,7 +164,7 @@ class TestConfigFlowRoomsStep:
     @pytest.mark.asyncio
     async def test_rooms_step_requires_at_least_one_room(self):
         """Test that at least one room must be selected."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -182,7 +182,7 @@ class TestConfigFlowRoomsStep:
     @pytest.mark.asyncio
     async def test_rooms_step_accepts_custom_rooms(self):
         """Test that custom rooms can be added."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -206,7 +206,7 @@ class TestConfigFlowPersonsStep:
     @pytest.mark.asyncio
     async def test_persons_step_shows_form(self):
         """Test that persons step shows person/pet input form."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -227,7 +227,7 @@ class TestConfigFlowPersonsStep:
     @pytest.mark.asyncio
     async def test_persons_step_requires_at_least_one_entity(self):
         """Test that at least one person or pet is required."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -246,7 +246,7 @@ class TestConfigFlowPersonsStep:
     @pytest.mark.asyncio
     async def test_persons_step_parses_comma_separated_names(self):
         """Test that comma-separated names are parsed correctly."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -271,7 +271,7 @@ class TestConfigFlowRoomEntitiesStep:
     @pytest.mark.asyncio
     async def test_room_entities_step_creates_entry(self):
         """Test that room entities step creates config entry."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -293,7 +293,7 @@ class TestConfigFlowRoomEntitiesStep:
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert result["title"] == "WhoLLM (ollama)"
+        assert result["title"] == "Roomer (ollama)"
         assert CONF_ROOM_ENTITIES in result["data"]
         assert CONF_LEARNING_ENABLED in result["data"]
 
@@ -303,40 +303,40 @@ class TestGuessEntityHint:
 
     def test_guess_motion_sensor(self):
         """Test guessing motion sensor hint type."""
-        from custom_components.whollm.config_flow import _guess_entity_hint
+        from custom_components.roomer.config_flow import _guess_entity_hint
 
         assert _guess_entity_hint("binary_sensor.office_motion") == "motion"
         assert _guess_entity_hint("binary_sensor.living_room_occupancy") == "motion"
 
     def test_guess_media_player(self):
         """Test guessing media player hint type."""
-        from custom_components.whollm.config_flow import _guess_entity_hint
+        from custom_components.roomer.config_flow import _guess_entity_hint
 
         assert _guess_entity_hint("media_player.living_room_tv") == "media"
 
     def test_guess_light(self):
         """Test guessing light hint type."""
-        from custom_components.whollm.config_flow import _guess_entity_hint
+        from custom_components.roomer.config_flow import _guess_entity_hint
 
         assert _guess_entity_hint("light.office_light") == "light"
 
     def test_guess_computer(self):
         """Test guessing computer hint type."""
-        from custom_components.whollm.config_flow import _guess_entity_hint
+        from custom_components.roomer.config_flow import _guess_entity_hint
 
         assert _guess_entity_hint("switch.office_pc") == "computer"
         assert _guess_entity_hint("switch.desktop_computer") == "computer"
 
     def test_guess_camera(self):
         """Test guessing camera hint type."""
-        from custom_components.whollm.config_flow import _guess_entity_hint
+        from custom_components.roomer.config_flow import _guess_entity_hint
 
         assert _guess_entity_hint("camera.living_room_camera") == "camera"
         assert _guess_entity_hint("binary_sensor.person_detected") == "camera"
 
     def test_guess_door_sensor(self):
         """Test guessing door/window sensor hint type."""
-        from custom_components.whollm.config_flow import _guess_entity_hint
+        from custom_components.roomer.config_flow import _guess_entity_hint
 
         assert _guess_entity_hint("binary_sensor.front_door") == "door"
         assert _guess_entity_hint("binary_sensor.bedroom_window") == "door"
@@ -344,13 +344,13 @@ class TestGuessEntityHint:
 
     def test_guess_device_tracker(self):
         """Test guessing device tracker hint type."""
-        from custom_components.whollm.config_flow import _guess_entity_hint
+        from custom_components.roomer.config_flow import _guess_entity_hint
 
         assert _guess_entity_hint("device_tracker.alice_phone") == "presence"
 
     def test_guess_unknown_defaults_to_appliance(self):
         """Test that unknown entities default to appliance hint type."""
-        from custom_components.whollm.config_flow import _guess_entity_hint
+        from custom_components.roomer.config_flow import _guess_entity_hint
 
         assert _guess_entity_hint("switch.random_switch") == "appliance"
         assert _guess_entity_hint("sensor.unknown_sensor") == "appliance"
@@ -405,7 +405,7 @@ class TestConfigFlowEdgeCases:
     @pytest.mark.asyncio
     async def test_empty_model_list_uses_default(self):
         """Test that empty model list uses default model."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -420,7 +420,7 @@ class TestConfigFlowEdgeCases:
     @pytest.mark.asyncio
     async def test_whitespace_in_custom_rooms_handled(self):
         """Test that whitespace in custom room names is handled."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()
@@ -440,7 +440,7 @@ class TestConfigFlowEdgeCases:
     @pytest.mark.asyncio
     async def test_duplicate_custom_rooms_deduplicated(self):
         """Test that duplicate rooms are not added twice."""
-        from custom_components.whollm.config_flow import LLMPresenceConfigFlow
+        from custom_components.roomer.config_flow import LLMPresenceConfigFlow
 
         flow = LLMPresenceConfigFlow()
         flow.hass = MagicMock()

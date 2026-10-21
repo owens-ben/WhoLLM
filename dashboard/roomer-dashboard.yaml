@@ -13,7 +13,7 @@
 #        dashboards:
 #          llm-presence:
 #            mode: yaml
-#            title: WhoLLM
+#            title: Roomer
 #            icon: mdi:brain
 #            show_in_sidebar: true
 #            filename: llm-presence-dashboard.yaml
@@ -23,7 +23,7 @@
 #   Settings → Dashboards → Add Dashboard → Take Control → Raw Config Editor
 ###############################################################################
 
-title: "🧠 WhoLLM"
+title: "🧠 Roomer"
 views:
   - title: Presence Overview
     path: presence
@@ -38,7 +38,7 @@ views:
         cards:
           - type: markdown
             content: |
-              # 🧠 WhoLLM
+              # 🧠 Roomer
               ### Intelligent presence detection powered by local AI
               
               This dashboard shows real-time room presence deduced by analyzing
@@ -274,7 +274,7 @@ views:
           - type: custom:mushroom-template-card
             primary: "Detection Quality"
             secondary: |
-              {% set sensors = states.sensor | selectattr('entity_id', 'search', 'whollm') | selectattr('entity_id', 'search', '_room') | list %}
+              {% set sensors = states.sensor | selectattr('entity_id', 'search', 'roomer') | selectattr('entity_id', 'search', '_room') | list %}
               {% set total_conf = 0 %}
               {% set count = 0 %}
               {% for sensor in sensors %}
@@ -291,7 +291,7 @@ views:
               {% endif %}
             icon: mdi:chart-arc
             icon_color: |
-              {% set sensors = states.sensor | selectattr('entity_id', 'search', 'whollm') | selectattr('entity_id', 'search', '_room') | list %}
+              {% set sensors = states.sensor | selectattr('entity_id', 'search', 'roomer') | selectattr('entity_id', 'search', '_room') | list %}
               {% set total_conf = 0 %}
               {% set count = 0 %}
               {% for sensor in sensors %}
@@ -510,7 +510,7 @@ views:
         cards:
           - type: markdown
             content: |
-              # ⚙️ WhoLLM Settings
+              # ⚙️ Roomer Settings
               
               ### Configuration
               
@@ -531,7 +531,7 @@ views:
               ### How to Reconfigure
               
               1. Go to **Settings** → **Devices & Services**
-              2. Find **WhoLLM**
+              2. Find **Roomer**
               3. Click **Configure** to change settings
               
               ---
@@ -541,11 +541,11 @@ views:
               Check Home Assistant logs for detailed LLM responses:
               
               ```
-              Settings → System → Logs → Filter: whollm
+              Settings → System → Logs → Filter: roomer
               ```
 
           - type: entities
-            title: "All WhoLLM Entities"
+            title: "All Roomer Entities"
             show_header_toggle: false
             entities:
               # Replace 'alice' with your configured person name

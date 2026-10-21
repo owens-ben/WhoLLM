@@ -1,4 +1,4 @@
-"""Tests for WhoLLM vision module."""
+"""Tests for Roomer vision module."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ class TestVisionIdentifier:
 
     def test_initialization_default(self):
         """Test default initialization."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://localhost:11434",
@@ -34,7 +34,7 @@ class TestVisionIdentifier:
 
     def test_initialization_custom(self):
         """Test initialization with custom settings."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://192.168.1.100:11434",
@@ -50,7 +50,7 @@ class TestVisionIdentifier:
     @pytest.mark.asyncio
     async def test_identify_from_camera_success(self, mock_hass):
         """Test successful camera identification."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://localhost:11434",
@@ -87,7 +87,7 @@ class TestVisionIdentifier:
     @pytest.mark.asyncio
     async def test_identify_from_camera_snapshot_failure(self, mock_hass):
         """Test handling when camera snapshot fails."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 
@@ -104,7 +104,7 @@ class TestVisionIdentifier:
     @pytest.mark.asyncio
     async def test_identify_from_camera_exception(self, mock_hass):
         """Test handling of exceptions during identification."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 
@@ -125,7 +125,7 @@ class TestImageCompression:
     @pytest.mark.asyncio
     async def test_compress_image_with_pil(self):
         """Test image compression with PIL available."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 
@@ -151,13 +151,13 @@ class TestImageCompression:
     @pytest.mark.asyncio
     async def test_compress_image_without_pil(self):
         """Test that compression returns original when PIL not available."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 
         fake_image = b"fake image bytes"
 
-        with patch("custom_components.whollm.vision.BytesIO", side_effect=ImportError):
+        with patch("custom_components.roomer.vision.BytesIO", side_effect=ImportError):
             # Should return original data
             result = await identifier._compress_image(fake_image)
             # In actual code, ImportError is caught differently
@@ -170,7 +170,7 @@ class TestOllamaVisionAPI:
     @pytest.mark.asyncio
     async def test_identify_with_ollama_person(self):
         """Test Ollama API call for person identification."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://localhost:11434",
@@ -179,7 +179,7 @@ class TestOllamaVisionAPI:
 
         fake_image = b"test image"
 
-        with patch("custom_components.whollm.vision.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.vision.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json = AsyncMock(
@@ -203,7 +203,7 @@ class TestOllamaVisionAPI:
     @pytest.mark.asyncio
     async def test_identify_with_ollama_animal(self):
         """Test Ollama API call for animal identification."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://localhost:11434",
@@ -212,7 +212,7 @@ class TestOllamaVisionAPI:
 
         fake_image = b"test image"
 
-        with patch("custom_components.whollm.vision.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.vision.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json = AsyncMock(
@@ -234,13 +234,13 @@ class TestOllamaVisionAPI:
     @pytest.mark.asyncio
     async def test_identify_with_ollama_api_error(self):
         """Test handling of API errors."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 
         fake_image = b"test image"
 
-        with patch("custom_components.whollm.vision.aiohttp.ClientSession") as mock_session:
+        with patch("custom_components.roomer.vision.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
             mock_response.status = 500
             mock_response.__aenter__ = AsyncMock(return_value=mock_response)
@@ -260,7 +260,7 @@ class TestOllamaVisionAPI:
     @pytest.mark.asyncio
     async def test_identify_with_ollama_timeout(self):
         """Test that timeout error is handled gracefully."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 
@@ -276,7 +276,7 @@ class TestResponseParsing:
 
     def test_parse_person_response(self):
         """Test parsing person identification response."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://localhost:11434",
@@ -295,7 +295,7 @@ DESCRIPTION: Woman with brown hair sitting at desk"""
 
     def test_parse_animal_response(self):
         """Test parsing animal identification response."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://localhost:11434",
@@ -313,7 +313,7 @@ DESCRIPTION: Orange tabby cat on the couch"""
 
     def test_parse_unknown_person(self):
         """Test parsing when person is unknown."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://localhost:11434",
@@ -331,7 +331,7 @@ DESCRIPTION: Cannot see face clearly"""
 
     def test_parse_normalizes_known_names(self):
         """Test that response normalizes to known names."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(
             ollama_url="http://localhost:11434",
@@ -350,7 +350,7 @@ DESCRIPTION: Person at desk"""
 
     def test_parse_malformed_response(self):
         """Test parsing malformed response."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 
@@ -368,7 +368,7 @@ class TestCameraTrackingController:
     @pytest.mark.asyncio
     async def test_enable_tracking(self, mock_hass):
         """Test enabling camera tracking."""
-        from custom_components.whollm.vision import CameraTrackingController
+        from custom_components.roomer.vision import CameraTrackingController
 
         controller = CameraTrackingController(mock_hass)
 
@@ -385,7 +385,7 @@ class TestCameraTrackingController:
     @pytest.mark.asyncio
     async def test_disable_tracking(self, mock_hass):
         """Test disabling camera tracking."""
-        from custom_components.whollm.vision import CameraTrackingController
+        from custom_components.roomer.vision import CameraTrackingController
 
         controller = CameraTrackingController(mock_hass)
 
@@ -402,7 +402,7 @@ class TestCameraTrackingController:
     @pytest.mark.asyncio
     async def test_enable_tracking_error(self, mock_hass):
         """Test handling error when enabling tracking."""
-        from custom_components.whollm.vision import CameraTrackingController
+        from custom_components.roomer.vision import CameraTrackingController
 
         mock_hass.services.async_call = AsyncMock(side_effect=Exception("Service not found"))
 
@@ -415,7 +415,7 @@ class TestCameraTrackingController:
     @pytest.mark.asyncio
     async def test_toggle_tracking_on_detection(self, mock_hass):
         """Test toggling tracking based on detection."""
-        from custom_components.whollm.vision import CameraTrackingController
+        from custom_components.roomer.vision import CameraTrackingController
 
         controller = CameraTrackingController(mock_hass)
 
@@ -440,7 +440,7 @@ class TestCameraSnapshot:
         Note: This test requires mocking Home Assistant's camera component.
         In CI, use pytest-homeassistant-custom-component for full coverage.
         """
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 
@@ -451,7 +451,7 @@ class TestCameraSnapshot:
     @pytest.mark.asyncio
     async def test_get_camera_snapshot_error(self, mock_hass):
         """Test that camera errors return None."""
-        from custom_components.whollm.vision import VisionIdentifier
+        from custom_components.roomer.vision import VisionIdentifier
 
         identifier = VisionIdentifier(ollama_url="http://localhost:11434")
 

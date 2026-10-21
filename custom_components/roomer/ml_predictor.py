@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 # Model path - looks in HA config directory
-MODEL_PATH = Path("/config/custom_components/whollm/models/per_person_models.pkl")
+MODEL_PATH = Path("/config/custom_components/roomer/models/per_person_models.pkl")
 # No fallback path - models must be trained for your household
 
 # Notification settings
@@ -278,7 +278,7 @@ class MLPredictor:
                 {
                     "title": f"Where is {entity_name}?",
                     "message": message,
-                    "notification_id": f"whollm_{entity_name.lower()}",
+                    "notification_id": f"roomer_{entity_name.lower()}",
                 },
             )
             self._last_notification[entity_name] = now
@@ -298,7 +298,7 @@ class MLPredictor:
 
         This appends to a feedback file that will be used in the next training run.
         """
-        feedback_path = Path("/config/whollm_feedback.jsonl")
+        feedback_path = Path("/config/roomer_feedback.jsonl")
 
         pending = self._pending_feedback.get(entity_name, {})
 
