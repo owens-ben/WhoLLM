@@ -13,9 +13,14 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-# Model path - looks in HA config directory
-MODEL_PATH = Path("/config/custom_components/whollm/models/per_person_models.pkl")
-# No fallback path - models must be trained for your household
+# Paths are relative to the HA config directory. Models live outside
+# custom_components/ so HACS updates don't wipe them; the legacy location
+# is still checked for existing installs.
+DEFAULT_CONFIG_DIR = Path("/config")
+MODEL_FILENAME = "per_person_models.pkl"
+MODEL_SUBDIR = Path("whollm/models")
+LEGACY_MODEL_SUBDIR = Path("custom_components/whollm/models")
+FEEDBACK_FILENAME = "whollm_feedback.jsonl"
 
 # Notification settings
 NOTIFICATION_COOLDOWN = timedelta(minutes=15)  # Don't spam notifications
@@ -25,9 +30,12 @@ UNCERTAINTY_THRESHOLD = 0.4  # Ask for help if max probability < this
 class MLPredictor:
     """ML-based room presence predictor with uncertainty detection."""
 
-    def __init__(self, hass: HomeAssistant | None = None):
+    def __init__(self, hass: HomeAssistant | None = None, config_dir: Path | None = None):
         """Initialize the ML predictor."""
         self.hass = hass
+        if config_dir is None:
+            config_dir = Path(hass.config.config_dir) if hass is not None else DEFAULT_CONFIG_DIR
+        self.config_dir = config_dir
         self.models: dict = {}
         self.feature_names: list = []
         self.rooms: list = []
@@ -40,10 +48,10 @@ class MLPredictor:
 
     def _load_models(self) -> bool:
         """Load trained models from disk."""
-        # Try to load from config path
-        if MODEL_PATH.exists():
+        model_path = self.model_path
+        if model_path.exists():
             try:
-                with open(MODEL_PATH, "rb") as f:
+                with open(model_path, "rb") as f:
                     data = pickle.load(f)
 
                 self.models = {name: info["model"] for name, info in data.get("models", {}).items()}
@@ -56,16 +64,25 @@ class MLPredictor:
                 _LOGGER.info(
                     "Loaded ML models for %s from %s (trained: %s)",
                     list(self.models.keys()),
-                    MODEL_PATH,
+                    model_path,
                     data.get("trained_at", "unknown"),
                 )
                 return True
 
             except Exception as err:
-                _LOGGER.error("Failed to load models from %s: %s", MODEL_PATH, err)
+                _LOGGER.error("Failed to load models from %s: %s", model_path, err)
 
         _LOGGER.warning("No ML models found, prediction disabled")
         return False
+
+    @property
+    def model_path(self) -> Path:
+        """Return the model file path, preferring the HACS-safe location."""
+        path = self.config_dir / MODEL_SUBDIR / MODEL_FILENAME
+        legacy = self.config_dir / LEGACY_MODEL_SUBDIR / MODEL_FILENAME
+        if not path.exists() and legacy.exists():
+            return legacy
+        return path
 
     def extract_features(self, context: dict, entity_name: str) -> list[float]:
         """Extract features from sensor context matching training format."""
@@ -298,7 +315,7 @@ class MLPredictor:
 
         This appends to a feedback file that will be used in the next training run.
         """
-        feedback_path = Path("/config/whollm_feedback.jsonl")
+        feedback_path = self.config_dir / FEEDBACK_FILENAME
 
         pending = self._pending_feedback.get(entity_name, {})
 

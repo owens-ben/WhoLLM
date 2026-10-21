@@ -649,7 +649,7 @@
             <div class="manual-toggle" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 1.5rem;">
                 <div class="form-group" style="text-align: left; max-width: 500px; margin: 0 auto;">
                     <label for="ha-url">Home Assistant URL</label>
-                    <input type="text" id="ha-url" value="" placeholder="http://192.168.0.233:8123">
+                    <input type="text" id="ha-url" value="" placeholder="http://homeassistant.local:8123">
                 </div>
             </div>
             <button type="button" class="btn btn-large" id="signin-btn">
@@ -782,7 +782,7 @@
             clientId: window.location.origin + '/',
             redirectUri: window.location.origin + '/',
             // HA URL for direct browser redirects (authorize endpoint)
-            haUrl: localStorage.getItem('ha_url') || 'http://192.168.0.233:8123',
+            haUrl: localStorage.getItem('ha_url') || 'http://homeassistant.local:8123',
             accessToken: null,
             refreshToken: localStorage.getItem('ha_refresh_token'),
             tokenExpiry: 0,
@@ -1111,7 +1111,7 @@
             );
 
             const visionSensor = states.find(s =>
-                s.entity_id === 'sensor.llm_presence_vision_last_identification'
+                s.entity_id === 'sensor.vision_last_identification'
             );
             if (visionSensor) updateVisionDisplay(visionSensor);
 
@@ -1339,7 +1339,7 @@
             if (!token) return;
 
             try {
-                const response = await fetch('/api/services/llm_presence/identify_person', {
+                const response = await fetch('/api/services/whollm/identify_person', {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer ' + token,

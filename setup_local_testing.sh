@@ -5,10 +5,10 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INTEGRATION_SRC="$SCRIPT_DIR/custom_components/llm_presence"
-INTEGRATION_NAME="llm_presence"
+INTEGRATION_SRC="$SCRIPT_DIR/custom_components/whollm"
+INTEGRATION_NAME="whollm"
 
-echo "🔧 LLM Room Presence - Local Testing Setup"
+echo "🔧 WhoLLM - Local Testing Setup"
 echo "==========================================="
 echo ""
 
@@ -135,13 +135,13 @@ echo ""
 echo "📝 Next steps:"
 echo "   1. Restart Home Assistant"
 echo "   2. Go to Settings → Devices & Services → Add Integration"
-echo "   3. Search for 'LLM Room Presence'"
+echo "   3. Search for 'WhoLLM'"
 echo "   4. Follow the setup wizard"
 echo ""
 echo "💡 Tip: Enable debug logging in configuration.yaml:"
 echo "   logger:"
 echo "     default: info"
 echo "     logs:"
-echo "       custom_components.llm_presence: debug"
+echo "       custom_components.whollm: debug"
 echo ""
 

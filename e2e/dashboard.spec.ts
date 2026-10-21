@@ -174,7 +174,7 @@ test.describe('Auth section', () => {
 
   test('Auth.login() navigates to HA /auth/authorize with correct params', async ({ page }) => {
     // Set the HA URL field
-    await page.locator('#ha-url').fill('http://192.168.0.233:8123');
+    await page.locator('#ha-url').fill('http://homeassistant.local:8123');
 
     // Intercept the navigation that Auth.login() triggers (goes to HA directly)
     const [request] = await Promise.all([
@@ -184,7 +184,7 @@ test.describe('Auth section', () => {
 
     const url = new URL(request.url());
     // Should navigate to HA directly, not through proxy
-    expect(url.origin).toBe('http://192.168.0.233:8123');
+    expect(url.origin).toBe('http://homeassistant.local:8123');
     expect(url.pathname).toBe('/auth/authorize');
     expect(url.searchParams.has('client_id')).toBe(true);
     expect(url.searchParams.has('redirect_uri')).toBe(true);

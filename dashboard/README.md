@@ -21,28 +21,33 @@ A beautiful, modern dashboard for visualizing LLM-powered room presence detectio
 
 ```bash
 cd whollm/dashboard
-docker compose up -d
+HA_URL=http://homeassistant.local:8123 docker compose up -d
+# or keep the settings in the git-ignored local overlay:
+docker compose --env-file ../local/.env up -d
 ```
+
+`HA_URL` (no trailing slash) is where nginx proxies `/api/` and `/auth/token`.
+If it isn't set, `http://homeassistant.local:8123` is used.
 
 Access at: `http://YOUR_HOST:3380`
 
 ### Option 2: Home Assistant Dashboard
 
-Import `llm-presence-dashboard.yaml` into Home Assistant:
+Import `whollm-dashboard.yaml` into Home Assistant:
 
-1. Copy `llm-presence-dashboard.yaml` to your HA config directory
+1. Copy `whollm-dashboard.yaml` to your HA config directory
 2. Add to `configuration.yaml`:
 
 ```yaml
 lovelace:
   mode: yaml
   dashboards:
-    llm-presence:
+    whollm:
       mode: yaml
       title: WhoLLM
       icon: mdi:brain
       show_in_sidebar: true
-      filename: llm-presence-dashboard.yaml
+      filename: whollm-dashboard.yaml
 ```
 
 3. Restart Home Assistant
@@ -110,9 +115,9 @@ Modify CSS variables in the `:root` section:
 | File | Description |
 |------|-------------|
 | `index.html` | Standalone web dashboard |
-| `llm-presence-dashboard.yaml` | Home Assistant Lovelace dashboard |
+| `whollm-dashboard.yaml` | Home Assistant Lovelace dashboard |
 | `docker-compose.yml` | Docker deployment |
-| `nginx.conf` | Nginx configuration |
+| `nginx.conf.template` | Nginx config template (`HA_URL` is filled in at container start) |
 
 ## Integration with Homepage
 

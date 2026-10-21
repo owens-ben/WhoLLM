@@ -8,6 +8,7 @@ Optionally uses vision models to identify specific people/pets.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import voluptuous as vol
@@ -83,8 +84,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     max_file_size_mb = entry.options.get(
         CONF_MAX_FILE_SIZE_MB, entry.data.get(CONF_MAX_FILE_SIZE_MB, DEFAULT_MAX_FILE_SIZE_MB)
     )
-    event_logger = EventLogger(retention_days=retention_days, max_file_size_mb=max_file_size_mb)
-    habit_predictor = HabitPredictor()
+    event_logger = EventLogger(
+        log_path=hass.config.path("whollm_events.jsonl"),
+        retention_days=retention_days,
+        max_file_size_mb=max_file_size_mb,
+    )
+    habit_predictor = HabitPredictor(config_path=Path(hass.config.config_dir))
     confidence_weights = entry.options.get(
         CONF_CONFIDENCE_WEIGHTS, entry.data.get(CONF_CONFIDENCE_WEIGHTS, DEFAULT_CONFIDENCE_WEIGHTS)
     )

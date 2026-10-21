@@ -12,7 +12,7 @@
 - `main` is at `cb8ff82` (PR #6: HA OAuth2 dashboard login and nginx fix). There are no open issues or PRs.
 - Feature areas are in place: providers (Ollama, OpenAI, Anthropic, CrewAI), habits, history, zones, notifications, services, blueprints, Lovelace card, standalone dashboard, ML predictor and training scripts.
 - Gaps found:
-  - **Local values leaked into the repo:** `192.168.0.233:8123` is hardcoded in `dashboard/nginx.conf`, `dashboard/index.html` and `e2e/dashboard.spec.ts`.
+  - **Local values leaked into the repo:** the HA host IP was hardcoded in `dashboard/nginx.conf`, `dashboard/index.html` and `e2e/dashboard.spec.ts`.
   - **Hardcoded `/config` paths:** in `ml_predictor.py` (`MODEL_PATH`, feedback path), `event_logger.py`, `habits.py` and `history.py`. These should use `hass.config.path()`.
   - **Stale names:** `scripts/sync_training_data.sh` still reads `llm_presence_events.jsonl` (the old name), and `.gitignore` still lists `custom_components/llm_presence/`.
   - **Lint is not enforced:** CI runs lint with `continue-on-error`. Ruff reports 216 issues, mostly whitespace, and 13 files are unformatted.
@@ -26,7 +26,7 @@
 | Repo (Track B) | Local (Track A) |
 |---|---|
 | Use `hass.config.path()` for every storage and model path | Keep using the default `/config` |
-| Template nginx with `${HA_URL}` (envsubst in docker-compose) and remove the IP default in `index.html` | Put `.env` with `HA_URL=http://192.168.0.233:8123` in a git-ignored `local/` folder |
+| Template nginx with `${HA_URL}` (envsubst in docker-compose) and remove the IP default in `index.html` | Put `.env` with your real `HA_URL` in a git-ignored `local/` folder |
 | Use `homeassistant.local` in e2e tests, or read it from env | — |
 | Fix `llm_presence` → `whollm` in scripts and `.gitignore` | Rename the old events file on the HA box |
 | Add `local/` to `.gitignore` and document the "local overlay" pattern in DEVELOPMENT.md | `local/` holds the docker `.env`, model `.pkl` files, room and person YAML exports, and the deploy script |

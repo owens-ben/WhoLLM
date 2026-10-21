@@ -35,6 +35,33 @@ ln -s /path/to/whollm/custom_components/whollm /path/to/your/ha/config/custom_co
 cp -r /path/to/whollm/custom_components/whollm /path/to/your/ha/config/custom_components/
 ```
 
+### Option C: Deploy Script (Remote HA Host)
+
+If Home Assistant runs on another machine, use the local overlay:
+
+```bash
+cp local/.env.example local/.env   # set HA_SSH, HA_CONFIG_DIR, HA_RESTART_CMD
+scripts/deploy.sh
+```
+
+## Local Overlay
+
+Keep anything specific to your household in `local/`, which git ignores
+apart from its `README.md` and `.env.example`: your HA address, SSH target,
+trained models and exported event logs. Code changes go in the tracked tree
+and must work for any household. Configuration stays in `local/` or in
+Home Assistant.
+
+The integration stores its data under the HA config directory, wherever
+that is on your install:
+
+| File | Purpose |
+|------|---------|
+| `whollm_events.jsonl` | Event log (ML training data) |
+| `whollm_learned_habits.json` | Learned habit patterns |
+| `whollm_feedback.jsonl` | User corrections for retraining |
+| `whollm/models/per_person_models.pkl` | Trained ML models (kept outside `custom_components/` so HACS updates don't remove them; the old `custom_components/whollm/models/` location still works) |
+
 ## Step 3: Verify Structure
 
 Your Home Assistant config directory should have this structure:

@@ -83,7 +83,7 @@ home-assistant_v2.db
 # Training data and models (contains personal data)
 data/
 models/
-custom_components/llm_presence/models/
+custom_components/whollm/models/
 *.pkl
 *.jsonl
 
@@ -91,3 +91,9 @@ custom_components/llm_presence/models/
 !data/.gitkeep
 !models/.gitkeep
 
+
+# Local overlay: household-specific config, models and deploy settings
+# (see DEVELOPMENT.md). Only the templates are tracked.
+local/*
+!local/README.md
+!local/.env.example

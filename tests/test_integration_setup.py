@@ -19,10 +19,12 @@ from custom_components.whollm.const import (
 
 
 @pytest.fixture
-def mock_hass():
+def mock_hass(tmp_path):
     """Create a mock Home Assistant instance."""
     hass = MagicMock()
     hass.data = {}
+    hass.config.config_dir = str(tmp_path)
+    hass.config.path = lambda *parts: str(tmp_path.joinpath(*parts))
     hass.services = MagicMock()
     hass.services.has_service = MagicMock(return_value=False)
     hass.services.async_register = MagicMock()
@@ -101,6 +103,27 @@ class TestAsyncSetupEntry:
 
         assert result is True
         assert mock_config_entry.entry_id in mock_hass.data[DOMAIN]
+
+    @pytest.mark.asyncio
+    async def test_setup_entry_uses_ha_config_dir(self, mock_hass, mock_config_entry, tmp_path):
+        """Test that storage paths come from the HA config dir, not a hardcoded /config."""
+        from custom_components.whollm import async_setup_entry
+
+        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+            mock_coordinator = MagicMock()
+            mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+            mock_coord_class.return_value = mock_coordinator
+
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
+
+                with patch("custom_components.whollm.HabitPredictor") as mock_habit_class:
+                    with patch("custom_components.whollm.VisionIdentifier"):
+                        with patch("custom_components.whollm.CameraTrackingController"):
+                            await async_setup_entry(mock_hass, mock_config_entry)
+
+        assert mock_logger_class.call_args.kwargs["log_path"] == str(tmp_path / "whollm_events.jsonl")
+        assert mock_habit_class.call_args.kwargs["config_path"] == tmp_path
 
     @pytest.mark.asyncio
     async def test_setup_entry_registers_services(self, mock_hass, mock_config_entry):
