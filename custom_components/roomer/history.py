@@ -80,6 +80,10 @@ class HistoryTracker:
         except Exception as err:
             _LOGGER.debug("Could not load history: %s", err)
     
+    def save_history(self) -> None:
+        """Save history to file now."""
+        self._save_history()
+
     def _save_history(self) -> None:
         """Save history to file."""
         try:
