@@ -124,45 +124,44 @@ CREATE TABLE image_queue (
 ```python
 class ImageQueueProcessor:
     """Background processor for queued images."""
-    
+
     def __init__(self, db_path: str, compreface_url: str):
         self.db = sqlite3.connect(db_path)
         self.compreface = CompreFaceClient(compreface_url)
-        
+
     async def process_queue(self):
         """Process queued images during low-activity periods."""
         while True:
             # Get unprocessed images
             images = self.db.execute(
-                "SELECT * FROM image_queue WHERE processed = FALSE "
-                "ORDER BY priority DESC, timestamp ASC LIMIT 10"
+                "SELECT * FROM image_queue WHERE processed = FALSE ORDER BY priority DESC, timestamp ASC LIMIT 10"
             ).fetchall()
-            
+
             for image in images:
                 result = await self.process_image(image)
                 self.store_result(result)
-                self.mark_processed(image['id'])
-            
+                self.mark_processed(image["id"])
+
             await asyncio.sleep(5)  # Check every 5 seconds
-    
+
     async def process_image(self, image: dict) -> dict:
         """Process a single image with face recognition."""
         # Try fast face recognition first
-        faces = await self.compreface.detect_faces(image['image_path'])
-        
+        faces = await self.compreface.detect_faces(image["image_path"])
+
         if faces:
             for face in faces:
                 match = await self.compreface.recognize(face)
-                if match['confidence'] > 0.7:
+                if match["confidence"] > 0.7:
                     return {
-                        'person': match['name'],
-                        'confidence': match['confidence'],
-                        'method': 'face_recognition',
-                        'embedding': face['embedding']
+                        "person": match["name"],
+                        "confidence": match["confidence"],
+                        "method": "face_recognition",
+                        "embedding": face["embedding"],
                     }
-        
+
         # Fall back to LLM vision for unrecognized faces
-        return await self.llm_identify(image['image_path'])
+        return await self.llm_identify(image["image_path"])
 ```
 
 ### Phase 3: Habit Learning & Prediction
@@ -174,17 +173,18 @@ class ImageQueueProcessor:
 ```python
 class HabitLearner:
     """Learn and predict presence patterns from historical data."""
-    
+
     def __init__(self, db_path: str):
         self.db = sqlite3.connect(db_path)
-        
+
     def update_patterns(self, person: str, room: str, timestamp: datetime):
         """Update habit patterns with new observation."""
         day = timestamp.weekday()
         hour = timestamp.hour
-        
+
         # Upsert pattern
-        self.db.execute("""
+        self.db.execute(
+            """
             INSERT INTO habit_patterns 
             (person_name, day_of_week, hour, typical_room, confidence, sample_count, last_updated)
             VALUES (?, ?, ?, ?, 1.0, 1, ?)
@@ -197,41 +197,45 @@ class HabitLearner:
                 confidence = (confidence * sample_count + 1.0) / (sample_count + 1),
                 sample_count = sample_count + 1,
                 last_updated = excluded.last_updated
-        """, (person, day, hour, room, timestamp))
-        
+        """,
+            (person, day, hour, room, timestamp),
+        )
+
     def predict_location(self, person: str, timestamp: datetime = None) -> dict:
         """Predict where a person is likely to be."""
         if timestamp is None:
             timestamp = datetime.now()
-            
+
         day = timestamp.weekday()
         hour = timestamp.hour
-        
-        result = self.db.execute("""
+
+        result = self.db.execute(
+            """
             SELECT typical_room, confidence, sample_count
             FROM habit_patterns
             WHERE person_name = ? AND day_of_week = ? AND hour = ?
-        """, (person, day, hour)).fetchone()
-        
+        """,
+            (person, day, hour),
+        ).fetchone()
+
         if result:
-            return {
-                'predicted_room': result[0],
-                'confidence': result[1],
-                'based_on_samples': result[2]
-            }
-        return {'predicted_room': 'unknown', 'confidence': 0.0}
-    
+            return {"predicted_room": result[0], "confidence": result[1], "based_on_samples": result[2]}
+        return {"predicted_room": "unknown", "confidence": 0.0}
+
     def get_daily_timeline(self, person: str, day: int = None) -> list:
         """Get typical daily timeline for a person."""
         if day is None:
             day = datetime.now().weekday()
-            
-        return self.db.execute("""
+
+        return self.db.execute(
+            """
             SELECT hour, typical_room, confidence
             FROM habit_patterns
             WHERE person_name = ? AND day_of_week = ?
             ORDER BY hour
-        """, (person, day)).fetchall()
+        """,
+            (person, day),
+        ).fetchall()
 ```
 
 #### Machine Learning Models
@@ -242,46 +246,42 @@ For more sophisticated prediction, use scikit-learn or XGBoost:
 from sklearn.ensemble import GradientBoostingClassifier
 import pandas as pd
 
+
 class MLPredictor:
     """ML-based presence prediction."""
-    
+
     def __init__(self):
-        self.model = GradientBoostingClassifier(
-            n_estimators=100,
-            max_depth=5,
-            learning_rate=0.1
-        )
-        
+        self.model = GradientBoostingClassifier(n_estimators=100, max_depth=5, learning_rate=0.1)
+
     def train(self, events_df: pd.DataFrame):
         """Train model on historical presence events."""
         # Feature engineering
-        features = pd.DataFrame({
-            'hour': events_df['timestamp'].dt.hour,
-            'day_of_week': events_df['timestamp'].dt.dayofweek,
-            'minute': events_df['timestamp'].dt.minute,
-            'is_weekend': events_df['timestamp'].dt.dayofweek >= 5,
-            # Add sensor features
-            'living_room_light_on': events_df['sensor_context'].apply(
-                lambda x: x.get('lights', {}).get('living_room', 'off') == 'on'
-            ),
-            'bedroom_tv_on': events_df['sensor_context'].apply(
-                lambda x: x.get('media', {}).get('bedroom_tv', 'off') == 'playing'
-            ),
-            # Previous room (for transition prediction)
-            'prev_room': events_df['room'].shift(1).fillna('unknown')
-        })
-        
-        self.model.fit(features, events_df['room'])
-        
+        features = pd.DataFrame(
+            {
+                "hour": events_df["timestamp"].dt.hour,
+                "day_of_week": events_df["timestamp"].dt.dayofweek,
+                "minute": events_df["timestamp"].dt.minute,
+                "is_weekend": events_df["timestamp"].dt.dayofweek >= 5,
+                # Add sensor features
+                "living_room_light_on": events_df["sensor_context"].apply(
+                    lambda x: x.get("lights", {}).get("living_room", "off") == "on"
+                ),
+                "bedroom_tv_on": events_df["sensor_context"].apply(
+                    lambda x: x.get("media", {}).get("bedroom_tv", "off") == "playing"
+                ),
+                # Previous room (for transition prediction)
+                "prev_room": events_df["room"].shift(1).fillna("unknown"),
+            }
+        )
+
+        self.model.fit(features, events_df["room"])
+
     def predict(self, current_context: dict) -> dict:
         """Predict current room based on context."""
         features = self.extract_features(current_context)
         probabilities = self.model.predict_proba([features])[0]
-        
-        return {
-            room: prob 
-            for room, prob in zip(self.model.classes_, probabilities)
-        }
+
+        return {room: prob for room, prob in zip(self.model.classes_, probabilities)}
 ```
 
 ### Phase 4: Continuous Learning Pipeline
@@ -321,36 +321,40 @@ class MLPredictor:
 ```python
 class FeedbackCollector:
     """Collect user corrections to improve the model."""
-    
+
     def __init__(self, db_path: str):
         self.db = sqlite3.connect(db_path)
-        
-    def record_correction(
-        self, 
-        event_id: int, 
-        correct_person: str, 
-        correct_room: str
-    ):
+
+    def record_correction(self, event_id: int, correct_person: str, correct_room: str):
         """Record when user corrects an identification."""
-        self.db.execute("""
+        self.db.execute(
+            """
             INSERT INTO corrections 
             (event_id, correct_person, correct_room, timestamp)
             VALUES (?, ?, ?, ?)
-        """, (event_id, correct_person, correct_room, datetime.now()))
-        
+        """,
+            (event_id, correct_person, correct_room, datetime.now()),
+        )
+
         # Update the original event for retraining
-        self.db.execute("""
+        self.db.execute(
+            """
             UPDATE presence_events 
             SET person_name = ?, room = ?, corrected = TRUE
             WHERE id = ?
-        """, (correct_person, correct_room, event_id))
-        
+        """,
+            (correct_person, correct_room, event_id),
+        )
+
     def get_training_data(self) -> pd.DataFrame:
         """Get corrected data for model retraining."""
-        return pd.read_sql("""
+        return pd.read_sql(
+            """
             SELECT * FROM presence_events 
             WHERE corrected = TRUE OR confidence > 0.9
-        """, self.db)
+        """,
+            self.db,
+        )
 ```
 
 ---
@@ -462,79 +466,66 @@ retention:
 def get_habit_context(person: str) -> str:
     """Add habit-based hints to LLM prompt."""
     now = datetime.now()
-    
+
     # Simple rule-based habits (replace with learned patterns later)
     habits = {
-        'Alice': {
-            (0, 6): 'bedroom (sleeping)',
-            (6, 9): 'kitchen or bathroom (morning routine)',
-            (9, 17): 'office (working)',
-            (17, 22): 'living_room or kitchen (evening)',
-            (22, 24): 'bedroom (going to bed)',
+        "Alice": {
+            (0, 6): "bedroom (sleeping)",
+            (6, 9): "kitchen or bathroom (morning routine)",
+            (9, 17): "office (working)",
+            (17, 22): "living_room or kitchen (evening)",
+            (22, 24): "bedroom (going to bed)",
         },
-        'Bob': {
+        "Bob": {
             # Similar patterns
-        }
+        },
     }
-    
+
     hour = now.hour
     person_habits = habits.get(person, {})
     for (start, end), location in person_habits.items():
         if start <= hour < end:
             return f"Based on typical patterns, {person} is usually in {location} at this time."
-    
+
     return ""
 ```
 
 ### 2. Store Events for Future Training
 ```python
-async def log_presence_event(
-    person: str, 
-    room: str, 
-    confidence: float,
-    context: dict
-):
+async def log_presence_event(person: str, room: str, confidence: float, context: dict):
     """Log every presence detection for future ML training."""
     event = {
-        'timestamp': datetime.now().isoformat(),
-        'person': person,
-        'room': room,
-        'confidence': confidence,
-        'context': context
+        "timestamp": datetime.now().isoformat(),
+        "person": person,
+        "room": room,
+        "confidence": confidence,
+        "context": context,
     }
-    
+
     # Append to JSONL file (simple, no database needed)
-    with open('/config/presence_events.jsonl', 'a') as f:
-        f.write(json.dumps(event) + '\n')
+    with open("/config/presence_events.jsonl", "a") as f:
+        f.write(json.dumps(event) + "\n")
 ```
 
 ### 3. Add Confidence Weighting
 ```python
 def weighted_presence(
-    llm_guess: str,
-    llm_confidence: float,
-    habit_prediction: str,
-    habit_confidence: float,
-    sensor_indicators: list
+    llm_guess: str, llm_confidence: float, habit_prediction: str, habit_confidence: float, sensor_indicators: list
 ) -> tuple[str, float]:
     """Combine multiple signals with confidence weighting."""
-    
+
     # Weight factors
-    weights = {
-        'llm': 0.4,
-        'habit': 0.3,
-        'sensors': 0.3
-    }
-    
+    weights = {"llm": 0.4, "habit": 0.3, "sensors": 0.3}
+
     # If LLM and habits agree, boost confidence
     if llm_guess == habit_prediction:
         return llm_guess, min(1.0, (llm_confidence + habit_confidence) / 2 + 0.2)
-    
+
     # Otherwise, go with higher confidence
     if llm_confidence > habit_confidence:
-        return llm_guess, llm_confidence * weights['llm']
+        return llm_guess, llm_confidence * weights["llm"]
     else:
-        return habit_prediction, habit_confidence * weights['habit']
+        return habit_prediction, habit_confidence * weights["habit"]
 ```
 
 ---

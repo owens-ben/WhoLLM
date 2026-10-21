@@ -4,7 +4,7 @@ This page gets you from a fresh clone to a passing test run and a running copy o
 
 ## Prerequisites
 
-- Python 3.11, 3.12 or 3.13. CI tests all three, and `pyproject.toml` sets `requires-python = ">=3.11"`.
+- Python 3.13 or 3.14. CI tests both: on 3.14 the test dependencies resolve to the current Home Assistant release, on 3.13 to the last release that supported it (2026.2).
 - Git.
 - To try changes against a real house: a Home Assistant instance (2024.1.0 or later, per `hacs.json`) and an [Ollama](https://ollama.com) server with at least one model pulled.
 
@@ -19,33 +19,31 @@ source .venv/bin/activate
 
 ## Install test dependencies
 
-Install exactly what [`.github/workflows/test.yml`](https://github.com/owens-ben/roomer/blob/main/.github/workflows/test.yml) installs, so your results match CI:
+CI installs [`requirements_test.txt`](https://github.com/owens-ben/roomer/blob/main/requirements_test.txt); do the same so your results match:
 
 ```bash
-python -m pip install --upgrade pip
-pip install pytest pytest-asyncio pytest-cov aiohttp voluptuous pillow
-pip install pytest-homeassistant-custom-component
+pip install -r requirements_test.txt
 ```
 
-`pytest-homeassistant-custom-component` pulls in a matching `homeassistant` package, which is large and takes a while the first time. For linting, also install ruff:
+`pytest-homeassistant-custom-component` pulls in a matching `homeassistant` package along with pytest, pytest-asyncio and pytest-cov. It is large and takes a while the first time. For linting, also install ruff at the version CI uses:
 
 ```bash
-pip install ruff
+pip install ruff==0.17.1
 ```
 
 !!! note
-    `pyproject.toml` also defines a `dev` extra (`pip install -e ".[dev]"`) with pytest, ruff, mypy and `homeassistant`. CI does not use it. If the two ever disagree, trust the workflow file. `CONTRIBUTING.md` mentions a `requirements_dev.txt`, but that file does not exist.
+    `pyproject.toml` also defines a `dev` extra (`pip install -e ".[dev]"`). CI does not use it. If the two ever disagree, trust `requirements_test.txt` and [`.github/workflows/ci.yml`](https://github.com/owens-ben/roomer/blob/main/.github/workflows/ci.yml).
 
 ## Run the tests
 
 ```bash
-pytest tests/ -v --tb=short
+pytest
 ```
 
-`pyproject.toml` sets `asyncio_mode = "auto"` and `testpaths = ["tests"]`, so a plain `pytest` works too. To get the coverage report CI produces on Python 3.11:
+`pyproject.toml` sets `asyncio_mode = "auto"`, `testpaths = ["tests"]` and `-v --tb=short`. CI also prints a coverage report:
 
 ```bash
-pytest tests/ --cov=custom_components/roomer --cov-report=term-missing
+pytest --cov=custom_components/roomer --cov-report=term-missing:skip-covered
 ```
 
 To run a single file or test while iterating:
@@ -55,31 +53,40 @@ pytest tests/test_providers.py -v
 pytest tests/test_coordinator.py -k device_tracker -v
 ```
 
-!!! warning "Known issue"
-    `tests/test_services.py` currently has 13 failures. `custom_components/roomer/services.py` imports `get_habit_predictor` from `habits.py`, and that function does not exist, so the module fails to import. A fix is in progress. Until it lands, expect these failures. Every other test file should pass.
-
 ## Lint and format
 
-Ruff is configured in `pyproject.toml`: target `py311`, line length 120, rule sets `E W F I B C4 UP`, with `E501` and `B008` ignored. CI runs:
+Ruff is configured in `pyproject.toml`: target `py311`, line length 120, rule sets `E W F I B C4 UP`, with `E501` and `B008` ignored. CI checks the whole repository and fails the build on any finding:
 
 ```bash
-ruff check custom_components/roomer/
-ruff format --check custom_components/roomer/
+ruff check .
+ruff format --check .
 ```
 
-Both lint steps in CI have `continue-on-error: true`, so they report problems but do not fail the build yet. Please keep new code clean anyway. To auto-fix and format:
+To auto-fix and format:
 
 ```bash
-ruff check --fix custom_components/roomer/
-ruff format custom_components/roomer/
+ruff check --fix .
+ruff format .
 ```
 
-The repo also ships a [`.pre-commit-config.yaml`](https://github.com/owens-ben/roomer/blob/main/.pre-commit-config.yaml) with whitespace, YAML/JSON checks and the ruff hooks. To use it:
+The repo also ships a [`.pre-commit-config.yaml`](https://github.com/owens-ben/roomer/blob/main/.pre-commit-config.yaml) with whitespace, YAML/JSON checks and the same ruff version as CI. To use it:
 
 ```bash
 pip install pre-commit
 pre-commit install
 ```
+
+## Dashboard end-to-end tests
+
+The standalone dashboard in `dashboard/` has Playwright tests in `e2e/`. They need Node 22; Playwright starts a static file server for `dashboard/` on port 3380 by itself, and no Home Assistant is needed (HA API calls are mocked).
+
+```bash
+npm ci
+npx playwright install chromium   # once; or set PW_CHANNEL=chrome to use an installed Google Chrome
+npx playwright test
+```
+
+CI runs them only when `dashboard/`, `e2e/` or the Playwright/npm config change.
 
 ## Test against a real Home Assistant
 

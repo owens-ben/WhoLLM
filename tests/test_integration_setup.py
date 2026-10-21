@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from datetime import timedelta
 
 from custom_components.roomer.const import (
+    CONF_MAX_FILE_SIZE_MB,
+    CONF_RETENTION_DAYS,
     CONF_URL,
     CONF_VISION_MODEL,
-    CONF_RETENTION_DAYS,
-    CONF_MAX_FILE_SIZE_MB,
-    DOMAIN,
-    DEFAULT_VISION_MODEL,
-    DEFAULT_RETENTION_DAYS,
     DEFAULT_MAX_FILE_SIZE_MB,
+    DEFAULT_RETENTION_DAYS,
+    DEFAULT_VISION_MODEL,
+    DOMAIN,
 )
 
 
@@ -56,7 +56,8 @@ def _make_mock_event_logger(cleanup_return=None):
     """Create a mock EventLogger with standard defaults."""
     mock = MagicMock()
     mock.cleanup = MagicMock(
-        return_value=cleanup_return or {
+        return_value=cleanup_return
+        or {
             "total_deleted": 0,
             "total_kept": 100,
             "final_size_mb": 5.0,
@@ -157,7 +158,7 @@ class TestAsyncSetupEntry:
                 mock_logger_class.return_value = _make_mock_event_logger()
 
                 with patch("custom_components.roomer.VisionIdentifier") as mock_vision:
-                    with patch("custom_components.roomer.CameraTrackingController") as mock_tracking:
+                    with patch("custom_components.roomer.CameraTrackingController"):
                         await async_setup_entry(mock_hass, mock_config_entry)
 
                         # Vision identifier should be created with known persons/pets
@@ -189,7 +190,7 @@ class TestAsyncUnloadEntry:
     @pytest.mark.asyncio
     async def test_unload_entry_platforms(self, mock_hass, mock_config_entry):
         """Test that platforms are unloaded."""
-        from custom_components.roomer import async_unload_entry, PLATFORMS
+        from custom_components.roomer import PLATFORMS, async_unload_entry
 
         mock_coordinator = MagicMock()
         mock_coordinator.provider = MagicMock()
@@ -274,13 +275,15 @@ class TestServiceHandlers:
         mock_hass.bus = MagicMock()
         mock_hass.bus.async_fire = MagicMock()
 
-        mock_event_logger = _make_mock_event_logger({
-            "deleted_by_time": 5,
-            "deleted_by_size": 0,
-            "total_deleted": 5,
-            "total_kept": 95,
-            "final_size_mb": 4.5,
-        })
+        mock_event_logger = _make_mock_event_logger(
+            {
+                "deleted_by_time": 5,
+                "deleted_by_size": 0,
+                "total_deleted": 5,
+                "total_kept": 95,
+                "final_size_mb": 4.5,
+            }
+        )
 
         with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class:
             mock_coordinator = MagicMock()
@@ -312,8 +315,8 @@ class TestServiceSchemas:
 
     def test_identify_person_schema(self):
         """Test identify_person schema validation."""
+
         from custom_components.roomer import IDENTIFY_PERSON_SCHEMA
-        import voluptuous as vol
 
         # Valid input
         valid_data = {
@@ -363,8 +366,9 @@ class TestPlatforms:
 
     def test_platforms_list(self):
         """Test that correct platforms are defined."""
-        from custom_components.roomer import PLATFORMS
         from homeassistant.const import Platform
+
+        from custom_components.roomer import PLATFORMS
 
         assert Platform.SENSOR in PLATFORMS
         assert Platform.BINARY_SENSOR in PLATFORMS

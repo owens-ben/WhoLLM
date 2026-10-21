@@ -8,7 +8,7 @@ Thank you for your interest in contributing to Roomer!
 2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/Roomer.git`
 3. Create a branch: `git checkout -b feature/your-feature-name`
 4. Make your changes
-5. Run tests: `pytest tests/`
+5. Run tests: `pytest`
 6. Commit your changes
 7. Push to your fork and submit a Pull Request
 
@@ -19,8 +19,8 @@ Thank you for your interest in contributing to Roomer!
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies
-pip install -r requirements_dev.txt
+# Install test dependencies (same as CI)
+pip install -r requirements_test.txt ruff==0.17.1 pre-commit
 
 # Install pre-commit hooks
 pre-commit install
@@ -31,12 +31,13 @@ pre-commit install
 - We use [ruff](https://github.com/astral-sh/ruff) for linting and formatting
 - Run `ruff check .` to lint
 - Run `ruff format .` to format
-- All code must pass CI checks before merging
+- All code must pass CI checks before merging (lint failures block the PR)
 
 ## Testing
 
 - Write tests for new features
-- Ensure all tests pass: `pytest tests/ -v`
+- Ensure all tests pass: `pytest`
+- Dashboard changes: run the Playwright tests (`npm ci && npx playwright test`); see the dev setup docs
 - Aim for good coverage of edge cases
 
 ## Pull Request Guidelines

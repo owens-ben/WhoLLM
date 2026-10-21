@@ -4,32 +4,26 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from homeassistant import config_entries
-from homeassistant.data_entry_flow import FlowResultType
-
 from custom_components.roomer.const import (
+    CONF_CONFIDENCE_WEIGHTS,
+    CONF_LEARNING_ENABLED,
     CONF_MODEL,
+    CONF_PERSON_DEVICES,
     CONF_PERSONS,
     CONF_PETS,
     CONF_POLL_INTERVAL,
     CONF_PROVIDER,
-    CONF_ROOMS,
-    CONF_URL,
     CONF_ROOM_ENTITIES,
-    CONF_LEARNING_ENABLED,
-    CONF_CONFIDENCE_WEIGHTS,
-    CONF_PERSON_DEVICES,
+    CONF_ROOMS,
     CONF_TIMEOUT,
+    CONF_URL,
     DEFAULT_CONFIDENCE_WEIGHTS,
-    DEFAULT_MODEL,
-    DEFAULT_POLL_INTERVAL,
-    DEFAULT_PROVIDER,
-    DEFAULT_URL,
     DOMAIN,
     VALID_ROOMS,
 )
@@ -601,9 +595,7 @@ class TestConfigFlowEdgeCases:
             CONF_MODEL: "llama3.2",
         }
 
-        result = await flow.async_step_rooms(
-            user_input={CONF_ROOMS: [], "custom_rooms": "  garage  ,   Game Room  ,  "}
-        )
+        await flow.async_step_rooms(user_input={CONF_ROOMS: [], "custom_rooms": "  garage  ,   Game Room  ,  "})
 
         assert "garage" in flow._data[CONF_ROOMS]
         assert "game_room" in flow._data[CONF_ROOMS]
@@ -621,7 +613,7 @@ class TestConfigFlowEdgeCases:
             CONF_MODEL: "llama3.2",
         }
 
-        result = await flow.async_step_rooms(user_input={CONF_ROOMS: ["office"], "custom_rooms": "office, bedroom"})
+        await flow.async_step_rooms(user_input={CONF_ROOMS: ["office"], "custom_rooms": "office, bedroom"})
 
         # office should not be duplicated
         assert flow._data[CONF_ROOMS].count("office") == 1

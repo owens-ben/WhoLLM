@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import Event, HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
@@ -46,6 +47,8 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Roomer from YAML configuration."""
@@ -70,7 +73,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     confidence_combiner = ConfidenceCombiner(confidence_weights)
 
     coordinator = LLMPresenceCoordinator(
-        hass, entry,
+        hass,
+        entry,
         event_logger=event_logger,
         habit_predictor=habit_predictor,
         confidence_combiner=confidence_combiner,

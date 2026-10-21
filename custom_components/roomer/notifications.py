@@ -27,27 +27,27 @@ ROOM_UNKNOWN = "unknown"
 
 class NotificationManager:
     """Manages arrival/departure notifications.
-    
+
     Tracks room state changes and fires events when:
     - Someone arrives home (away -> any room)
     - Someone leaves home (any room -> away)
     - Someone changes rooms
     """
-    
+
     def __init__(self, hass: HomeAssistant, enabled: bool = True):
         """Initialize the notification manager.
-        
+
         Args:
             hass: Home Assistant instance
             enabled: Whether notifications are enabled
         """
         self._hass = hass
         self._enabled = enabled
-        
+
         # Track current and previous room for each entity
         self._current_rooms: dict[str, str] = {}
         self._previous_rooms: dict[str, str] = {}
-    
+
     def update_room(
         self,
         entity_name: str,
@@ -55,47 +55,47 @@ class NotificationManager:
         confidence: float = 0.0,
     ) -> None:
         """Update room state and fire events if needed.
-        
+
         Args:
             entity_name: Name of the person
             new_room: New room name
             confidence: Confidence of the detection
         """
         old_room = self._current_rooms.get(entity_name)
-        
+
         # No change
         if old_room == new_room:
             return
-        
+
         # Update state
         self._previous_rooms[entity_name] = old_room
         self._current_rooms[entity_name] = new_room
-        
+
         # The first observation (e.g. after a restart) only sets the baseline;
         # firing here would report everyone as arriving on every startup.
         if old_room is None or not self._enabled:
             return
-        
+
         timestamp = datetime.now().isoformat()
-        
+
         # Check for arrival (away/unknown -> home)
         if self._is_away(old_room) and not self._is_away(new_room):
             self._fire_arrival_event(entity_name, new_room, confidence, timestamp)
-        
+
         # Check for departure (home -> away)
         elif not self._is_away(old_room) and self._is_away(new_room) and old_room is not None:
             self._fire_departure_event(entity_name, old_room, timestamp)
-        
+
         # Room change (both home, different rooms)
         elif old_room is not None and not self._is_away(old_room) and not self._is_away(new_room):
             self._fire_room_change_event(entity_name, old_room, new_room, confidence, timestamp)
-    
+
     def _is_away(self, room: str | None) -> bool:
         """Check if a room value indicates away/not home."""
         if room is None:
             return True
         return room.lower() in (ROOM_AWAY, ROOM_UNKNOWN, "not_home")
-    
+
     def _fire_arrival_event(
         self,
         entity_name: str,
@@ -110,10 +110,10 @@ class NotificationManager:
             "confidence": confidence,
             "timestamp": timestamp,
         }
-        
+
         self._hass.bus.async_fire(EVENT_PERSON_ARRIVED, event_data)
         _LOGGER.info("%s arrived home (in %s)", entity_name, room)
-    
+
     def _fire_departure_event(
         self,
         entity_name: str,
@@ -126,10 +126,10 @@ class NotificationManager:
             "last_room": last_room,
             "timestamp": timestamp,
         }
-        
+
         self._hass.bus.async_fire(EVENT_PERSON_LEFT, event_data)
         _LOGGER.info("%s left home (was in %s)", entity_name, last_room)
-    
+
     def _fire_room_change_event(
         self,
         entity_name: str,
@@ -146,36 +146,30 @@ class NotificationManager:
             "confidence": confidence,
             "timestamp": timestamp,
         }
-        
+
         self._hass.bus.async_fire(EVENT_ROOM_CHANGED, event_data)
         _LOGGER.debug("%s moved from %s to %s", entity_name, from_room, to_room)
-    
+
     def get_current_room(self, entity_name: str) -> str | None:
         """Get current room for an entity."""
         return self._current_rooms.get(entity_name)
-    
+
     def get_previous_room(self, entity_name: str) -> str | None:
         """Get previous room for an entity."""
         return self._previous_rooms.get(entity_name)
-    
+
     def is_home(self, entity_name: str) -> bool:
         """Check if an entity is currently home."""
         room = self._current_rooms.get(entity_name)
         return room is not None and not self._is_away(room)
-    
+
     def get_all_home(self) -> list[str]:
         """Get list of all entities currently home."""
-        return [
-            name for name, room in self._current_rooms.items()
-            if not self._is_away(room)
-        ]
-    
+        return [name for name, room in self._current_rooms.items() if not self._is_away(room)]
+
     def get_all_away(self) -> list[str]:
         """Get list of all entities currently away."""
-        return [
-            name for name, room in self._current_rooms.items()
-            if self._is_away(room)
-        ]
+        return [name for name, room in self._current_rooms.items() if self._is_away(room)]
 
 
 # Global instance
@@ -188,10 +182,10 @@ def get_notification_manager(
 ) -> NotificationManager | None:
     """Get or create the global notification manager."""
     global _notification_manager
-    
+
     if _notification_manager is None and hass is not None:
         _notification_manager = NotificationManager(hass, enabled)
-    
+
     return _notification_manager
 
 
