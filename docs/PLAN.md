@@ -37,6 +37,8 @@
 
 ## Phase 1 — Make the repo healthy (Track B)
 
+**Status:** items 0–3 done on `claude/elegant-volta-kxqqvb` (341 tests passing on py3.11, 3.12 and 3.13). Item 4, the release, is waiting on merge.
+
 0. **Connect the unused code.** `services.py` is never imported, and it calls `get_habit_predictor` and `get_history_tracker`, which the refactor in 72f4f70 deleted. As a result `correct_room`, `get_history`, `refresh` and the other services are never registered, and 13 tests fail. `NotificationManager` is also never created, so the `whollm_person_arrived/left/room_changed` events never fire and the welcome/goodbye blueprints can't trigger.
 1. Run `ruff check --fix` and `ruff format`, then remove `continue-on-error` from the lint job.
 2. Fix the test setup so `pytest-homeassistant-custom-component` installs. Pin it in a `requirements_test.txt`, and add a SessionStart hook so cloud sessions can run the tests.
