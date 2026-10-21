@@ -115,7 +115,7 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
 
     1. From another machine, open `http://<ollama-host>:11434/api/tags` in a browser. You should get a JSON list of models.
     2. **Don't use `localhost`** unless Ollama really runs inside the same container as Home Assistant. On Home Assistant OS or in Docker, `localhost` is Home Assistant itself. Use the Ollama machine's IP address, such as `http://192.168.1.50:11434`.
-    3. Make sure Ollama listens on the network, not just locally: set `OLLAMA_HOST=0.0.0.0` on the Ollama machine and restart it.
+    3. Make sure Ollama listens on the network, not just locally: set `OLLAMA_HOST` on the Ollama machine and restart it. Prefer the machine's LAN address (for example `OLLAMA_HOST=192.168.1.50`) over `0.0.0.0`, which listens on every interface. Ollama has no authentication, so limit port 11434 to Home Assistant with a firewall and never expose it to the Internet.
     4. Make sure the model you picked is pulled: `ollama list` on the Ollama machine. A missing model also shows up as a request error.
     5. The server URL can only be set during setup. To change it, delete the Roomer integration and add it again.
 

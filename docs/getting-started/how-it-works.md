@@ -61,7 +61,7 @@ Pets skip this step, since they don't carry phones.
 ### 2. Gather the clues
 
 Roomer collects every mapped entity that is currently **active**: on, playing,
-open, detected, home or occupied. Each clue is tagged with its room and a type
+open, detected, home or occupied. Media players also count when paused. Each clue is tagged with its room and a type
 (computer, motion, light and so on).
 
 For Alice, this includes:
