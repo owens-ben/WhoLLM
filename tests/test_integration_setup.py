@@ -158,7 +158,7 @@ class TestAsyncSetupEntry:
                 mock_logger_class.return_value = _make_mock_event_logger()
 
                 with patch("custom_components.roomer.VisionIdentifier") as mock_vision:
-                    with patch("custom_components.roomer.CameraTrackingController") as mock_tracking:
+                    with patch("custom_components.roomer.CameraTrackingController"):
                         await async_setup_entry(mock_hass, mock_config_entry)
 
                         # Vision identifier should be created with known persons/pets

@@ -225,8 +225,8 @@ def generate_report(reports: list[TesterReport], output_path: Path):
     for r in reports:
         status = "✓ PASS" if r.passed >= r.total_scenarios * 0.5 else "✗ FAIL"
         report += f"""### {r.tester}
-**Focus**: {r.profile.get("focus", "N/A")}  
-**Result**: {r.passed}/{r.total_scenarios} ({status})  
+**Focus**: {r.profile.get("focus", "N/A")}\\
+**Result**: {r.passed}/{r.total_scenarios} ({status})\\
 **Avg Confidence**: {r.avg_confidence:.1%}
 
 | Scenario | Status | Confidence |

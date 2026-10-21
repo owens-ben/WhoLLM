@@ -160,7 +160,7 @@ class TestImageCompression:
 
         with patch("custom_components.roomer.vision.BytesIO", side_effect=ImportError):
             # Should return original data
-            result = await identifier._compress_image(fake_image)
+            await identifier._compress_image(fake_image)
             # In actual code, ImportError is caught differently
             # This tests the fallback path
 

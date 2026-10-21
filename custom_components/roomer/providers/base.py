@@ -407,7 +407,7 @@ class BaseLLMProvider(ABC):
         # Check if any PC is on
         pc_is_on = False
         pc_room = "office"
-        for entity_id, data in context.get("computers", {}).items():
+        for data in context.get("computers", {}).values():
             if data.get("state") in ["on", "home"]:
                 pc_is_on = True
                 pc_room = data.get("room", "office")
@@ -415,7 +415,7 @@ class BaseLLMProvider(ABC):
 
         # Check media state
         media_room = None
-        for entity_id, data in context.get("media", {}).items():
+        for data in context.get("media", {}).values():
             if data.get("state") == "playing":
                 # Use configured room if available, else guess from name
                 media_room = data.get("room") or "living_room"

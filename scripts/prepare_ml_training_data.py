@@ -48,11 +48,11 @@ def extract_features(event: dict) -> dict:
         "ai_person_detected": 1.0 if ss.get("ai_person_detected", []) else 0.0,
         "ai_animal_detected": 1.0 if ss.get("ai_animal_detected", []) else 0.0,
         # Room-specific light indicators
-        "light_living_room": 1.0 if any("living" in l.lower() for l in ss.get("lights_on", [])) else 0.0,
-        "light_bedroom": 1.0 if any("bedroom" in l.lower() for l in ss.get("lights_on", [])) else 0.0,
-        "light_office": 1.0 if any("office" in l.lower() for l in ss.get("lights_on", [])) else 0.0,
-        "light_kitchen": 1.0 if any("kitchen" in l.lower() for l in ss.get("lights_on", [])) else 0.0,
-        "light_bathroom": 1.0 if any("bath" in l.lower() for l in ss.get("lights_on", [])) else 0.0,
+        "light_living_room": 1.0 if any("living" in name.lower() for name in ss.get("lights_on", [])) else 0.0,
+        "light_bedroom": 1.0 if any("bedroom" in name.lower() for name in ss.get("lights_on", [])) else 0.0,
+        "light_office": 1.0 if any("office" in name.lower() for name in ss.get("lights_on", [])) else 0.0,
+        "light_kitchen": 1.0 if any("kitchen" in name.lower() for name in ss.get("lights_on", [])) else 0.0,
+        "light_bathroom": 1.0 if any("bath" in name.lower() for name in ss.get("lights_on", [])) else 0.0,
         # Room-specific motion indicators
         "motion_living_room": 1.0 if any("living" in m.lower() for m in ss.get("motion_detected", [])) else 0.0,
         "motion_office": 1.0 if any("office" in m.lower() for m in ss.get("motion_detected", [])) else 0.0,

@@ -245,8 +245,6 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_room_entities(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle room-entity mapping configuration."""
-        errors: dict[str, str] = {}
-
         if user_input is not None:
             # Process room entity mappings, validating entities exist
             room_entities = {}

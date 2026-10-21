@@ -58,7 +58,7 @@ class TestInvalidRoomResponses:
         """Test handling when LLM returns room not in valid list."""
         from custom_components.roomer.providers.ollama import OllamaProvider
 
-        provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
+        OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
         with patch("custom_components.roomer.providers.ollama.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
@@ -84,7 +84,7 @@ class TestInvalidRoomResponses:
         """Test handling of empty LLM response."""
         from custom_components.roomer.providers.ollama import OllamaProvider
 
-        provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
+        OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
         with patch("custom_components.roomer.providers.ollama.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
@@ -107,17 +107,7 @@ class TestInvalidRoomResponses:
         """Test handling when LLM returns verbose response."""
         from custom_components.roomer.providers.ollama import OllamaProvider
 
-        provider = OllamaProvider(url="http://localhost:11434", model="llama3.2")
-
-        context = {
-            "lights": {},
-            "motion": {},
-            "media": {},
-            "computers": {},
-            "device_trackers": {},
-            "ai_detection": {},
-            "time_context": {"current_time": "14:00", "day_of_week": "Monday"},
-        }
+        OllamaProvider(url="http://localhost:11434", model="llama3.2")
 
         with patch("custom_components.roomer.providers.ollama.aiohttp.ClientSession") as mock_session:
             mock_response = AsyncMock()
@@ -431,7 +421,7 @@ class TestMemoryAndCleanup:
                     )
 
             # Cleanup
-            result = logger.cleanup_old_events()
+            logger.cleanup_old_events()
 
             # Should keep events within retention period (30 days)
             events = logger.get_recent_events(100)

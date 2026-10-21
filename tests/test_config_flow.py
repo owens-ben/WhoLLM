@@ -424,9 +424,7 @@ class TestConfigFlowEdgeCases:
             CONF_MODEL: "llama3.2",
         }
 
-        result = await flow.async_step_rooms(
-            user_input={CONF_ROOMS: [], "custom_rooms": "  garage  ,   Game Room  ,  "}
-        )
+        await flow.async_step_rooms(user_input={CONF_ROOMS: [], "custom_rooms": "  garage  ,   Game Room  ,  "})
 
         assert "garage" in flow._data[CONF_ROOMS]
         assert "game_room" in flow._data[CONF_ROOMS]
@@ -444,7 +442,7 @@ class TestConfigFlowEdgeCases:
             CONF_MODEL: "llama3.2",
         }
 
-        result = await flow.async_step_rooms(user_input={CONF_ROOMS: ["office"], "custom_rooms": "office, bedroom"})
+        await flow.async_step_rooms(user_input={CONF_ROOMS: ["office"], "custom_rooms": "office, bedroom"})
 
         # office should not be duplicated
         assert flow._data[CONF_ROOMS].count("office") == 1

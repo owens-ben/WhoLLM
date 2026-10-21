@@ -19,8 +19,8 @@ MODEL_DIR = PROJECT_DIR / "models"
 
 def load_data():
     """Load training and validation data."""
-    train = [json.loads(l) for l in open(DATA_DIR / "train.jsonl")]
-    val = [json.loads(l) for l in open(DATA_DIR / "val.jsonl")]
+    train = [json.loads(line) for line in open(DATA_DIR / "train.jsonl")]
+    val = [json.loads(line) for line in open(DATA_DIR / "val.jsonl")]
     meta = json.load(open(DATA_DIR / "metadata.json"))
 
     X_train = np.array([list(t["features"].values()) for t in train])
