@@ -148,7 +148,7 @@ INFO (MainThread) [custom_components.roomer] Setting up Roomer integration
 4. To test config-flow changes, delete the Roomer integration under **Settings → Devices & Services**, restart and add it again.
 
 !!! note
-    The integration does not register an options update listener. After you change options in the UI, use **Reload** on the integration (or restart) before the coordinator picks them up.
+    Saving options in the UI reloads the integration through its update listener, so option changes don't need a restart. Python changes still do.
 
 ### Troubleshooting a local install
 

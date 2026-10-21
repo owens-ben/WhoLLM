@@ -80,7 +80,7 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
 
     1. Open the room sensor's **History** and compare it with the `indicators` at each change.
     2. Remove or re-map sensors that are misleading. A hallway sensor mapped to the living room is a classic culprit.
-    3. Lower the weight of noisy signal types (often `light`) under **Configure → Confidence Weights**, then reload the integration.
+    3. Lower the weight of noisy signal types (often `light`) under **Configure → Confidence Weights**.
     4. Give the person a personal signal, such as their own PC or room-level phone presence, assigned under **Person Device Ownership**.
     5. In automations, add a `for:` delay to triggers so short flips are ignored. See [Automations](automations.md).
 
@@ -124,7 +124,7 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
     Each update asks the AI once per person and per pet, one after another. Each request may take up to the **LLM Request Timeout** (default **30 seconds**, adjustable from 5 to 120), and a failed request is retried once after a 2-second pause. With three people and a struggling server, one update can take minutes.
 
     1. Check the timing in the debug logs (`Finished fetching roomer data in … seconds`).
-    2. Raise the timeout if the model is slow but working: **Configure → General Settings → LLM Request Timeout**. Then reload the integration.
+    2. Raise the timeout if the model is slow but working: **Configure → General Settings → LLM Request Timeout**.
     3. Raise the **Poll Interval** (default 10 seconds) so updates don't pile up, for example to 30–60 seconds.
     4. Use a smaller, faster model (the default is `llama3.2`), or run Ollama on a machine with a GPU.
     5. The first request after Ollama has unloaded a model is much slower because the model has to load. Keeping it loaded (Ollama's `OLLAMA_KEEP_ALIVE` setting) helps.
@@ -161,15 +161,11 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
 
 ??? question "My settings changes don't seem to take effect"
 
-    **Likely causes**
+    Roomer reloads itself when you save a **Configure** page, and each page keeps what the other pages saved. If a change still doesn't show up:
 
-    - Roomer doesn't reload by itself when you change its options. Changes apply after a reload.
-    - In the current version, each **Configure** page (General Settings, Room Entity Mapping, Person Device Ownership, Confidence Weights) saves **only its own settings** and discards what the other pages saved earlier. The forms also start from your original setup values, not from your last saved values.
-
-    **What to do**
-
-    1. After saving, go to **Settings → Devices & services → Roomer**, open the **⋮** menu and choose **Reload**.
-    2. If you need to change settings on more than one page, be aware that the last page you save is the one that takes effect. Check each page's values before saving.
+    1. Reopen the page and check that it shows the value you saved.
+    2. Check the logs for errors from `custom_components.roomer` during the reload.
+    3. Rooms, people, pets and the server URL can only be set during setup. To change them, delete the Roomer integration and add it again.
 
 ??? question "The dashboard card says \"Custom element doesn't exist: roomer-card\""
 

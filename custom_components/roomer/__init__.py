@@ -128,11 +128,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 result.get("final_size_mb", 0.0),
             )
 
-    # Schedule daily cleanup (runs every 24 hours)
-    async_track_time_interval(
-        hass,
-        periodic_cleanup,
-        timedelta(hours=24),
+    # Schedule daily cleanup (runs every 24 hours), cancelled when the entry unloads
+    entry.async_on_unload(
+        async_track_time_interval(
+            hass,
+            periodic_cleanup,
+            timedelta(hours=24),
+        )
     )
     _LOGGER.info("Scheduled daily periodic cleanup")
 
@@ -160,6 +162,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await _async_register_services(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Reload when options change so saved options take effect immediately
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
@@ -301,5 +306,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload config entry."""
-    await async_unload_entry(hass, entry)
-    await async_setup_entry(hass, entry)
+    await hass.config_entries.async_reload(entry.entry_id)

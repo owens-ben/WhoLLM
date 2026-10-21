@@ -23,21 +23,9 @@ To change mappings later, or to assign devices to people, use Roomer's options:
 !!! example "Screenshot needed: options-menu.png"
     The "Roomer Options" menu showing the four choices: General Settings, Room Entity Mapping, Person Device Ownership, Confidence Weights.
 
-!!! warning "Current limitations of the options screens (alpha)"
-    - **Changes apply after a reload.** After saving, go to **Settings →
-      Devices & services → Roomer**, open the **⋮** menu and select **Reload**,
-      or restart Home Assistant.
-    - **Only the most recently saved options section takes effect.** Saving one
-      section replaces anything you saved in a different section. Everything
-      else goes back to what you chose in the setup wizard. The forms also show
-      your setup-wizard values, not your last save.
-
-    Until this is fixed, the most reliable approach is:
-
-    1. Do your **room mapping in the setup wizard**.
-    2. Use **Person Device Ownership** as the one options section you save.
-    3. To change rooms or room mappings later, remove Roomer and add it again,
-       then redo Person Device Ownership.
+Each section saves only its own settings and keeps what you saved in the
+others. The forms open with your last saved values. Roomer reloads itself when
+you save, so changes take effect straight away.
 
 ## How Roomer reads an entity
 
@@ -74,7 +62,7 @@ counts when it's `paused`, at a lower weight.
 
 ## Room Entity Mapping
 
-This screen has one picker per room. It accepts binary sensors, sensors, lights,
+This screen has one picker per room, labelled with the room's name. It accepts binary sensors, sensors, lights,
 switches, media players, device trackers and cameras. For each room, add the
 things that show someone is in that room right now.
 
@@ -100,7 +88,7 @@ office motion sensor doesn't know who moved.
 
 ## Person Device Ownership
 
-This screen has one picker per person and pet. It accepts device trackers,
+This screen has one picker per person and pet, labelled with their name. It accepts device trackers,
 binary sensors, switches and sensors. Add the devices that belong to that person.
 
 Roomer uses them in two ways:
@@ -193,8 +181,7 @@ currently active.
 
 This screen has a slider (0–100%) for each type of clue: camera, computer,
 media, motion, presence, appliance, light, door, the language model's reasoning
-(`llm_reasoning`) and learned habits (`habit`). The labels may show technical
-names like `weight_camera`. Raise a weight to make that type count for more.
+(`llm_reasoning`) and learned habits (`habit`). Raise a weight to make that type count for more.
 Most people can leave these alone.
 
 Next: learn about the [entities Roomer creates](../using/entities.md), or start
