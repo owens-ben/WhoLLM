@@ -1,6 +1,7 @@
-# Roomer
+# Roomer { .roomer-hero }
 
 **Know *who* is in which room, not just that a room is occupied.**
+{ .roomer-lead }
 
 Most smart homes can tell you that someone is in the office. Roomer is a
 [Home Assistant](https://www.home-assistant.io/) integration that tries to tell
