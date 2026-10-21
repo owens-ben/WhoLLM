@@ -361,7 +361,6 @@ body {
   background-color: var(--roomer-bg);
   color: var(--roomer-ink);
   font-weight: 700;
-  border-bottom: 1px solid var(--roomer-line);
 }
 
 .md-typeset table:not([class]) td {

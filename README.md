@@ -1,4 +1,10 @@
-# Roomer
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
+    <img src="docs/assets/banner-light.svg" alt="Roomer — know who's in which room" width="100%">
+  </picture>
+</h1>
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/v/release/owens-ben/Roomer?include_prereleases)](https://github.com/owens-ben/Roomer/releases)
