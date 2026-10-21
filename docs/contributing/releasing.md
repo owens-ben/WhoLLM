@@ -62,10 +62,9 @@ Merge the version bump and changelog through a pull request. Before you tag, mak
 
 | Workflow | File | What it checks |
 | --- | --- | --- |
-| Tests | [`.github/workflows/test.yml`](https://github.com/owens-ben/roomer/blob/main/.github/workflows/test.yml) | `pytest` on Python 3.11, 3.12 and 3.13, plus coverage. Ruff runs too but cannot fail the build yet (`continue-on-error`). |
-| Validate | [`.github/workflows/validate.yml`](https://github.com/owens-ben/roomer/blob/main/.github/workflows/validate.yml) | **hassfest** (Home Assistant's manifest and integration structure checks) and the **HACS action** (`category: integration`, with the `brands` check ignored until Roomer is submitted to `home-assistant/brands`). It also runs nightly and can be started by hand from the Actions tab (`workflow_dispatch`). |
+| CI | [`.github/workflows/ci.yml`](https://github.com/owens-ben/roomer/blob/main/.github/workflows/ci.yml) | Ruff lint and format check; `pytest` with coverage on Python 3.13 and 3.14; **hassfest** (Home Assistant's manifest and integration structure checks); the **HACS action** (`category: integration`, with the `brands` check ignored until Roomer is submitted to `home-assistant/brands`); and the dashboard Playwright tests. Each job runs only when the files it checks change, and the **CI OK** job sums them up. Start a full run by hand from the Actions tab (`workflow_dispatch`) before tagging. |
 
-Treat a failing Validate run as a release blocker: it usually means HACS or HA will reject or mis-read the integration. Common causes are a malformed `manifest.json`, keys out of order or a missing `version`.
+Treat a failing hassfest or HACS job as a release blocker: it usually means HACS or HA will reject or mis-read the integration. Common causes are a malformed `manifest.json`, keys out of order or a missing `version`.
 
 ## 5. Tag the release
 
