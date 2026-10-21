@@ -32,10 +32,13 @@ class OllamaProvider(BaseLLMProvider):
 
         _LOGGER.debug(
             "Ollama query for %s (%s): prompt_len=%d",
-            entity_name, entity_type, len(prompt),
+            entity_name,
+            entity_type,
+            len(prompt),
         )
 
         try:
+
             async def _do_request():
                 session = self._get_session()
                 async with session.post(
@@ -54,7 +57,9 @@ class OllamaProvider(BaseLLMProvider):
                 ) as resp:
                     if resp.status != 200:
                         raise aiohttp.ClientResponseError(
-                            resp.request_info, resp.history, status=resp.status,
+                            resp.request_info,
+                            resp.history,
+                            status=resp.status,
                         )
                     return await resp.json()
 
@@ -62,7 +67,9 @@ class OllamaProvider(BaseLLMProvider):
             raw_answer = result.get("response", "").strip()
 
             _LOGGER.debug(
-                "Ollama response for %s: '%s'", entity_name, raw_answer[:200],
+                "Ollama response for %s: '%s'",
+                entity_name,
+                raw_answer[:200],
             )
 
             room, confidence, reason = parse_llm_response(raw_answer, rooms)

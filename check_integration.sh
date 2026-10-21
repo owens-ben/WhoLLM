@@ -1,23 +1,25 @@
 #!/bin/bash
-# Quick check script for LLM Room Presence integration
+# Quick check script for WhoLLM integration
 #
 # Usage: ./check_integration.sh [HA_CONFIG_PATH]
 # Example: ./check_integration.sh /config
 
 # Set your HA config path here or pass as argument
 HA_CONFIG="${1:-/config}"
-INTEGRATION_DST="$HA_CONFIG/custom_components/llm_presence"
+INTEGRATION_DST="$HA_CONFIG/custom_components/whollm"
 
-echo "🔍 LLM Room Presence Integration Check"
+echo "🔍 WhoLLM Integration Check"
 echo "======================================"
 echo ""
 
-# Check symlink
-if [ -L "$INTEGRATION_DST" ]; then
+# Check install (symlink from setup_local_testing.sh, or a copy from scripts/deploy.sh)
+if [ -L "$INTEGRATION_DST" ] && [ -d "$INTEGRATION_DST" ]; then
     echo "✅ Symlink exists"
     echo "   → $(readlink -f "$INTEGRATION_DST")"
+elif [ -d "$INTEGRATION_DST" ]; then
+    echo "✅ Integration directory exists"
 else
-    echo "❌ Symlink missing!"
+    echo "❌ Integration missing at $INTEGRATION_DST"
     exit 1
 fi
 
@@ -43,14 +45,14 @@ echo ""
 
 # Check for errors in logs
 echo "🔍 Recent Home Assistant logs (last 50 lines, filtering for llm/error):"
-docker logs homeassistant --tail 50 2>&1 | grep -iE "(llm_presence|error.*llm|import.*llm)" | tail -5 || echo "   (No relevant errors found)"
+docker logs homeassistant --tail 50 2>&1 | grep -iE "(whollm|error.*whollm|import.*whollm)" | tail -5 || echo "   (No relevant errors found)"
 
 echo ""
 echo "📝 Next Steps:"
 echo "   1. Open Home Assistant UI"
 echo "   2. Go to: Settings → Devices & Services"
 echo "   3. Click: + Add Integration (bottom right button)"
-echo "   4. Search for: 'llm' or 'LLM Room Presence'"
+echo "   4. Search for: 'WhoLLM'"
 echo ""
 echo "💡 If integration doesn't appear:"
 echo "   - Wait for HA to fully start (check UI shows 'Home' loaded)"

@@ -22,14 +22,14 @@ _LOGGER = logging.getLogger(__name__)
 
 def calculate_time_decay(seconds_ago: int, sensor_type: str = "motion") -> float:
     """Calculate time decay factor for sensor readings.
-    
+
     Motion sensors decay over time - recent motion is more indicative.
     Lights don't decay - if on, they're on.
-    
+
     Args:
         seconds_ago: How many seconds ago the event occurred
         sensor_type: Type of sensor ("motion", "light", "media", etc.)
-        
+
     Returns:
         Decay factor from 0.0 to 1.0
     """
@@ -37,7 +37,7 @@ def calculate_time_decay(seconds_ago: int, sensor_type: str = "motion") -> float
     non_decaying = ["light", "appliance", "computer", "media"]
     if sensor_type in non_decaying:
         return 1.0
-    
+
     # Motion sensors decay over time
     if sensor_type == "motion":
         if seconds_ago < 60:
@@ -55,7 +55,7 @@ def calculate_time_decay(seconds_ago: int, sensor_type: str = "motion") -> float
         else:
             # Old motion - very low confidence
             return max(0.1, 0.1 - (seconds_ago - 1800) / 36000)
-    
+
     # Doors decay faster - door opening is momentary
     if sensor_type == "door":
         if seconds_ago < 30:
@@ -66,7 +66,7 @@ def calculate_time_decay(seconds_ago: int, sensor_type: str = "motion") -> float
             return 0.5
         else:
             return 0.2
-    
+
     # Default: moderate decay
     if seconds_ago < 300:
         return 1.0

@@ -24,6 +24,13 @@ Run actions when leaving home (lights off, lock doors, set thermostat).
 
 [![Import Blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://github.com/owens-ben/WhoLLM/blob/main/blueprints/goodbye_routine.yaml)
 
+### Activity Log
+Post every room change to Slack, Discord or a phone, with confidence and the signals behind each guess. Low-confidence guesses are flagged. Use it while tuning mappings.
+
+[![Import Blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://github.com/owens-ben/WhoLLM/blob/main/blueprints/activity_log.yaml)
+
+For Slack: set up the [Slack integration](https://www.home-assistant.io/integrations/slack/), invite its bot to the channel, then use `notify.<your slack service>` as the action and the channel ID as the target.
+
 ## Installation
 
 ### Option 1: Import Button

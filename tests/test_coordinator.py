@@ -179,6 +179,8 @@ class TestCoordinatorRoomTransition:
             coordinator._previous_rooms = {"Alice": "bedroom"}
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
+            coordinator.history_tracker = MagicMock()
+            coordinator.notification_manager = MagicMock()
 
             # Move Alice to office
             await coordinator._check_room_transition("Alice", "office", 0.9)
@@ -190,6 +192,14 @@ class TestCoordinatorRoomTransition:
                 to_room="office",
                 confidence=0.9,
             )
+
+            coordinator.history_tracker.record_transition.assert_called_once_with(
+                entity_name="Alice",
+                from_room="bedroom",
+                to_room="office",
+                confidence=0.9,
+            )
+            coordinator.notification_manager.update_room.assert_called_once_with("Alice", "office", 0.9)
 
             # Previous room should be updated
             assert coordinator._previous_rooms["Alice"] == "office"
@@ -204,12 +214,15 @@ class TestCoordinatorRoomTransition:
             coordinator._previous_rooms = {"Alice": "office"}
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
+            coordinator.history_tracker = MagicMock()
+            coordinator.notification_manager = MagicMock()
 
             # Alice stays in office
             await coordinator._check_room_transition("Alice", "office", 0.9)
 
             # Should NOT have logged a transition
             coordinator.event_logger.async_log_room_transition.assert_not_called()
+            coordinator.history_tracker.record_transition.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_check_room_transition_to_unknown_no_log(self, mock_hass, mock_config_entry):
@@ -221,6 +234,8 @@ class TestCoordinatorRoomTransition:
             coordinator._previous_rooms = {"Alice": "office"}
             coordinator.event_logger = MagicMock()
             coordinator.event_logger.async_log_room_transition = AsyncMock()
+            coordinator.history_tracker = MagicMock()
+            coordinator.notification_manager = MagicMock()
 
             # Unknown room result
             await coordinator._check_room_transition("Alice", "unknown", 0.3)

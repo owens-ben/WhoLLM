@@ -23,13 +23,13 @@ mkdir -p "$DATA_DIR/raw" "$DATA_DIR/ml_ready"
 
 # Copy events file from Home Assistant
 echo "1. Copying events from Home Assistant..."
-if [ -f "$HA_CONFIG/llm_presence_events.jsonl" ]; then
-    sudo cp "$HA_CONFIG/llm_presence_events.jsonl" "$DATA_DIR/ha_events.jsonl"
+if [ -f "$HA_CONFIG/whollm_events.jsonl" ]; then
+    sudo cp "$HA_CONFIG/whollm_events.jsonl" "$DATA_DIR/ha_events.jsonl"
     sudo chown $USER:$USER "$DATA_DIR/ha_events.jsonl"
     EVENT_COUNT=$(wc -l < "$DATA_DIR/ha_events.jsonl")
     echo "   Copied $EVENT_COUNT events"
 else
-    echo "   WARNING: No events file found at $HA_CONFIG/llm_presence_events.jsonl"
+    echo "   WARNING: No events file found at $HA_CONFIG/whollm_events.jsonl"
     exit 1
 fi
 

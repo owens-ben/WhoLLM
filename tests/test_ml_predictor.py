@@ -14,6 +14,7 @@ from tempfile import TemporaryDirectory
 def mock_hass():
     """Create mock Home Assistant instance."""
     hass = MagicMock()
+    hass.config.config_dir = "/config"
     hass.services = MagicMock()
     hass.services.async_call = AsyncMock()
     return hass
@@ -291,6 +292,48 @@ class TestUncertaintyNotification:
         assert predictor._pending_feedback["Alice"]["predicted_room"] == "office"
 
 
+class TestPaths:
+    """Test that storage paths follow the HA config directory."""
+
+    def test_config_dir_from_hass(self, mock_hass):
+        """Paths resolve under hass.config.config_dir."""
+        from custom_components.whollm.ml_predictor import MLPredictor
+
+        mock_hass.config.config_dir = "/srv/ha"
+        with patch.object(Path, "exists", return_value=False):
+            predictor = MLPredictor(mock_hass)
+
+        assert predictor.config_dir == Path("/srv/ha")
+        assert predictor.model_path == Path("/srv/ha/whollm/models/per_person_models.pkl")
+
+    def test_legacy_model_path_used_when_only_legacy_exists(self):
+        """Models in custom_components/whollm/models are still found."""
+        from custom_components.whollm.ml_predictor import MLPredictor
+
+        with TemporaryDirectory() as tmpdir:
+            legacy = Path(tmpdir) / "custom_components/whollm/models/per_person_models.pkl"
+            legacy.parent.mkdir(parents=True)
+            legacy.touch()
+
+            predictor = MLPredictor(config_dir=Path(tmpdir))
+
+            assert predictor.model_path == legacy
+
+    def test_new_model_path_preferred(self):
+        """The HACS-safe location wins when both exist."""
+        from custom_components.whollm.ml_predictor import MLPredictor
+
+        with TemporaryDirectory() as tmpdir:
+            for subdir in ("whollm/models", "custom_components/whollm/models"):
+                path = Path(tmpdir) / subdir / "per_person_models.pkl"
+                path.parent.mkdir(parents=True)
+                path.touch()
+
+            predictor = MLPredictor(config_dir=Path(tmpdir))
+
+            assert predictor.model_path == Path(tmpdir) / "whollm/models/per_person_models.pkl"
+
+
 class TestFeedbackRecording:
     """Test feedback recording for ML training."""
 
@@ -299,26 +342,22 @@ class TestFeedbackRecording:
         from custom_components.whollm.ml_predictor import MLPredictor
 
         with TemporaryDirectory() as tmpdir:
-            feedback_path = Path(tmpdir) / "feedback.jsonl"
+            feedback_path = Path(tmpdir) / "whollm_feedback.jsonl"
 
-            with patch.object(Path, "exists", return_value=False):
-                predictor = MLPredictor()
+            predictor = MLPredictor(config_dir=Path(tmpdir))
 
-            # Mock the feedback path
-            with patch("custom_components.whollm.ml_predictor.Path") as mock_path:
-                mock_path.return_value = feedback_path
+            # Add pending feedback
+            predictor._pending_feedback["Alice"] = {
+                "predicted_room": "office",
+                "confidence": 0.3,
+                "context_snapshot": {"time": "14:00"},
+            }
 
-                # Add pending feedback
-                predictor._pending_feedback["Alice"] = {
-                    "predicted_room": "office",
-                    "confidence": 0.3,
-                    "context_snapshot": {"time": "14:00"},
-                }
-
-                result = predictor.record_feedback("Alice", "bedroom")
+            result = predictor.record_feedback("Alice", "bedroom")
 
             assert result is True
             assert "Alice" not in predictor._pending_feedback  # Cleared
+            assert json.loads(feedback_path.read_text())["correct_room"] == "bedroom"
 
     def test_record_feedback_without_pending(self):
         """Test recording feedback without pending request."""

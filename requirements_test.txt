@@ -1,0 +1,9 @@
+# Test dependencies. The tests mock Home Assistant internals, so plain
+# homeassistant is enough; pip picks the newest release for each Python.
+homeassistant>=2024.1.0
+aiohttp
+voluptuous
+pillow
+pytest
+pytest-asyncio
+pytest-cov

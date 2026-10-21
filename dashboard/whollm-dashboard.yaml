@@ -11,12 +11,12 @@
 #      lovelace:
 #        mode: yaml
 #        dashboards:
-#          llm-presence:
+#          whollm-dashboard:
 #            mode: yaml
 #            title: WhoLLM
 #            icon: mdi:brain
 #            show_in_sidebar: true
-#            filename: llm-presence-dashboard.yaml
+#            filename: whollm-dashboard.yaml
 #   3. Restart Home Assistant
 #
 # Or import via UI:
@@ -152,7 +152,7 @@ views:
               {% if occupied %}blue{% else %}grey{% endif %}
             tap_action:
               action: navigate
-              navigation_path: /llm-presence/office
+              navigation_path: /whollm-dashboard/office
             layout: vertical
             fill_container: true
 
@@ -175,7 +175,7 @@ views:
               {% if occupied %}green{% else %}grey{% endif %}
             tap_action:
               action: navigate
-              navigation_path: /llm-presence/living-room
+              navigation_path: /whollm-dashboard/living-room
             layout: vertical
             fill_container: true
 
@@ -198,7 +198,7 @@ views:
               {% if occupied %}purple{% else %}grey{% endif %}
             tap_action:
               action: navigate
-              navigation_path: /llm-presence/bedroom
+              navigation_path: /whollm-dashboard/bedroom
             layout: vertical
             fill_container: true
 
@@ -221,7 +221,7 @@ views:
               {% if occupied %}orange{% else %}grey{% endif %}
             tap_action:
               action: navigate
-              navigation_path: /llm-presence/kitchen
+              navigation_path: /whollm-dashboard/kitchen
             layout: vertical
             fill_container: true
 

@@ -19,10 +19,13 @@ from custom_components.whollm.const import (
 
 
 @pytest.fixture
-def mock_hass():
+def mock_hass(tmp_path):
     """Create a mock Home Assistant instance."""
     hass = MagicMock()
     hass.data = {}
+    hass.config.config_dir = str(tmp_path)
+    hass.config.path = lambda *parts: str(tmp_path.joinpath(*parts))
+    hass.async_add_executor_job = AsyncMock(side_effect=lambda func, *args: func(*args))
     hass.services = MagicMock()
     hass.services.has_service = MagicMock(return_value=False)
     hass.services.async_register = MagicMock()
@@ -103,6 +106,27 @@ class TestAsyncSetupEntry:
         assert mock_config_entry.entry_id in mock_hass.data[DOMAIN]
 
     @pytest.mark.asyncio
+    async def test_setup_entry_uses_ha_config_dir(self, mock_hass, mock_config_entry, tmp_path):
+        """Test that storage paths come from the HA config dir, not a hardcoded /config."""
+        from custom_components.whollm import async_setup_entry
+
+        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+            mock_coordinator = MagicMock()
+            mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+            mock_coord_class.return_value = mock_coordinator
+
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
+
+                with patch("custom_components.whollm.HabitPredictor") as mock_habit_class:
+                    with patch("custom_components.whollm.VisionIdentifier"):
+                        with patch("custom_components.whollm.CameraTrackingController"):
+                            await async_setup_entry(mock_hass, mock_config_entry)
+
+        assert mock_logger_class.call_args.kwargs["log_path"] == str(tmp_path / "whollm_events.jsonl")
+        assert mock_habit_class.call_args.kwargs["config_path"] == tmp_path
+
+    @pytest.mark.asyncio
     async def test_setup_entry_registers_services(self, mock_hass, mock_config_entry):
         """Test that setup registers services."""
         from custom_components.whollm import async_setup_entry
@@ -121,6 +145,8 @@ class TestAsyncSetupEntry:
 
         # Should have called async_register multiple times for services
         assert mock_hass.services.async_register.called
+        registered = {c.args[1] for c in mock_hass.services.async_register.call_args_list}
+        assert {"refresh", "correct_room", "get_history", "clear_history", "get_patterns"} <= registered
 
     @pytest.mark.asyncio
     async def test_setup_entry_schedules_cleanup(self, mock_hass, mock_config_entry):
@@ -206,17 +232,30 @@ class TestAsyncReloadEntry:
 
     @pytest.mark.asyncio
     async def test_reload_entry(self, mock_hass, mock_config_entry):
-        """Test that reload calls unload then setup."""
+        """Reload goes through HA's config entry manager."""
         from custom_components.whollm import async_reload_entry
 
-        mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
+        mock_hass.config_entries.async_reload = AsyncMock()
 
-        with patch("custom_components.whollm.async_unload_entry", new_callable=AsyncMock) as mock_unload:
-            with patch("custom_components.whollm.async_setup_entry", new_callable=AsyncMock) as mock_setup:
-                await async_reload_entry(mock_hass, mock_config_entry)
+        await async_reload_entry(mock_hass, mock_config_entry)
 
-                mock_unload.assert_called_once_with(mock_hass, mock_config_entry)
-                mock_setup.assert_called_once_with(mock_hass, mock_config_entry)
+        mock_hass.config_entries.async_reload.assert_called_once_with(mock_config_entry.entry_id)
+
+    @pytest.mark.asyncio
+    async def test_setup_registers_options_listener(self, mock_hass, mock_config_entry):
+        """Changing options reloads the entry so they apply without a restart."""
+        from custom_components.whollm import async_reload_entry, async_setup_entry
+
+        with patch("custom_components.whollm.LLMPresenceCoordinator") as mock_coord_class:
+            mock_coord_class.return_value.async_config_entry_first_refresh = AsyncMock()
+            with patch("custom_components.whollm.EventLogger") as mock_logger_class:
+                mock_logger_class.return_value = _make_mock_event_logger()
+                with patch("custom_components.whollm.VisionIdentifier"):
+                    with patch("custom_components.whollm.CameraTrackingController"):
+                        await async_setup_entry(mock_hass, mock_config_entry)
+
+        mock_config_entry.add_update_listener.assert_called_once_with(async_reload_entry)
+        mock_config_entry.async_on_unload.assert_called_once_with(mock_config_entry.add_update_listener.return_value)
 
 
 class TestServiceHandlers:
@@ -229,7 +268,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, **kwargs):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register
@@ -266,7 +305,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, **kwargs):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register

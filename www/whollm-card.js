@@ -51,7 +51,8 @@ class WhoLLMCard extends HTMLElement {
         return;
       }
 
-      const name = state.attributes.friendly_name || entityId.split('.')[1];
+      // Room sensors are named "<Name> Room"; show just the name
+      const name = (state.attributes.friendly_name || entityId.split('.')[1]).replace(/ Room$/, '');
       const room = state.state || 'unknown';
       const confidence = state.attributes.confidence || 0;
       const indicators = state.attributes.indicators || [];
@@ -89,8 +90,10 @@ class WhoLLMCard extends HTMLElement {
         const confPercent = Math.round(confidence * 100);
         const confClass = confidence >= 0.7 ? 'high' : confidence >= 0.4 ? 'medium' : 'low';
         html += `
-          <div class="confidence ${confClass}">
-            <div class="bar" style="width: ${confPercent}%"></div>
+          <div class="confidence-row">
+            <div class="confidence ${confClass}">
+              <div class="bar" style="width: ${confPercent}%"></div>
+            </div>
             <span class="label">${confPercent}%</span>
           </div>
         `;
@@ -149,12 +152,17 @@ class WhoLLMCard extends HTMLElement {
         .entity.away .room {
           color: var(--error-color);
         }
-        .confidence {
+        .confidence-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
           margin-top: 8px;
+        }
+        .confidence {
+          flex: 1;
           height: 4px;
           background: var(--divider-color);
           border-radius: 2px;
-          position: relative;
           overflow: hidden;
         }
         .confidence .bar {
@@ -171,10 +179,9 @@ class WhoLLMCard extends HTMLElement {
         .confidence.low .bar {
           background: var(--error-color, #f44336);
         }
-        .confidence .label {
-          position: absolute;
-          right: 0;
-          top: -18px;
+        .confidence-row .label {
+          min-width: 32px;
+          text-align: right;
           font-size: 11px;
           color: var(--secondary-text-color);
         }
