@@ -1,5 +1,6 @@
 #!/bin/bash
-# Copy the integration to a Home Assistant host over SSH and optionally restart it.
+# Copy the integration and blueprints to a Home Assistant host over SSH,
+# then optionally restart it.
 #
 # Usage: scripts/deploy.sh [ENV_FILE]   (default: local/.env)
 #
@@ -26,6 +27,10 @@ echo "Deploying to $DEST"
 rsync -av --delete \
     --exclude '__pycache__/' --exclude 'models/' --exclude '.gitkeep' \
     "$PROJECT_DIR/custom_components/whollm/" "$DEST"
+
+echo "Deploying blueprints to $HA_SSH:$HA_CONFIG_DIR/blueprints/automation/whollm/"
+ssh "$HA_SSH" "mkdir -p '$HA_CONFIG_DIR/blueprints/automation/whollm'"
+rsync -av "$PROJECT_DIR/blueprints/"*.yaml "$HA_SSH:$HA_CONFIG_DIR/blueprints/automation/whollm/"
 
 if [ -n "${HA_RESTART_CMD:-}" ]; then
     echo "Restarting Home Assistant: $HA_RESTART_CMD"

@@ -1,0 +1,91 @@
+blueprint:
+  name: WhoLLM - Activity Log
+  description: >-
+    Post every WhoLLM room change to a notification service (Slack, Discord,
+    mobile app, ...) with confidence and the signals behind the guess. Useful
+    as a live log while tuning room and device mappings. Low-confidence
+    guesses are flagged so they're easy to spot.
+  domain: automation
+  author: WhoLLM
+  source_url: https://github.com/owens-ben/WhoLLM/blob/main/blueprints/activity_log.yaml
+  input:
+    room_sensors:
+      name: Room Sensors
+      description: WhoLLM room sensors to log
+      selector:
+        entity:
+          domain: sensor
+          integration: whollm
+          multiple: true
+    notify_action:
+      name: Notify Action
+      description: >-
+        Notify action to call, e.g. notify.slack or notify.mobile_app_phone.
+        Check Developer Tools → Actions for the exact name.
+      selector:
+        text:
+    notify_target:
+      name: Target (optional)
+      description: >-
+        Channel or recipient, for actions that take one. For Slack, use the
+        channel ID or #name (invite the bot to private channels first).
+        Leave empty for actions without a target.
+      default: ""
+      selector:
+        text:
+    low_confidence:
+      name: Low Confidence Threshold
+      description: Guesses below this confidence are flagged
+      default: 50
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    only_low_confidence:
+      name: Only Log Low-Confidence Guesses
+      description: Skip confident room changes and only post the doubtful ones
+      default: false
+      selector:
+        boolean:
+
+mode: queued
+max: 20
+
+trigger:
+  # to: null fires on state changes only, not attribute-only updates
+  - platform: state
+    entity_id: !input room_sensors
+    to: null
+
+variables:
+  notify_action: !input notify_action
+  notify_target: !input notify_target
+  threshold: !input low_confidence
+  only_low: !input only_low_confidence
+  name: "{{ trigger.to_state.name | replace(' Room', '') }}"
+  from_room: "{{ trigger.from_state.state | replace('_', ' ') }}"
+  to_room: "{{ trigger.to_state.state | replace('_', ' ') }}"
+  confidence: "{{ ((trigger.to_state.attributes.get('confidence', 0) | float(0)) * 100) | round(0) | int }}"
+  is_low: "{{ confidence < threshold | int }}"
+  indicators: "{{ trigger.to_state.attributes.get('indicators') or [] }}"
+  message: >-
+    {{ ':warning: ' if is_low else '' }}*{{ name }}*: {{ from_room }} → {{ to_room }}
+    ({{ confidence }}%){% if indicators %} · {{ indicators[:4] | join(', ') }}{% endif %}
+
+condition:
+  - condition: template
+    value_template: >-
+      {{ trigger.from_state is not none
+         and trigger.from_state.state not in ['unavailable', 'unknown']
+         and trigger.to_state.state not in ['unavailable', 'unknown']
+         and (is_low or not only_low) }}
+
+action:
+  - action: "{{ notify_action }}"
+    data: >-
+      {% if notify_target %}
+        {{ {'message': message, 'target': [notify_target]} }}
+      {% else %}
+        {{ {'message': message} }}
+      {% endif %}

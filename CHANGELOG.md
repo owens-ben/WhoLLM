@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Activity Log blueprint: posts room changes with confidence and indicators to any notify action (Slack, Discord, mobile)
 - Test suite with pytest (52 tests covering habits, providers, coordinator)
 - CI workflow for running tests on Python 3.11 and 3.12
 - pyproject.toml for modern Python project configuration
