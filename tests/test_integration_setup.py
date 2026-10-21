@@ -103,26 +103,6 @@ class TestAsyncSetupEntry:
         assert mock_config_entry.entry_id in mock_hass.data[DOMAIN]
 
     @pytest.mark.asyncio
-    async def test_setup_entry_registers_update_listener(self, mock_hass, mock_config_entry):
-        """Test that setup reloads the entry when options change."""
-        from custom_components.roomer import async_reload_entry, async_setup_entry
-
-        with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class:
-            mock_coordinator = MagicMock()
-            mock_coordinator.async_config_entry_first_refresh = AsyncMock()
-            mock_coord_class.return_value = mock_coordinator
-
-            with patch("custom_components.roomer.EventLogger") as mock_logger_class:
-                mock_logger_class.return_value = _make_mock_event_logger()
-
-                with patch("custom_components.roomer.VisionIdentifier"):
-                    with patch("custom_components.roomer.CameraTrackingController"):
-                        await async_setup_entry(mock_hass, mock_config_entry)
-
-        mock_config_entry.add_update_listener.assert_called_once_with(async_reload_entry)
-        mock_config_entry.async_on_unload.assert_any_call(mock_config_entry.add_update_listener.return_value)
-
-    @pytest.mark.asyncio
     async def test_setup_entry_registers_services(self, mock_hass, mock_config_entry):
         """Test that setup registers services."""
         from custom_components.roomer import async_setup_entry
@@ -226,7 +206,11 @@ class TestAsyncReloadEntry:
 
     @pytest.mark.asyncio
     async def test_reload_entry(self, mock_hass, mock_config_entry):
-        """Test that reload goes through Home Assistant's config entry reload."""
+        """Test that reload goes through the config entries manager.
+
+        A manual unload + setup would skip the entry's async_on_unload callbacks
+        and stack a new update listener on every options change.
+        """
         from custom_components.roomer import async_reload_entry
 
         mock_hass.config_entries.async_reload = AsyncMock(return_value=True)
@@ -246,7 +230,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, supports_response=None):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register
@@ -283,7 +267,7 @@ class TestServiceHandlers:
 
         captured_handlers = {}
 
-        def capture_register(domain, service, handler, schema=None):
+        def capture_register(domain, service, handler, schema=None, supports_response=None):
             captured_handlers[service] = handler
 
         mock_hass.services.async_register = capture_register

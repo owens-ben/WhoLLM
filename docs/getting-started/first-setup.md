@@ -125,8 +125,8 @@ almost nothing to go on until you add some.
 
 ## When you're done
 
-Roomer creates an entry called **Roomer (ollama)** and makes its first guess
-straight away. You'll find these new entities:
+Roomer creates an entry called **Roomer (ollama)** or **Roomer (crewai)**,
+depending on the provider you picked, and makes its first guess straight away. You'll find these new entities:
 
 | Entity | Example | What it shows |
 |---|---|---|

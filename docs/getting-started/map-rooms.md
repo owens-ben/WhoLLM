@@ -25,7 +25,8 @@ To change mappings later, or to assign devices to people, use Roomer's options:
 
 Each section saves only its own settings and keeps what you saved in the
 others. The forms open with your last saved values. Roomer reloads itself when
-you save, so changes take effect straight away.
+you save, so changes take effect straight away. Your room sensors briefly
+become unavailable while it restarts with the new settings.
 
 ## How Roomer reads an entity
 

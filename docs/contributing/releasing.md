@@ -82,17 +82,22 @@ git push origin v0.3.0
 
 A tag on its own is not enough for HACS: it reads **releases**. Create one from the tag, either on GitHub (**Releases → Draft a new release**, choose the tag) or with the GitHub CLI:
 
+First save the version's section from `CHANGELOG.md` (everything under its `## [0.3.0]` heading) to a file called `release-notes.md`, then run:
+
 ```bash
 gh release create v0.3.0 --title "v0.3.0" --notes-file release-notes.md
 ```
 
-For the notes, paste the version's section from `CHANGELOG.md`. Mark the release as a **pre-release** if it is not ready for everyone. HACS only shows pre-releases to users who have opted in to beta versions for Roomer.
+On GitHub, paste the same section into the release description instead. Mark the release as a **pre-release** if it is not ready for everyone. HACS only shows pre-releases to users who have opted in to beta versions for Roomer.
 
 After publishing, HACS users see the update within HACS's normal refresh cycle. To check it end to end, open HACS in a test HA instance, find Roomer, and confirm the new version is offered.
 
 ## Documentation
 
 This site is built with MkDocs Material and deploys itself. [`.github/workflows/docs.yml`](https://github.com/owens-ben/roomer/blob/main/.github/workflows/docs.yml) runs on every push to `main` that touches `docs/**`, `mkdocs.yml` or the workflow file. It installs `docs/requirements.txt`, runs `mkdocs build --strict` and publishes the result to GitHub Pages. Pull requests that touch the docs get the build (so broken links or nav entries fail the PR) without the deploy. You can also start a deploy by hand with `workflow_dispatch`.
+
+!!! note "One-time setup"
+    The deploy only works once the repository's Pages source is set to **GitHub Actions**: **Settings → Pages → Build and deployment → Source → GitHub Actions**.
 
 Docs are not versioned: the site always reflects `main`. If a release changes behaviour, update the docs in the same PR as the code.
 
