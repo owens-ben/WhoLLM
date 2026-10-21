@@ -1,69 +1,113 @@
-# Development Setup Guide
+# Development
 
-This guide will help you set up the WhoLLM integration for local testing in your Home Assistant instance.
+[← Status & roadmap](status.md) · [Guide home](README.md) · Next: [ML & training data →](ml-and-training-data.md)
 
-## Prerequisites
+Everything you need to change WhoLLM and try it in a real Home Assistant. For the contribution process (branches, pull
+requests, style), see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-1. **Home Assistant** installed and running (2024.1.0 or later)
-2. **Ollama** installed and running
-3. At least one LLM model installed in Ollama
+## Where things live
 
-## Step 1: Locate Your Home Assistant Config Directory
+```
+custom_components/whollm/
+├── __init__.py        setup, camera/storage services, daily cleanup
+├── config_flow.py     setup wizard and options menu
+├── coordinator.py     the detection pipeline (one poll = one update)
+├── providers/         base.py (prompts, parsing, fallback), ollama.py, crewai.py, openai.py, anthropic.py
+├── habits.py          HabitPredictor and ConfidenceCombiner (the weighing step)
+├── event_logger.py    JSONL event log with retention
+├── vision.py          camera snapshot identification and tracking switches
+├── sensor.py  binary_sensor.py   the entities
+├── const.py  strings.json  translations/en.json  services.yaml
+└── notifications.py  zones.py  history.py  services.py  ml_predictor.py     written and tested, not connected yet
+```
 
-The location depends on your Home Assistant installation type:
+| Module | In the running integration? |
+|---|---|
+| `__init__`, `config_flow`, `coordinator`, `habits`, `event_logger`, `vision`, `sensor`, `binary_sensor` | ✅ yes |
+| `providers/base`, `ollama`, `crewai` | ✅ yes |
+| `providers/openai`, `providers/anthropic` | 🚧 not in the provider registry |
+| `notifications`, `zones`, `history`, `services`, `ml_predictor` | 🚧 not imported by the integration (`history` only by `services`) |
 
-- **Home Assistant OS (HassOS)**: `/config/` (accessible via Samba or SSH)
-- **Home Assistant Container**: Mounted volume (usually `/config/`)
-- **Home Assistant Core (Python venv)**: Usually `~/.homeassistant/` or `~/.config/homeassistant/`
-- **Home Assistant Supervised**: `/usr/share/hassio/homeassistant/` or `/config/`
+The full picture, with user-facing effects, is in [Status & roadmap](status.md). The best place to start reading the
+logic is `_process_entity` in `coordinator.py` and `ConfidenceCombiner.combine` in `habits.py`, which the
+[How it works](how-it-works.md) page walks through.
 
-## Step 2: Copy Integration to Custom Components
+## Set up a dev environment
 
-### Option A: Symlink (Recommended for Development)
-
-This allows you to edit code and see changes after restart:
+Python 3.11 or newer (CI runs 3.11, 3.12 and 3.13).
 
 ```bash
-# Find your HA config directory first, then:
-ln -s /path/to/whollm/custom_components/whollm /path/to/your/ha/config/custom_components/whollm
+python3 -m venv .venv
+source .venv/bin/activate
+
+# the same packages CI installs
+pip install pytest pytest-asyncio pytest-cov aiohttp voluptuous pillow
+pip install pytest-homeassistant-custom-component
+
+# optional
+pip install ruff pre-commit
+pre-commit install
 ```
 
-### Option B: Copy Files
+(`pip install -e ".[dev]"` is an alternative that pulls the extras declared in `pyproject.toml`.)
+
+## Run the checks
 
 ```bash
-# Copy the integration folder
-cp -r /path/to/whollm/custom_components/whollm /path/to/your/ha/config/custom_components/
+pytest tests/ -v                      # unit tests
+pytest tests/ --cov=custom_components/whollm --cov-report=term-missing
+
+ruff check custom_components/whollm/  # lint
+ruff format custom_components/whollm/ # format
 ```
 
-## Step 3: Verify Structure
+CI runs the tests on Python 3.11 to 3.13 and reports lint results without failing the build yet. A separate nightly
+workflow runs Home Assistant's **hassfest** and the **HACS** validation.
 
-Your Home Assistant config directory should have this structure:
+### Dashboard browser tests
 
-```
-config/
-├── configuration.yaml
-├── custom_components/
-│   └── whollm/
-│       ├── __init__.py
-│       ├── manifest.json
-│       ├── config_flow.py
-│       ├── const.py
-│       ├── coordinator.py
-│       ├── sensor.py
-│       ├── binary_sensor.py
-│       ├── strings.json
-│       ├── translations/
-│       │   └── en.json
-│       └── providers/
-│           ├── __init__.py
-│           ├── base.py
-│           └── ollama.py
-└── ...
+The standalone dashboard has Playwright tests in `e2e/`. They expect the dashboard on port 3380:
+
+```bash
+npm install
+(cd dashboard && docker compose up -d)   # serves the dashboard on :3380
+npx playwright test
 ```
 
-## Step 4: Enable Debug Logging (Optional but Recommended)
+### Simulated households
 
-Add this to your `configuration.yaml` to see detailed logs:
+[`beta-testers/`](../beta-testers/README.md) holds five simulated home setups (a studio flat, a family with a pet, a
+sensor-heavy smart home, a minimal setup and a remote worker):
+
+```bash
+python beta-testers/run_all_testers.py
+python beta-testers/run_all_testers.py --tester alice
+```
+
+## Try your changes in Home Assistant
+
+### 1. Link the integration into your config
+
+Find your Home Assistant config directory:
+
+| Install type | Config directory |
+|---|---|
+| Home Assistant OS | `/config/` (via Samba or SSH) |
+| Container | the volume mounted at `/config/` |
+| Core (venv) | usually `~/.homeassistant/` |
+| Supervised | `/usr/share/hassio/homeassistant/` |
+
+A symlink means edits show up after a restart, with no copying:
+
+```bash
+ln -s /path/to/WhoLLM/custom_components/whollm /path/to/ha/config/custom_components/whollm
+```
+
+> [!NOTE]
+> The helper scripts `check_integration.sh` and `setup_local_testing.sh` in the repo root still refer to the old name
+> `llm_presence` and stop immediately. Use the symlink above instead. See [Status](status.md#known-issues).
+
+### 2. Turn on debug logging
 
 ```yaml
 logger:
@@ -72,129 +116,55 @@ logger:
     custom_components.whollm: debug
 ```
 
-## Step 5: Restart Home Assistant
+### 3. Restart and check
 
-Restart Home Assistant to load the custom integration:
+Restart Home Assistant (Settings → System → Restart, or `docker restart homeassistant`) and look for this log line:
 
-- **Home Assistant OS**: Go to Settings → System → Restart
-- **Docker**: `docker restart homeassistant`
-- **Python venv**: Restart the Home Assistant service
-
-## Step 6: Verify Integration is Loaded
-
-After restart, check the logs for:
-
-```
+```text
 INFO (MainThread) [custom_components.whollm] Setting up WhoLLM integration
 ```
 
-If you see errors, check:
-- The `custom_components/whollm` folder exists
-- All Python files are present
-- `manifest.json` is valid JSON
-- Dependencies are installed (aiohttp)
+If it is missing, check that the folder is in place, `manifest.json` is valid
+(`python3 -m json.tool custom_components/whollm/manifest.json`), and that the files compile
+(`python3 -m py_compile custom_components/whollm/*.py`).
 
-## Step 7: Add Integration via UI
+Then **Settings → Devices & Services → Add Integration → WhoLLM**, and confirm in **Developer Tools → States** that
+`sensor.<name>_room` and `binary_sensor.<name>_in_<room>` exist.
 
-1. Go to **Settings** → **Devices & Services**
-2. Click **+ Add Integration**
-3. Search for **"WhoLLM"**
-4. Follow the setup wizard:
-   - Enter Ollama URL (default: `http://localhost:11434`)
-   - Select poll interval
-   - Choose model
-   - Select rooms
-   - Enter person/pet names
+### 4. The edit loop
 
-## Step 8: Verify Entities are Created
+1. Edit the code.
+2. Restart Home Assistant. A **Reload** of the integration only re-reads its configuration; it does not re-import
+   changed Python files.
+3. Watch the logs: `tail -f /path/to/ha/config/home-assistant.log | grep whollm`.
 
-After configuration, check that entities are created:
+To test config-flow changes, delete the integration, restart, and add it again.
 
-- `sensor.{person_name}_room` - Room sensor for each person/pet
-- `binary_sensor.{person_name}_in_{room}` - Binary sensors for each person × room combination
+## Working on the docs
 
-You can verify in:
-- **Settings** → **Devices & Services** → **WhoLLM**
-- **Developer Tools** → **States** (search for `whollm`)
+The guide in `docs/` is plain Markdown that renders on GitHub. Two kinds of image live in `docs/assets/`, and both
+can be regenerated:
 
-## Troubleshooting
+| Image | Tool | Run |
+|---|---|---|
+| Diagrams: `hero.svg`, `pipeline.svg`, `weights.svg`, `wizard.svg` | [`scripts/docs/generate_diagrams.py`](../scripts/docs/generate_diagrams.py) | `python scripts/docs/generate_diagrams.py` |
+| Screenshots: `dashboard-live.png`, `dashboard-signin.png`, `lovelace-card.png` | [`scripts/docs/capture_screenshots.js`](../scripts/docs/capture_screenshots.js) | `npm install`, then `node scripts/docs/capture_screenshots.js` |
 
-### Integration Not Appearing
+- `weights.svg` is read straight from `DEFAULT_CONFIDENCE_WEIGHTS` in `const.py`. Re-run the generator whenever the
+  default weights change.
+- The screenshots are rendered from the **real** dashboard and card code using made-up demo data, through a tiny
+  stand-in for Home Assistant. Re-run the script whenever you change how those look. If Playwright's own Chromium is not
+  installed, set `CHROMIUM_PATH` to any Chromium or Chrome.
+- The numbers in [How it works](how-it-works.md#signals-weights-and-confidence) were produced by running the real
+  `ConfidenceCombiner`. If you change the weighing logic, re-check them.
 
-1. **Check logs** for import errors:
-   ```bash
-   # In Home Assistant logs
-   grep -i "whollm" home-assistant.log
-   ```
+When you change behaviour, update the page that describes it and the [Status](status.md) table if a feature moves
+between ✅, ⚠️ and 🚧.
 
-2. **Verify manifest.json**:
-   ```bash
-   python3 -m json.tool custom_components/whollm/manifest.json
-   ```
+## Common problems
 
-3. **Check Python syntax**:
-   ```bash
-   python3 -m py_compile custom_components/whollm/*.py
-   ```
-
-### Dependencies Not Installed
-
-If you see `ModuleNotFoundError: No module named 'aiohttp'`:
-
-- **Home Assistant OS**: Dependencies should install automatically
-- **Manual install**: The integration will attempt to install via `manifest.json` requirements
-- **Check**: Look for `Installing requirements` in logs
-
-### Ollama Connection Issues
-
-1. **Verify Ollama is running**:
-   ```bash
-   curl http://localhost:11434/api/tags
-   ```
-
-2. **Check firewall** if Ollama is on a different machine
-
-3. **Test connection** in the integration config flow - it will test before allowing you to proceed
-
-### Making Code Changes
-
-1. **Edit files** in your development directory
-2. **Restart Home Assistant** to reload changes
-3. **Check logs** for any new errors
-4. **Reload integration** if needed: Settings → Devices & Services → WhoLLM → Reload
-
-## Development Tips
-
-### Quick Restart Script
-
-Create a script to quickly restart HA during development:
-
-```bash
-#!/bin/bash
-# restart-ha.sh
-# Adjust path to your HA instance
-systemctl restart home-assistant
-# or
-docker restart homeassistant
-```
-
-### Watch Logs
-
-```bash
-# Follow Home Assistant logs
-tail -f /path/to/ha/config/home-assistant.log | grep whollm
-```
-
-### Test Configuration Flow
-
-1. Remove integration: Settings → Devices & Services → WhoLLM → Delete
-2. Restart HA
-3. Add integration again to test config flow changes
-
-## Next Steps
-
-- Check the [Home Assistant Developer Documentation](https://developers.home-assistant.io/docs/development_testing/) for testing guidelines
-- Review integration logs for any issues
-- Test with real sensors and Ollama
-- Consider adding unit tests (see testing documentation)
-
+| Problem | Try |
+|---|---|
+| Integration does not appear | Check the folder path, restart, hard-refresh the browser, read the log. |
+| `ModuleNotFoundError: aiohttp` | Home Assistant installs it from `manifest.json`. Check the log for *Installing requirements*. |
+| Cannot reach Ollama from Home Assistant | `curl http://<host>:11434/api/tags` from the Home Assistant host. See [Troubleshooting](troubleshooting.md). |

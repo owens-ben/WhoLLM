@@ -1,5 +1,11 @@
 # Machine Learning Enhancement Proposal for WhoLLM
 
+> **Status: proposal, not documentation of shipped features.** This is a design document. Parts of it exist in some
+> form (event logging, habit learning, an ML predictor module and training scripts; see
+> [Status & roadmap](status.md) and [ML & training data](ml-and-training-data.md)). Face recognition with CompreFace or
+> Double-Take, the image queue and the presence database described below are **not implemented**, and the code samples
+> are illustrative sketches.
+
 ## Executive Summary
 
 This document outlines strategies to enhance the WhoLLM system with machine learning capabilities that learn from user habits over time, process queued images for timeline building, and integrate with proven open-source face recognition systems.
