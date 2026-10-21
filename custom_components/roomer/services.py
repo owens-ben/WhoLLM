@@ -18,13 +18,32 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
-from .habits import get_habit_predictor
-from .history import get_history_tracker
+from .habits import HabitPredictor
+from .history import HistoryTracker
 
 if TYPE_CHECKING:
     from .coordinator import LLMPresenceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+HISTORY_TRACKER_KEY = "history_tracker"
+
+
+def get_habit_predictor(hass: HomeAssistant) -> HabitPredictor | None:
+    """Return the habit predictor shared with the coordinator, if one is set up."""
+    for value in hass.data.get(DOMAIN, {}).values():
+        predictor = getattr(value, "habit_predictor", None)
+        if isinstance(predictor, HabitPredictor):
+            return predictor
+    return None
+
+
+def get_history_tracker(hass: HomeAssistant) -> HistoryTracker:
+    """Return the history tracker stored in hass.data, creating it on first use."""
+    domain_data = hass.data.setdefault(DOMAIN, {})
+    if HISTORY_TRACKER_KEY not in domain_data:
+        domain_data[HISTORY_TRACKER_KEY] = HistoryTracker()
+    return domain_data[HISTORY_TRACKER_KEY]
 
 # Service names
 SERVICE_REFRESH = "refresh"
@@ -109,12 +128,15 @@ async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> N
     entity_name = entity_id.split(".")[-1].replace("_room", "").replace("_", " ").title()
     
     # Learn from the correction
-    predictor = get_habit_predictor()
-    predictor.learn_from_event(
-        entity_name=entity_name,
-        room=room,
-        confidence=confidence,
-    )
+    predictor = get_habit_predictor(hass)
+    if predictor:
+        predictor.learn_from_event(
+            entity_name=entity_name,
+            room=room,
+            confidence=confidence,
+        )
+    else:
+        _LOGGER.warning("No habit predictor available; correction not learned")
     
     # Update the state
     current_state = hass.states.get(entity_id)
@@ -138,7 +160,7 @@ async def async_handle_get_history(hass: HomeAssistant, call: ServiceCall) -> li
     entity_name = call.data.get("entity_name")
     limit = call.data.get("limit", 20)
     
-    tracker = get_history_tracker()
+    tracker = get_history_tracker(hass)
     history = tracker.get_recent_transitions(entity_name, limit=limit)
     
     _LOGGER.debug("Retrieved %d history entries for %s", len(history), entity_name)
@@ -153,7 +175,7 @@ async def async_handle_clear_history(hass: HomeAssistant, call: ServiceCall) -> 
     """
     entity_name = call.data.get("entity_name")
     
-    tracker = get_history_tracker()
+    tracker = get_history_tracker(hass)
     tracker.clear_history(entity_name)
     
     if entity_name:
@@ -169,7 +191,7 @@ async def async_handle_get_patterns(hass: HomeAssistant, call: ServiceCall) -> l
     """
     entity_name = call.data.get("entity_name")
     
-    tracker = get_history_tracker()
+    tracker = get_history_tracker(hass)
     patterns = tracker.detect_patterns(entity_name)
     
     _LOGGER.debug("Retrieved %d patterns for %s", len(patterns), entity_name)
