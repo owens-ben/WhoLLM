@@ -7,27 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-21
+
+The redesign release: a new look across the dashboard card, the standalone dashboard, the docs site and the README.
+
 ### Added
-- Test suite with pytest (52 tests covering habits, providers, coordinator)
-- CI workflow for running tests on Python 3.11 and 3.12
-- pyproject.toml for modern Python project configuration
-- Ruff linting configuration
-- Comprehensive README with badges, troubleshooting, and examples
+- New logo: a house of four rooms, with the occupied rooms lit and a person in each. Includes an SVG favicon.
+- Docs site theme with light and dark modes, Bricolage Grotesque headings and DM Sans text.
+- README banner that follows the reader's light or dark GitHub theme.
+- Dashboard card `theme` option (`auto`, `light` or `dark`). `auto` follows Home Assistant's dark mode.
 
 ### Changed
-- **BREAKING: Renamed the project from WhoLLM to Roomer.** The Home Assistant domain changed from `whollm` to `roomer` and the integration now lives in `custom_components/roomer`. Remove the old integration and `custom_components/whollm`, install Roomer, and re-add it; there is no automatic migration.
-- **BREAKING:** Services moved from `whollm.*` to `roomer.*`, and events were renamed to `roomer_room_changed`, `roomer_person_arrived`, `roomer_person_left`, `roomer_vision_identification` and `roomer_storage_cleanup`. Automations, blueprints and dashboards that reference the old names must be updated.
-- **BREAKING:** Entities are recreated under the new domain (new unique IDs), and storage files are now `roomer_history.json`, `roomer_learned_habits.json` and `roomer_events.jsonl`, so learned habits and history start fresh.
-- Docs now lead with the problem (who is in which room, from combined weak signals) rather than the LLM; an LLM provider is still required.
-- Removed emojis from indicator strings in provider code
+- New colour palette: a warm oat base with Denim as the main colour, olive-sage and marigold accents, and a neutral charcoal dark mode.
+- Dashboard card redesigned: a row per person with their room, the strongest clues, and a confidence chip in words and numbers ("Sure · 91%"). Avatars use the person's Home Assistant picture, or initials when there is none. People who are away are shown with a dashed outline.
+- Standalone dashboard restyled to match.
+
+## [0.2.0] - 2026-10-21
+
+### Added
+- Documentation site (MkDocs Material, deployed to GitHub Pages).
+- Services `roomer.refresh`, `roomer.correct_room`, `roomer.get_history`, `roomer.clear_history` and `roomer.get_patterns` are now registered.
+- `roomer_room_changed`, `roomer_person_arrived` and `roomer_person_left` events now fire.
+- Test suite with pytest and a CI workflow for Python 3.11–3.13.
+- `pyproject.toml` and Ruff linting configuration.
+
+### Changed
+- The project is now called Roomer (domain `roomer`).
+- Docs lead with the problem (who is in which room, from combined weak signals) rather than the LLM. An LLM provider is still required.
+- Removed emojis from indicator strings in provider code.
 
 ### Fixed
-- Home Assistant 2025.x compatibility: use direct import for `async_track_time_interval` instead of deprecated `hass.helpers.event` access
+- Learned habits and history are saved when Home Assistant stops, instead of being lost on restart.
+- `services.py` imported functions that no longer existed, so the module failed to load.
+- Home Assistant 2025.x compatibility: use direct import for `async_track_time_interval` instead of deprecated `hass.helpers.event` access.
 
 ## [0.1.0-alpha] - 2025-01-29
 
 ### Added
-- Initial release of WhoLLM integration
+- Initial release
 - LLM-based presence detection using Ollama
 - Multi-person and pet tracking
 - Configurable room-entity mappings via UI
@@ -53,9 +70,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `sensor.vision_last_identification` - Last vision identification result
 
 ### Services
-- `whollm.identify_person` - Trigger vision identification from a camera
-- `whollm.enable_tracking` / `whollm.disable_tracking` - Camera tracking control
-- `whollm.cleanup_storage` - Manual storage cleanup
+- `roomer.identify_person` - Trigger vision identification from a camera
+- `roomer.enable_tracking` / `roomer.disable_tracking` - Camera tracking control
+- `roomer.cleanup_storage` - Manual storage cleanup
 
-[Unreleased]: https://github.com/owens-ben/WhoLLM/compare/v0.1.0-alpha...HEAD
-[0.1.0-alpha]: https://github.com/owens-ben/WhoLLM/releases/tag/v0.1.0-alpha
+[Unreleased]: https://github.com/owens-ben/roomer/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/owens-ben/roomer/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/owens-ben/roomer/compare/v0.1.0...v0.2.0
+[0.1.0-alpha]: https://github.com/owens-ben/roomer/releases/tag/v0.1.0

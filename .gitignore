@@ -92,3 +92,4 @@ custom_components/llm_presence/models/
 !models/.gitkeep
 
 site/
+.claude/worktrees/

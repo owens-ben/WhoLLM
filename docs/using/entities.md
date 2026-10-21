@@ -147,7 +147,3 @@ Copy these into **Developer Tools → Template** to try them out:
    | selectattr('state', 'eq', 'on')
    | map(attribute='name') | list }}
 ```
-
-## Upgraded from WhoLLM?
-
-If your entities now end in `_2` (for example `sensor.alice_room_2`), the old WhoLLM entities are still holding the original IDs. See [Troubleshooting](troubleshooting.md) and [Migrating from WhoLLM](../migrating.md).

@@ -1,4 +1,10 @@
-# Roomer
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/owens-ben/roomer/main/docs/assets/banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/owens-ben/roomer/main/docs/assets/banner-light.svg">
+    <img src="https://raw.githubusercontent.com/owens-ben/roomer/main/docs/assets/banner-light.svg" alt="Roomer — know who's in which room" width="100%">
+  </picture>
+</h1>
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/v/release/owens-ben/Roomer?include_prereleases)](https://github.com/owens-ben/Roomer/releases)
@@ -9,8 +15,6 @@
 **A Home Assistant integration that works out *who* is in which room — not just whether a room is occupied — by combining the weak signals your home already has.**
 
 > **Status: Alpha** — Running, but expect rough edges.
-
-> **Formerly WhoLLM.** The rename to Roomer (domain `roomer`) is breaking — see [Migrating from WhoLLM](https://owens-ben.github.io/roomer/migrating/).
 
 ## 📖 [Read the documentation →](https://owens-ben.github.io/roomer/)
 

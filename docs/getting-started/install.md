@@ -61,7 +61,5 @@ is named exactly `roomer`.
 !!! example "Screenshot needed: add-integration-search.png"
     The "Add integration" search dialog with "Roomer" typed in and the Roomer result shown.
 
-!!! info "Upgrading from WhoLLM?"
-    Remove WhoLLM first. See [Migrating from WhoLLM](../migrating.md).
 
 Next: [First setup](first-setup.md).
