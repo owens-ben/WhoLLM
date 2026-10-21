@@ -14,7 +14,7 @@ DATA_DIR="$PROJECT_DIR/data"
 # Home Assistant config path - pass as argument or set to your HA config directory
 HA_CONFIG="${1:-/config}"
 
-echo "=== LLM Presence Training Data Sync ==="
+echo "=== Roomer Training Data Sync ==="
 echo "Date: $(date)"
 echo ""
 
@@ -23,13 +23,13 @@ mkdir -p "$DATA_DIR/raw" "$DATA_DIR/ml_ready"
 
 # Copy events file from Home Assistant
 echo "1. Copying events from Home Assistant..."
-if [ -f "$HA_CONFIG/llm_presence_events.jsonl" ]; then
-    sudo cp "$HA_CONFIG/llm_presence_events.jsonl" "$DATA_DIR/ha_events.jsonl"
+if [ -f "$HA_CONFIG/roomer_events.jsonl" ]; then
+    sudo cp "$HA_CONFIG/roomer_events.jsonl" "$DATA_DIR/ha_events.jsonl"
     sudo chown $USER:$USER "$DATA_DIR/ha_events.jsonl"
     EVENT_COUNT=$(wc -l < "$DATA_DIR/ha_events.jsonl")
     echo "   Copied $EVENT_COUNT events"
 else
-    echo "   WARNING: No events file found at $HA_CONFIG/llm_presence_events.jsonl"
+    echo "   WARNING: No events file found at $HA_CONFIG/roomer_events.jsonl"
     exit 1
 fi
 

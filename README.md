@@ -5,9 +5,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
 
-**A Home Assistant integration that uses local LLMs to determine *who* is in which room.**
+**A Home Assistant integration that works out *who* is in which room — not just whether a room is occupied — by combining the weak signals your home already has.**
 
 > **Status: Alpha** — Running, but expect rough edges.
+
+> **Formerly WhoLLM.** This project was renamed from WhoLLM (domain `whollm`) to Roomer (domain `roomer`). The rename is **breaking** — see [Migrating from WhoLLM](#migrating-from-whollm).
 
 ---
 
@@ -23,7 +25,7 @@ Without person-level tracking, you can't:
 
 ## The Solution
 
-Roomer uses a local LLM to reason across multiple weak signals—the same way humans do:
+Roomer combines multiple weak signals—device trackers, PCs, motion, media, learned habits—the same way a person would. Today the reasoning step is done by an LLM (local via Ollama by default), with heuristic and habit-based fallbacks:
 
 ```
 Motion in office
@@ -76,6 +78,22 @@ No single sensor is definitive. Together, they're enough for a good guess.
 2. Copy it to your Home Assistant `config/custom_components/` directory
 3. Restart Home Assistant
 4. Add the integration via Settings → Devices & Services
+
+### Migrating from WhoLLM
+
+Roomer is the same integration under a new name, but the Home Assistant domain changed from `whollm` to `roomer`, so HA treats it as a new integration. There is no automatic migration.
+
+1. **Remove the old integration** — Settings → Devices & Services → WhoLLM → Delete. Do this first so the old entities are removed and their entity IDs are freed for Roomer to reuse.
+2. **Delete** `config/custom_components/whollm` (and remove the old custom repository from HACS if you used it).
+3. **Install** `custom_components/roomer` (via HACS or manually, as above) and restart Home Assistant.
+4. **Re-add** the integration via Settings → Devices & Services → Add Integration → Roomer, and redo your room/person mappings.
+5. **Update anything that references the old names:**
+   - **Services:** `whollm.*` → `roomer.*` (e.g. `whollm.identify_person` → `roomer.identify_person`)
+   - **Events:** `whollm_room_changed`, `whollm_person_arrived`, `whollm_person_left` → `roomer_room_changed`, `roomer_person_arrived`, `roomer_person_left`
+   - **Entities:** entity IDs are still based on the names you configure (`sensor.{name}_room`, `binary_sensor.{name}_in_{room}`), but they are new entities under the `roomer` platform with new unique IDs. If an old entity was not removed, the new one gets a `_2` suffix — delete the stale entity and rename the new one.
+   - **Logging config:** `custom_components.whollm` → `custom_components.roomer`
+   - Automations, scripts, blueprints and dashboards that use any of the above.
+6. **Learned data starts fresh.** History, learned habits and the event log are now stored as `roomer_history.json`, `roomer_learned_habits.json` and `roomer_events.jsonl`; the old `whollm_*` files are not read and can be deleted.
 
 ---
 
