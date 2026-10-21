@@ -5,6 +5,7 @@ Roomer's entities work like any other Home Assistant sensor, so you can use them
 !!! tip "Which entity should I trigger on?"
     - **"Alice walks into the office"** → `binary_sensor.alice_in_office` turning `on`.
     - **"Alice moved rooms"** or **"Alice left / got home"** → a state change of `sensor.alice_room`.
+    - **"Anyone moved rooms / got home / left"** → the [`roomer_room_changed`, `roomer_person_arrived` and `roomer_person_left` events](services-events.md#arrival-departure-and-room-change-events).
 
     See [Entities](entities.md) for the full list.
 
@@ -101,8 +102,26 @@ action:
 
 For "Alice left", use `to: "away"` instead and change the message.
 
-!!! warning "Not yet available: `roomer_person_arrived` and related events"
-    Roomer defines `roomer_person_arrived`, `roomer_person_left` and `roomer_room_changed` events, but the current version **does not fire them**, so automations that trigger on them never run. Use the room sensor's state, as above, until that is fixed. The planned event fields are listed on [Services & events](services-events.md).
+### Using the arrival event instead
+
+Roomer also fires `roomer_person_arrived` when someone goes from `away` to a room, and `roomer_person_left` when they go the other way. One automation can then cover everyone:
+
+```yaml
+alias: "Someone is home"
+mode: queued
+trigger:
+  - platform: event
+    event_type: roomer_person_arrived
+action:
+  - service: notify.mobile_app_your_phone   # change to your notify service
+    data:
+      title: "Welcome home"
+      message: >
+        {{ trigger.event.data.entity_name }} just got home and is in the
+        {{ trigger.event.data.room | replace('_', ' ') }}.
+```
+
+To limit it to one person, add `event_data: {entity_name: Alice}` under the trigger. The events don't fire at startup, and an event trigger can't use `for:`. See [Services & events](services-events.md#arrival-departure-and-room-change-events) for the details and the fields each event carries.
 
 ## Example 3: "you've been at your desk too long"
 
@@ -175,7 +194,6 @@ A blueprint is a ready-made automation where you only fill in a form. Roomer shi
 | **Roomer - Goodbye Routine** | After a delay, turns off lights, locks doors, sets the thermostat and arms the alarm when someone leaves | `roomer_person_left` event |
 
 !!! warning "Known issues with the bundled blueprints"
-    - **Welcome Home Lights** and **Goodbye Routine** trigger on `roomer_person_arrived` / `roomer_person_left`. Roomer doesn't fire those events yet, so these two blueprints currently never run.
     - The blueprints use their inputs (such as `min_confidence` or `target_room`) inside templates without declaring them as `variables`. Home Assistant doesn't make inputs available to templates that way, so the template conditions may fail or always evaluate false.
     - **Follow Me Music** defaults to a minimum confidence of `0.6`, which many correct Roomer answers don't reach. Lower it to around `0.4`.
 

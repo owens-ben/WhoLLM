@@ -86,10 +86,10 @@ So a correct answer usually sits between 0.3 and 0.6. Keep that in mind before a
 
 !!! info "For the curious"
     - The combiner is meant to add a +0.1 bonus when several strong signals agree. As written, that bonus effectively never applies in the current version.
-    - Habits are learned only from decisions with confidence of 0.7 or more, in two-hour time-of-day slots. In the current version they are kept in memory and start over when Home Assistant restarts.
+    - Habits are learned only from decisions with confidence of 0.7 or more, in two-hour time-of-day slots. They are saved to `/config/roomer_learned_habits.json` and kept across restarts.
     - The code is in `custom_components/roomer/habits.py` (`ConfidenceCombiner`). See [Architecture](../contributing/architecture.md).
 
-You can change the weights under **Settings → Devices & services → Roomer → Configure → Confidence Weights**. Each is a percentage, so 85% means 0.85. Reload the integration afterwards (**⋮ → Reload** on the Roomer entry) for the change to take effect, and see the warning about saving options in [Troubleshooting](troubleshooting.md).
+You can change the weights under **Settings → Devices & services → Roomer → Configure → Confidence Weights**. Each is a percentage, so 85% means 0.85. Roomer reloads itself when you save, so the change takes effect straight away. See the warning about saving options in [Troubleshooting](troubleshooting.md).
 
 ## Tips to improve accuracy
 

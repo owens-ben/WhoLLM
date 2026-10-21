@@ -2,26 +2,139 @@
 
 This page lists every service (called an "action" in newer Home Assistant versions) that Roomer registers, and every event it fires.
 
-You can try any of these from **Developer Tools → Actions** (called **Services** in older versions). Switch to **YAML mode** and paste an example.
+You can try any of these from **Developer Tools → Actions** (called **Services** in older versions). Each one has a form, or you can switch to **YAML mode** and paste an example.
 
 ## Services
 
 | Service | What it does |
 |---|---|
+| [`roomer.refresh`](#roomerrefresh) | Runs presence detection right away instead of waiting for the next update |
+| [`roomer.correct_room`](#roomercorrect_room) | Tells Roomer where someone really is, so it can learn from it |
+| [`roomer.get_history`](#roomerget_history) | Returns someone's recent room changes |
+| [`roomer.clear_history`](#roomerclear_history) | Deletes room-change history for one person or everyone |
+| [`roomer.get_patterns`](#roomerget_patterns) | Returns routines Roomer has spotted in someone's history |
 | [`roomer.identify_person`](#roomeridentify_person) | Takes a camera snapshot and asks a vision model who is in it |
 | [`roomer.enable_tracking`](#roomerenable_tracking-roomerdisable_tracking) | Turns on a PTZ camera's auto-tracking switch |
 | [`roomer.disable_tracking`](#roomerenable_tracking-roomerdisable_tracking) | Turns off a PTZ camera's auto-tracking switch |
 | [`roomer.cleanup_storage`](#roomercleanup_storage) | Trims Roomer's event log file |
 
-!!! note "Results come back as events"
-    None of these services return response data to the caller. `identify_person` and `cleanup_storage` report their results by firing an event, listed under [Events](#events).
+!!! note "Getting results back"
+    `get_history` and `get_patterns` **only** return data, so you must call them with a `response_variable` in a script or automation (in Developer Tools the response is shown below the form). `identify_person` and `cleanup_storage` can return data too, and they also fire an event with the same result, listed under [Events](#events). The other services return nothing.
 
-!!! info "Only some services have a form in the UI"
-    Only `roomer.cleanup_storage` has field descriptions in the UI. The other three still work, but Developer Tools shows them without a form, so use YAML mode.
+### `roomer.refresh`
+
+Runs a presence update now. Useful right after something happens that Roomer should notice quickly, such as a door opening.
+
+| Field | Required | Type | Description |
+|---|---|---|---|
+| `entity_id` | no | entity ID | Accepted for future use. In the current version every person and pet is refreshed, whatever you pass. |
+
+```yaml
+service: roomer.refresh
+```
+
+### `roomer.correct_room`
+
+Sets a person's room sensor to the room you give and teaches Roomer's [habit learning](../getting-started/how-it-works.md#5-learn-habits) that this person is in that room at this time of day.
+
+| Field | Required | Type | Default | Description |
+|---|---|---|---|---|
+| `entity_id` | yes | entity ID | | The person's room sensor, such as `sensor.alice_room` |
+| `room` | yes | text | | The correct room, such as `office` |
+| `confidence` | no | number 0.0–1.0 | `1.0` | How sure you are. Habits are only learned from values of 0.7 or more. |
+
+```yaml
+service: roomer.correct_room
+data:
+  entity_id: sensor.alice_room
+  room: office
+```
+
+Things to know:
+
+- **The sensor shows your room only until the next update.** At the next regular update (every 10 seconds by default), Roomer recalculates. The lasting effect is the learned habit, which nudges future guesses at the same time of day.
+- **The person's name comes from the entity ID.** `sensor.alice_room` becomes `Alice` and `sensor.mary_jane_room` becomes `Mary Jane`. Habits are stored under that name, so the correction only counts if your configured name has the same capitalisation (for example `Alice`, not `alice`).
+- The habit is saved to disk straight away.
+
+### `roomer.get_history`
+
+Returns the most recent room changes Roomer has seen for a person.
+
+| Field | Required | Type | Default | Description |
+|---|---|---|---|---|
+| `entity_name` | yes | text | | The person's configured name, such as `Alice` |
+| `limit` | no | integer 1–100 | `20` | How many changes to return, newest last |
+
+```yaml
+service: roomer.get_history
+data:
+  entity_name: Alice
+  limit: 5
+response_variable: history
+```
+
+The response looks like this:
+
+```yaml
+transitions:
+  - entity_name: Alice
+    from_room: bedroom
+    to_room: kitchen
+    timestamp: "2026-10-21T07:42:10.512345"
+    confidence: 0.62
+```
+
+How history is recorded:
+
+- A change is recorded every time Roomer moves someone to a different room, including to and from `away`.
+- Results of `unknown` are skipped, and so is the first room after Home Assistant starts, since there is nothing to compare it with.
+- History is kept in `/config/roomer_history.json`: up to 1000 changes in total and the last 100 per person. It is saved every 10 changes, when Roomer is reloaded and when Home Assistant stops.
+
+### `roomer.clear_history`
+
+Deletes recorded room changes. The file on disk is updated straight away.
+
+| Field | Required | Type | Description |
+|---|---|---|---|
+| `entity_name` | no | text | Only clear this person's history. Leave it out to clear everyone's. |
+
+```yaml
+service: roomer.clear_history
+data:
+  entity_name: Alice
+```
+
+This does not touch learned habits or the event log.
+
+### `roomer.get_patterns`
+
+Looks through a person's [history](#roomerget_history) for simple routines: where they usually go in the morning (06:00–10:59) and in the evening (18:00–22:59).
+
+| Field | Required | Type | Description |
+|---|---|---|---|
+| `entity_name` | yes | text | The person's configured name |
+
+```yaml
+service: roomer.get_patterns
+data:
+  entity_name: Alice
+response_variable: patterns
+```
+
+The response looks like this:
+
+```yaml
+patterns:
+  - type: morning_routine
+    description: Usually in kitchen in the morning
+    confidence: 0.6
+```
+
+`patterns` is empty until there are at least 10 recorded changes for the person, and each routine needs at least 3 changes in its time window. `confidence` is the share of those changes that went to the named room.
 
 ### `roomer.identify_person`
 
-Grabs a snapshot from a camera and sends it to a vision model on your Ollama server, together with the names of the people (or pets) you configured, and asks who it is. The answer appears on [`sensor.vision_last_identification`](entities.md) and in the [`roomer_vision_identification`](#roomer_vision_identification) event.
+Grabs a snapshot from a camera and sends it to a vision model on your Ollama server, together with the names of the people (or pets) you configured, and asks who it is. The answer appears on [`sensor.vision_last_identification`](entities.md), in the [`roomer_vision_identification`](#roomer_vision_identification) event, and in the service response if you ask for one.
 
 | Field | Required | Type | Default | Description |
 |---|---|---|---|---|
@@ -33,7 +146,10 @@ service: roomer.identify_person
 data:
   camera_entity_id: camera.living_room
   detection_type: person
+response_variable: seen   # optional
 ```
+
+The response has the same fields as the [event](#roomer_vision_identification), except `camera` and `detection_type`.
 
 How it works:
 
@@ -75,9 +191,9 @@ data:
 ```
 
 !!! note
-    The values you pass here stay in effect for the automatic daily cleanup too, until Home Assistant restarts.
+    The values you pass here stay in effect for the automatic daily cleanup too, until Roomer is reloaded or Home Assistant restarts.
 
-When it finishes, it fires [`roomer_storage_cleanup`](#roomer_storage_cleanup).
+When it finishes, it fires [`roomer_storage_cleanup`](#roomer_storage_cleanup). If you ask for a response, you get the same fields plus `success: true`.
 
 ## Events
 
@@ -85,9 +201,68 @@ You can watch any of these live in **Developer Tools → Events**: type the even
 
 | Event | Fired when |
 |---|---|
+| [`roomer_person_arrived`](#roomer_person_arrived) | Someone goes from `away` to a room in the house |
+| [`roomer_person_left`](#roomer_person_left) | Someone goes from a room in the house to `away` |
+| [`roomer_room_changed`](#roomer_room_changed) | Someone moves from one room in the house to another |
 | [`roomer_vision_identification`](#roomer_vision_identification) | `roomer.identify_person` finishes, whether it succeeded or failed |
 | [`roomer_storage_cleanup`](#roomer_storage_cleanup) | `roomer.cleanup_storage` finishes |
-| [`roomer_person_arrived`, `roomer_person_left`, `roomer_room_changed`](#arrival-departure-and-room-change-events-not-fired-yet) | Not fired yet. See below. |
+
+### Arrival, departure and room-change events
+
+Roomer fires these when a person's or pet's room changes from one update to the next. They follow the same answers as `sensor.<name>_room`, so they are a convenient way to react to anyone without listing every sensor.
+
+- **Nothing fires when Home Assistant starts or Roomer reloads.** The first answer after that only sets a starting point. If Alice is already in the kitchen at startup, you don't get an "arrived" event.
+- **`unknown` is ignored.** If Roomer can't decide for one update, it keeps the last known room, so a hiccup doesn't count as leaving and coming back.
+- **Arrival and departure need `away`.** A person is only `away` when every device tracker assigned to them says they aren't home (see [Entities](entities.md)). Without a device tracker, you only get `roomer_room_changed`.
+- **They fire on every change, including brief ones.** An event trigger has no `for:` option. If you need a room to hold for a while before acting, trigger on the room sensor with `for:` instead (see [Automations](automations.md#before-you-start-avoid-flicker)).
+
+`timestamp` is an ISO-format local time string, and `confidence` is a number from 0.0 to 1.0.
+
+#### `roomer_person_arrived`
+
+| Field | Type | Description |
+|---|---|---|
+| `entity_name` | text | The configured name, such as `Alice` |
+| `room` | text | The room they arrived in |
+| `confidence` | number | Roomer's confidence in that room |
+| `timestamp` | text | When it happened |
+
+#### `roomer_person_left`
+
+| Field | Type | Description |
+|---|---|---|
+| `entity_name` | text | The configured name |
+| `last_room` | text | The room they were in before leaving |
+| `timestamp` | text | When it happened |
+
+#### `roomer_room_changed`
+
+| Field | Type | Description |
+|---|---|---|
+| `entity_name` | text | The configured name |
+| `from_room` | text | The previous room |
+| `to_room` | text | The new room |
+| `confidence` | number | Roomer's confidence in the new room |
+| `timestamp` | text | When it happened |
+
+Example: log every room change to the logbook.
+
+```yaml
+alias: "Log Roomer room changes"
+mode: queued
+trigger:
+  - platform: event
+    event_type: roomer_room_changed
+action:
+  - service: logbook.log
+    data:
+      name: "{{ trigger.event.data.entity_name }}"
+      message: >
+        moved from {{ trigger.event.data.from_room }}
+        to {{ trigger.event.data.to_room }}
+```
+
+To react to one person only, add `event_data: {entity_name: Alice}` under the trigger.
 
 ### `roomer_vision_identification`
 
@@ -131,44 +306,6 @@ action:
 | `total_kept` | integer | Entries left in the file |
 | `final_size_mb` | number | File size after cleanup, in MB |
 
-### Arrival, departure and room-change events (not fired yet)
-
-!!! warning "Not yet available"
-    These events are not fired in the current version.
-
-    The code defines the three events below, and older documentation and two of the bundled blueprints use them, but the part of Roomer that fires them is not connected yet. Automations that trigger on them **will not run**.
-
-    Until then, trigger on the room sensor instead:
-
-    - **Arrived home:** `sensor.<name>_room` changes `from: "away"`
-    - **Left home:** `sensor.<name>_room` changes `to: "away"`
-    - **Changed room:** any state change of `sensor.<name>_room`, or a `binary_sensor.<name>_in_<room>` turning `on`
-
-    [Automations](automations.md) has working examples.
-
-For reference, these are the fields the events are designed to carry:
-
-| Event | Fields |
-|---|---|
-| `roomer_person_arrived` | `entity_name` (the person's configured name, such as `Alice`), `room`, `confidence`, `timestamp` |
-| `roomer_person_left` | `entity_name`, `last_room`, `timestamp` |
-| `roomer_room_changed` | `entity_name`, `from_room`, `to_room`, `confidence`, `timestamp` |
-
-`timestamp` is an ISO-format local time string, and `confidence` is a number from 0.0 to 1.0.
-
 ## Services you may see mentioned elsewhere
 
-!!! warning "Not yet available"
-    The services named below are not registered, so you can't use them.
-
-Older documentation, and the service descriptions bundled with the integration, mention `roomer.refresh`, `roomer.correct_room`, `roomer.get_history`, `roomer.clear_history`, `roomer.get_patterns` and `roomer.request_vision_update`. **None of these are registered** in the current version, so calling them fails with a "service not found" error.
-
-To force an update, use Home Assistant's built-in `homeassistant.update_entity` action on one of Roomer's entities:
-
-```yaml
-service: homeassistant.update_entity
-target:
-  entity_id: sensor.alice_room
-```
-
-This refreshes all of Roomer's people and pets, not just the one you name.
+Older documentation mentions `roomer.request_vision_update`. It isn't registered, so calling it fails with a "service not found" error. Use [`roomer.identify_person`](#roomeridentify_person) instead.

@@ -61,12 +61,10 @@ Rename any event triggers in your automations:
 | `whollm_storage_cleanup` | `roomer_storage_cleanup` |
 
 !!! info
-    In the current release, `roomer_room_changed`, `roomer_person_arrived` and
-    `roomer_person_left` are defined but not fired yet. Until they are, trigger
-    automations on changes to `sensor.<name>_room` or
-    `binary_sensor.<name>_in_<room>` instead. See
-    [Services & events](using/services-events.md) and
-    [Automations](using/automations.md).
+    `roomer_room_changed`, `roomer_person_arrived` and `roomer_person_left` are
+    fired whenever someone's room changes. See
+    [Services & events](using/services-events.md#arrival-departure-and-room-change-events)
+    for when they fire and what data they carry.
 
 ### Entities
 

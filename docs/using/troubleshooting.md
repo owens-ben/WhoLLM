@@ -80,7 +80,7 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
 
     1. Open the room sensor's **History** and compare it with the `indicators` at each change.
     2. Remove or re-map sensors that are misleading. A hallway sensor mapped to the living room is a classic culprit.
-    3. Lower the weight of noisy signal types (often `light`) under **Configure → Confidence Weights**, then reload the integration.
+    3. Lower the weight of noisy signal types (often `light`) under **Configure → Confidence Weights**, and save. Roomer reloads itself with the new weights.
     4. Give the person a personal signal, such as their own PC or room-level phone presence, assigned under **Person Device Ownership**.
     5. In automations, add a `for:` delay to triggers so short flips are ignored. See [Automations](automations.md).
 
@@ -124,7 +124,7 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
     Each update asks the AI once per person and per pet, one after another. Each request may take up to the **LLM Request Timeout** (default **30 seconds**, adjustable from 5 to 120), and a failed request is retried once after a 2-second pause. With three people and a struggling server, one update can take minutes.
 
     1. Check the timing in the debug logs (`Finished fetching roomer data in … seconds`).
-    2. Raise the timeout if the model is slow but working: **Configure → General Settings → LLM Request Timeout**. Then reload the integration.
+    2. Raise the timeout if the model is slow but working: **Configure → General Settings → LLM Request Timeout**. Roomer reloads itself when you save.
     3. Raise the **Poll Interval** (default 10 seconds) so updates don't pile up, for example to 30–60 seconds.
     4. Use a smaller, faster model (the default is `llama3.2`), or run Ollama on a machine with a GPU.
     5. The first request after Ollama has unloaded a model is much slower because the model has to load. Keeping it loaded (Ollama's `OLLAMA_KEEP_ALIVE` setting) helps.
@@ -163,12 +163,12 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
 
     **Likely causes**
 
-    - Roomer doesn't reload by itself when you change its options. Changes apply after a reload.
+    - Roomer reloads itself when you save options. If a change still doesn't show, check the Home Assistant log for Roomer errors during the reload.
     - In the current version, each **Configure** page (General Settings, Room Entity Mapping, Person Device Ownership, Confidence Weights) saves **only its own settings** and discards what the other pages saved earlier. The forms also start from your original setup values, not from your last saved values.
 
     **What to do**
 
-    1. After saving, go to **Settings → Devices & services → Roomer**, open the **⋮** menu and choose **Reload**.
+    1. Check that the Roomer entry shows as loaded under **Settings → Devices & services → Roomer** after saving.
     2. If you need to change settings on more than one page, be aware that the last page you save is the one that takes effect. Check each page's values before saving.
 
 ??? question "The dashboard card says \"Custom element doesn't exist: roomer-card\""
@@ -179,13 +179,21 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
 
     See [Dashboard card](dashboard-card.md).
 
-??? question "Calling `roomer.refresh` or `roomer.correct_room` fails with \"service not found\""
+??? question "Calling a Roomer service fails with \"service not found\""
 
-    Those services are mentioned in older docs but aren't registered in the current version. See [Services & events](services-events.md) for what's available. To force an update, call `homeassistant.update_entity` on any Roomer entity.
+    - Check that the Roomer integration is loaded under **Settings → Devices & services**. Services are registered when Roomer starts.
+    - `roomer.request_vision_update` appears in older docs but doesn't exist. Use `roomer.identify_person`.
+    - `roomer.get_history` and `roomer.get_patterns` only return data. In a script or automation they need a `response_variable`, or Home Assistant rejects the call.
+
+    See [Services & events](services-events.md) for every service and its fields.
 
 ??? question "My `roomer_person_arrived` automation never runs"
 
-    Roomer doesn't fire the arrival, departure or room-change events yet. Trigger on the room sensor's state instead, for example `sensor.alice_room` changing `from: "away"`. See [Automations](automations.md).
+    - `roomer_person_arrived` and `roomer_person_left` need the person to be `away` first, which only happens when they have a device tracker assigned under **Configure → Person Device Ownership**. Check that `sensor.<name>_room` actually shows `away` when they're out.
+    - Nothing fires at startup. If the person was already home when Home Assistant started, there is no arrival until they leave and come back.
+    - Watch **Developer Tools → Events** for `roomer_person_arrived` to see whether it fires and what `entity_name` it carries. If your trigger filters on `event_data`, the name must match exactly, including capitals.
+
+    See [Services & events](services-events.md#arrival-departure-and-room-change-events).
 
 ## Still stuck?
 

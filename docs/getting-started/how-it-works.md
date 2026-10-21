@@ -119,9 +119,10 @@ remembers it for that person in a two-hour time slot (for example, *Alice, 14:00
 to 16:00, office*). Next time it's unsure at that time of day, the habit nudges
 the guess. Roomer starts with no habits and builds them up as it runs.
 
-!!! info "Habits reset on restart"
-    In the current release, learned habits are kept in memory only. They start
-    over each time Home Assistant restarts or Roomer is reloaded.
+Habits are saved to `/config/roomer_learned_habits.json` every 15 minutes
+while they change, when Roomer is reloaded and when Home Assistant stops, so they
+carry over restarts. You can also teach Roomer directly with the
+[`roomer.correct_room`](../using/services-events.md#roomercorrect_room) service.
 
 ## What this means for you
 
