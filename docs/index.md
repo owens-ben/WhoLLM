@@ -1,6 +1,9 @@
-# Roomer
+![Roomer logo: a house of four rooms, two lit with a person in each](assets/logo.svg){ width="96" .roomer-hero-logo }
+
+# Roomer { .roomer-hero }
 
 **Know *who* is in which room, not just that a room is occupied.**
+{ .roomer-lead }
 
 Most smart homes can tell you that someone is in the office. Roomer is a
 [Home Assistant](https://www.home-assistant.io/) integration that tries to tell
@@ -56,8 +59,5 @@ for a good guess.
 !!! info "Alpha software"
     Roomer is in alpha. It works, but expect rough edges, and check
     [Accuracy & limits](using/accuracy.md) to see what it can and can't do.
-
-Roomer was previously called **WhoLLM**. If you're upgrading, read
-[Migrating from WhoLLM](migrating.md).
 
 [Get started](getting-started/how-it-works.md){ .md-button .md-button--primary }

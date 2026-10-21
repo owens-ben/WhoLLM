@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="Roomer — know who's in which room">
+  <title>Roomer — know who's in which room</title>
+  <rect x="0.5" y="0.5" width="1199" height="299" rx="24" fill="#FBF6EC" stroke="#E7DCC5"/>
+  <g transform="translate(96 62) scale(2)">
+    <rect width="88" height="88" rx="22" fill="#3E5C82"/>
+    <path d="M14 38 L44 15 L74 38" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="22" y="40" width="20" height="15" rx="3" fill="#E8B23A"/>
+    <rect x="46" y="40" width="20" height="15" rx="3" fill="#FFFFFF" opacity="0.18"/>
+    <rect x="22" y="58" width="20" height="15" rx="3" fill="#FFFFFF" opacity="0.18"/>
+    <rect x="46" y="58" width="20" height="15" rx="3" fill="#FFFFFF"/>
+    <circle cx="32" cy="45" r="2.7" fill="#3E5C82"/>
+    <path d="M27.3 55 a4.7 4.2 0 0 1 9.4 0 Z" fill="#3E5C82"/>
+    <circle cx="56" cy="63" r="2.7" fill="#3E5C82"/>
+    <path d="M51.3 73 a4.7 4.2 0 0 1 9.4 0 Z" fill="#3E5C82"/>
+  </g>
+  <text x="324" y="160" font-family="Bricolage Grotesque, DM Sans, sans-serif" font-weight="600" font-size="104" letter-spacing="-2" fill="#2A2419">Roomer</text>
+  <text x="328" y="214" font-family="DM Sans, Bricolage Grotesque, sans-serif" font-weight="500" font-size="36" fill="#6B6150">Know who’s in which room.</text>
+</svg>

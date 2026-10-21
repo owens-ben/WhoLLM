@@ -1,9 +1,9 @@
 # Dashboard card
 
-Roomer comes with a small Lovelace card, `custom:roomer-card`, that shows each person's room with an icon, a confidence bar and the top signals. There is also a ready-made full dashboard if you want more.
+Roomer comes with a small Lovelace card, `custom:roomer-card`, titled "Who's where". It shows each person's room, how sure Roomer is, and the top signals behind the guess. There is also a ready-made full dashboard if you want more.
 
 !!! example "Screenshot needed: card-example.png"
-    The Roomer card on a dashboard with two people: one in `office` (high-confidence green bar, chips such as "computer: alice_pc") and one `away` (dimmed row).
+    The Roomer card on a dashboard with two people: one in `office` (a "Sure · 91%" chip and a line such as "computer: alice_pc") and one `away` (dashed outline, no chip).
 
 ## Install the card
 
@@ -44,7 +44,7 @@ lovelace:
 !!! tip "Updating the card"
     Browsers cache this file aggressively. After copying in a new version, change the resource URL to `/local/roomer-card.js?v=2` (and bump the number each time) so every device picks up the change.
 
-To check it loaded, open your browser's developer console. You should see a blue **Roomer Card v1.0.0** banner.
+To check it loaded, open your browser's developer console. You should see a blue **Roomer Card v0.3.0** banner.
 
 ## Add the card to a dashboard
 
@@ -52,8 +52,7 @@ To check it loaded, open your browser's developer console. You should see a blue
 2. Click **Add card**, search for **Roomer Presence Card**, and pick it.
 3. Switch to the **code editor** and paste the configuration below, changing the entity IDs to yours.
 
-!!! warning "Use the code editor"
-    The card's visual editor is not reliable in the current version, and it can only pick a single entity. Paste the YAML into the code editor instead.
+The visual editor lets you set the title, pick any number of room sensors, choose the theme and turn confidence and indicators on or off. Per-person overrides (`person:` and `name:`, below) are only available in the code editor, and the visual editor keeps them when you change other settings.
 
 ```yaml
 type: custom:roomer-card
@@ -64,6 +63,17 @@ entities:
   - sensor.fido_room
 show_confidence: true
 show_indicators: true
+theme: auto
+```
+
+Each entry can also be an object, if the person entity doesn't follow the sensor's name or you want a different display name:
+
+```yaml
+entities:
+  - sensor.alice_room
+  - entity: sensor.fido_room
+    person: person.fido_the_dog
+    name: Fido
 ```
 
 ### Options
@@ -71,23 +81,26 @@ show_indicators: true
 | Option | Required | Default | Description |
 |---|---|---|---|
 | `type` | yes | | Must be `custom:roomer-card` |
-| `entities` | yes | | A list of Roomer room sensors (`sensor.<name>_room`). Write each one as a plain entity ID; the card doesn't accept `- entity: ...` objects. The card shows an error if this is missing. |
-| `title` | no | `Room Presence` | The card header |
-| `show_confidence` | no | `true` | Shows a bar with the `confidence` attribute as a percentage. Green from 70%, orange from 40%, red below that. |
-| `show_indicators` | no | `true` | Shows up to three of the `indicators` as small chips under each person |
+| `entities` | yes | | A list of Roomer room sensors (`sensor.<name>_room`). Each entry is a plain entity ID, or an object with `entity` (required), `person` (a `person.` entity to take the picture and name from) and `name` (display name). The card shows an error if this is missing. |
+| `title` | no | `Who's where` | The card header |
+| `show_confidence` | no | `true` | Shows a chip with the `confidence` attribute in words and as a percentage: **Sure** from 80%, **Pretty sure** from 50%, **Guessing** below that. Hidden for people who are away. |
+| `show_indicators` | no | `true` | Shows up to two of the `indicators` on a small line under the room |
+| `theme` | no | `auto` | `auto` follows Home Assistant's light or dark mode; `light` or `dark` forces one |
 
-Those are all the options; the card has no settings for colours, icons or layout.
+Those are all the options; the card's colours, fonts and layout are fixed.
 
 ### What the card shows
 
-- **Name** comes from the entity's friendly name, for example "Alice Room".
-- **Room** is the sensor's state, with the underscore turned into a space.
-- **Icon** depends on the room: 💻 office, 🛋️ living_room, 🛏️ bedroom, 🍳 kitchen, 🚿 bathroom, 🚪 entry, 🚗 garage, 🚶 away, ❓ unknown, and 📍 for any other room name.
-- Rows for people who are `away` are slightly faded; `unknown` rows are faded more.
+- **Header** shows the title and how many people are home (anyone not `away`, `not_home` or `unknown`).
+- **Name** comes from `name:` if you set it, otherwise the matching person entity's name, otherwise the sensor's friendly name without "Room".
+- **Picture**: the card looks for `person.<name>` (for `sensor.alice_room` that is `person.alice`, or the `person:` you set). If that person has a picture, it is shown in a blue ring; otherwise the card shows their initials on a coloured circle.
+- **Room** is the sensor's state with underscores turned into spaces, for example "Living room".
+- Rows for people who are `away`, `not_home` or `unknown` have a dashed outline and no confidence chip.
+- **Footer** says when the most recently updated sensor last changed, for example "Updated 12s ago".
 - An entity that doesn't exist shows as `Entity not found: <entity_id>`.
 
 !!! note "Confidence is usually lower than you expect"
-    Roomer's `confidence` values often sit between 30% and 60% even when the room is right, so an orange bar is normal. [Accuracy & limits](accuracy.md) explains why.
+    Roomer's `confidence` values often sit between 30% and 60% even when the room is right, so "Guessing" or "Pretty sure" is normal. [Accuracy & limits](accuracy.md) explains why.
 
 ## The full Roomer dashboard (YAML)
 
