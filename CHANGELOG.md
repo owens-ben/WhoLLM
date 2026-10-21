@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Device-based room presence.** A phone, watch or tag entity assigned to a person or pet that reports a room (Bermuda area sensors, ESPresense, room-assistant, or an `area`/`room` attribute) now places them in that room directly, without asking the LLM. Room names are matched ignoring case, spaces and dashes; an unmatched room is logged once as a warning.
+- `sensor.{room}_occupants` for each room: the number of people in it, with `people`, `pets`, `confidence` and `sources` attributes.
+- `source` attribute on `sensor.{name}_room` (`device_room`, `device_tracker` or `llm`).
+- The Lovelace card shows who is in each room when given `sensor.{room}_occupants` entities.
 - Test suite with pytest (52 tests covering habits, providers, coordinator)
 - CI workflow for running tests on Python 3.11 and 3.12
 - pyproject.toml for modern Python project configuration
@@ -22,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed emojis from indicator strings in provider code
 
 ### Fixed
+- The options flow (**Configure**) no longer crashes on Home Assistant 2025.12 and later, which made `config_entry` read-only.
+- Saving one options page no longer wipes the settings saved from the others, and each page now shows the saved values.
+- A device tracker whose state is a room name (e.g. ESPresense Companion) is no longer treated as "not home".
 - Home Assistant 2025.x compatibility: use direct import for `async_track_time_interval` instead of deprecated `hass.helpers.event` access
 
 ## [0.1.0-alpha] - 2025-01-29

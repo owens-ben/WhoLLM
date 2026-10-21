@@ -75,7 +75,7 @@
       },
       "person_devices": {
         "title": "Person Device Ownership",
-        "description": "Assign devices owned by each person (their phone, PC, etc). If that device is active, it strongly suggests that person is nearby."
+        "description": "Assign devices to each person or pet.\n\n- **Room trackers** (for example a Bermuda area sensor, ESPresense or room-assistant) place them in the room the device reports. The room names must match Roomer's rooms; capitals, spaces and dashes don't matter.\n- **Home/away trackers** (phone on Wi-Fi or the Companion app) mark people as away when they leave.\n- **Personal devices** such as a PC suggest their owner is nearby when they are on."
       },
       "confidence_weights": {
         "title": "Confidence Weights",

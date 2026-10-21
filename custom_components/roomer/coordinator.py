@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Collection
 from datetime import timedelta
 from typing import Any
 
@@ -42,6 +43,7 @@ from .const import (
     ROOM_AWAY,
     VALID_ROOMS,
 )
+from .device_presence import DeviceRoomLocator, seen_since_away
 from .event_logger import EventLogger
 from .habits import ConfidenceCombiner, HabitPredictor
 from .providers import get_provider
@@ -111,21 +113,25 @@ class DeviceTrackerHelper:
         return DEVICE_TRACKER_AWAY_CONFIDENCE
 
     def check_person_device_trackers(
-        self, 
-        hass: HomeAssistant, 
-        person_name: str, 
-        person_devices: dict[str, list[str]]
+        self,
+        hass: HomeAssistant,
+        person_name: str,
+        person_devices: dict[str, list[str]],
+        exclude: Collection[str] = (),
     ) -> tuple[bool | None, list[str]]:
         """Check all device trackers for a person.
-        
+
+        Trackers in ``exclude`` are skipped, e.g. room-level trackers whose
+        state is a room name rather than home/not_home.
+
         Returns:
             (is_home, list_of_tracker_ids_checked)
         """
         # Get device trackers from person_devices config
         devices = person_devices.get(person_name, [])
-        
+
         # Filter to only device_tracker entities
-        trackers = [d for d in devices if d.startswith("device_tracker.")]
+        trackers = [d for d in devices if d.startswith("device_tracker.") and d not in exclude]
         
         if not trackers:
             return None, []
@@ -180,6 +186,9 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # Device tracker helper for away detection
         self.device_tracker_helper = DeviceTrackerHelper()
+
+        # Room-level device presence (phones, watches and tags located to a room)
+        self.device_room_locator = DeviceRoomLocator(self.rooms)
 
         # Track previous rooms for transition detection
         self._previous_rooms: dict[str, str] = {}
@@ -250,12 +259,15 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> PresenceGuess:
         """Process a single person or pet through the presence detection pipeline."""
 
-        # Device tracker check (persons only)
+        # Devices of this person/pet that report the room they are in
+        device_readings = self.device_room_locator.locate(self.hass, self.person_devices.get(name, []))
+
+        # Device tracker check (persons only). Trackers reporting a room aren't away.
         if not is_pet:
             is_home, trackers_checked = self.device_tracker_helper.check_person_device_trackers(
-                self.hass, name, self.person_devices
+                self.hass, name, self.person_devices, exclude={r.entity_id for r in device_readings}
             )
-            if is_home is False:
+            if is_home is False and not seen_since_away(self.hass, device_readings, trackers_checked):
                 guess = PresenceGuess(
                     room=ROOM_AWAY,
                     confidence=self.device_tracker_helper.get_away_confidence(),
@@ -267,6 +279,20 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await self._log_presence_event(name, entity_type, guess, context)
                 await self._check_room_transition(name, guess.room, guess.confidence)
                 return guess
+
+        # A device of theirs reports its room: that answers it for this person/pet alone
+        if device_readings:
+            guess = self.device_room_locator.guess(device_readings)
+            _LOGGER.debug("%s located in %s by device (%s)", name, guess.room, guess.raw_response)
+            if self.learning_enabled and guess.confidence >= 0.7:
+                self.habit_predictor.learn_from_event(
+                    entity_name=name,
+                    room=guess.room,
+                    confidence=guess.confidence,
+                )
+            await self._log_presence_event(name, entity_type, guess, context)
+            await self._check_room_transition(name, guess.room, guess.confidence)
+            return guess
 
         # Get habit hint (learned patterns)
         habit_hint = self.habit_predictor.get_habit_hint(name, entity_type)

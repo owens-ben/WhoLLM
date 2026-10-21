@@ -298,11 +298,14 @@ class TestSensorSetupEntry:
 
         await async_setup_entry(hass, mock_entry, capture_entities)
 
-        # Should have: Alice sensor, Bob sensor, Whiskers sensor, Vision sensor
-        assert len(added_entities) == 4
+        # Should have: Alice, Bob and Whiskers sensors, one occupants sensor per room
+        # (office, bedroom, living_room) and the vision sensor
+        assert len(added_entities) == 7
 
         # Verify entity types
         entity_names = [e._entity_name for e in added_entities if hasattr(e, "_entity_name")]
         assert "Alice" in entity_names
         assert "Bob" in entity_names
         assert "Whiskers" in entity_names
+        occupant_rooms = [e._room for e in added_entities if hasattr(e, "_room")]
+        assert occupant_rooms == ["office", "bedroom", "living_room"]

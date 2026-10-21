@@ -43,6 +43,8 @@ No single sensor is definitive. Together, they're enough for a good guess.
 ## Features
 
 - **Multi-person + pet tracking** — Track everyone in your household
+- **Device-based room presence** — A phone, watch or tag located to a room (Bermuda, ESPresense, room-assistant) places its owner there directly
+- **Who's in each room** — One sensor per room listing the people and pets in it
 - **Privacy-first** — All inference runs locally via Ollama
 - **Confidence scoring** — Each prediction includes confidence level and reasoning
 - **Vision identification** — Optional camera-based identification using vision LLMs
@@ -124,10 +126,32 @@ After initial setup, configure which sensors inform each room:
 
 ### Person-Device Mapping
 
-Associate devices with specific people:
-- Alice's phone → `device_tracker.alice_iphone`
+Associate devices with specific people (and pets) under **Configure → Person Device Ownership**:
+- Alice's phone → `device_tracker.alice_iphone` (home/away)
+- Alice's phone, located to a room → `sensor.alice_phone_area` (room presence, see below)
 - Alice's PC → `switch.alice_pc`
 - Bob's car → `device_tracker.bob_car`
+- Whiskers' collar tag → `sensor.whiskers_tag_area`
+
+### Device-Based Room Presence
+
+This is the most reliable way to tell people apart. Bluetooth room-presence tools such as [Bermuda](https://github.com/agittins/bermuda), [ESPresense](https://espresense.com/) and [room-assistant](https://www.room-assistant.io/) report which room a phone, watch or tag is in. Assign that entity to its owner under Person Device Ownership, and Roomer places them in the room it reports:
+
+| Tool | Typical entity to assign | Reports |
+|------|------------------|---------|
+| Bermuda | `sensor.<device>_area` | `Office` |
+| ESPresense (`mqtt_room`) | `sensor.<device>` | `office` |
+| ESPresense Companion | `device_tracker.<device>` | `office` |
+| room-assistant | `sensor.<device>_room` | `office` |
+
+Roomer also reads a room from an `area_id`, `area_name`, `area` or `room` attribute.
+
+- **Room names must match** the rooms you set up in Roomer. Capitals, spaces and dashes don't matter, so `Living Room` matches `living_room`. When an `*_area` or `*_room` sensor, or a device tracker, reports a room Roomer doesn't have, a warning in the log names the entity and the value. Rename the area, or the room, so they match.
+- **A located person skips the LLM.** Their room comes straight from the device, with `source: device_room` and a confidence of 0.9. If their devices disagree (a phone left on the desk while the watch moves with them), the room most devices report wins, then the device that moved most recently, at 0.7 confidence.
+- **GPS trackers are only used for home/away.** A phone's GPS tracker reports HA zones, so a work zone called `Office` is never mistaken for the office room.
+- **No room, no override.** When the device reports `unknown`, `not_home` or nothing, the person goes through the normal pipeline.
+- **Home/away still applies.** If a home/away tracker says the person left *after* the room device last changed, they are `away`. If the room device changed more recently (Bluetooth usually sees you arrive before Wi-Fi does), the room wins.
+- Set a timeout in your Bluetooth tool (for example `away_timeout` for `mqtt_room`), so a phone that leaves stops reporting its last room.
 
 ---
 
@@ -138,13 +162,20 @@ Associate devices with specific people:
 | Entity | Description |
 |--------|-------------|
 | `sensor.{name}_room` | Current room for each person/pet |
+| `sensor.{room}_occupants` | Who is in each room right now |
 | `sensor.vision_last_identification` | Last camera identification result |
 
-**Attributes:**
-- `confidence` — Prediction confidence (0-100%)
+**`sensor.{name}_room` attributes:**
+- `confidence` — Prediction confidence (0-1)
 - `indicators` — Signals that contributed to the prediction
-- `reasoning` — LLM's explanation (when available)
-- `last_updated` — Timestamp of last update
+- `raw_response` — LLM's answer, or which device located the person
+- `source` — Where the room came from: `device_room`, `device_tracker` (away) or `llm`
+
+**`sensor.{room}_occupants`** — the state is the number of **people** in the room, so a pet on its own doesn't count as the room being occupied. Attributes:
+- `people` — Names of the people in the room, e.g. `["Alice", "Bob"]`
+- `pets` — Names of the pets in the room
+- `confidence` — Confidence for each of them, e.g. `{"Alice": 0.9, "Bob": 0.62}`
+- `sources` — Where each one's room came from
 
 ### Binary Sensors
 
@@ -223,6 +254,23 @@ automation:
       - service: scene.turn_on
         target:
           entity_id: scene.movie_mode
+```
+
+### Lights Off When a Room Empties
+
+```yaml
+automation:
+  - alias: "Office lights off when nobody's there"
+    trigger:
+      - platform: state
+        entity_id: sensor.office_occupants
+        to: "0"
+        for:
+          minutes: 5
+    action:
+      - service: light.turn_off
+        target:
+          entity_id: light.office
 ```
 
 ### Desk Time Reminder
@@ -321,7 +369,7 @@ Common issues:
 - [ ] ML model training from HA history
 - [ ] More LLM providers (OpenAI, Anthropic, local llama.cpp)
 - [ ] Better prompt engineering
-- [ ] Dashboard card
+- [x] Dashboard card (`www/roomer-card.js`, people and rooms)
 
 ---
 

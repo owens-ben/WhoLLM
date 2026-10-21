@@ -15,7 +15,26 @@
  * entities:
  *   - sensor.ben_room
  *   - sensor.alex_room
+ *
+ * Room occupants sensors show who is in each room:
+ * type: custom:roomer-card
+ * title: Who's Where
+ * entities:
+ *   - sensor.office_occupants
+ *   - sensor.living_room_occupants
  */
+
+const ROOM_ICONS = {
+  'office': '💻',
+  'living_room': '🛋️',
+  'bedroom': '🛏️',
+  'kitchen': '🍳',
+  'bathroom': '🚿',
+  'entry': '🚪',
+  'garage': '🚗',
+  'away': '🚶',
+  'unknown': '❓',
+};
 
 class RoomerCard extends HTMLElement {
   set hass(hass) {
@@ -51,6 +70,12 @@ class RoomerCard extends HTMLElement {
         return;
       }
 
+      // Room occupants sensor (sensor.<room>_occupants): list who is in the room
+      if (Array.isArray(state.attributes.people)) {
+        html += this._renderRoom(entityId, state);
+        return;
+      }
+
       const name = state.attributes.friendly_name || entityId.split('.')[1];
       const room = state.state || 'unknown';
       const confidence = state.attributes.confidence || 0;
@@ -63,18 +88,7 @@ class RoomerCard extends HTMLElement {
       else if (room === 'unknown') statusClass = 'unknown';
 
       // Room emoji/icon
-      const roomIcons = {
-        'office': '💻',
-        'living_room': '🛋️',
-        'bedroom': '🛏️',
-        'kitchen': '🍳',
-        'bathroom': '🚿',
-        'entry': '🚪',
-        'garage': '🚗',
-        'away': '🚶',
-        'unknown': '❓',
-      };
-      const icon = roomIcons[room.toLowerCase()] || '📍';
+      const icon = ROOM_ICONS[room.toLowerCase()] || '📍';
 
       html += `
         <div class="entity ${statusClass}">
@@ -149,6 +163,13 @@ class RoomerCard extends HTMLElement {
         .entity.away .room {
           color: var(--error-color);
         }
+        .entity.empty {
+          opacity: 0.5;
+        }
+        .entity.empty .room {
+          color: var(--secondary-text-color);
+          text-transform: none;
+        }
         .confidence {
           margin-top: 8px;
           height: 4px;
@@ -196,6 +217,25 @@ class RoomerCard extends HTMLElement {
     `;
 
     this.innerHTML = html;
+  }
+
+  _renderRoom(entityId, state) {
+    const roomSlug = entityId.split('.')[1].replace(/_occupants$/, '');
+    const name = (state.attributes.friendly_name || roomSlug).replace(/ Occupants$/, '');
+    const who = [
+      ...state.attributes.people,
+      ...(state.attributes.pets || []).map(pet => `🐾 ${pet}`),
+    ];
+
+    return `
+      <div class="entity ${who.length ? 'home' : 'empty'}">
+        <div class="entity-row">
+          <span class="icon">${ROOM_ICONS[roomSlug] || '📍'}</span>
+          <span class="name">${name}</span>
+          <span class="room">${who.length ? who.join(', ') : 'Empty'}</span>
+        </div>
+      </div>
+    `;
   }
 
   static getConfigElement() {
