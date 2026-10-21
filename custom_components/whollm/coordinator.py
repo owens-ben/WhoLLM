@@ -59,54 +59,54 @@ class DeviceTrackerHelper:
 
     def is_person_home(self, hass: HomeAssistant, device_tracker_id: str) -> bool | None:
         """Check if a single device tracker indicates person is home.
-        
+
         Returns:
             True if home, False if away, None if unavailable/unknown
         """
         state = hass.states.get(device_tracker_id)
         if not state:
             return None
-        
+
         state_value = state.state.lower()
-        
+
         if state_value in (DEVICE_TRACKER_UNAVAILABLE, "unknown"):
             return None
-        
+
         # "home" or zone names indicate presence
         if state_value == DEVICE_TRACKER_HOME:
             return True
-        
+
         # "not_home" indicates away
         if state_value == DEVICE_TRACKER_NOT_HOME:
             return False
-        
+
         # Any other zone name (e.g., "work", "school") means not at home
         # but we return True only for "home"
         return False
 
     def is_person_home_any(self, hass: HomeAssistant, device_tracker_ids: list[str]) -> bool | None:
         """Check if any device tracker indicates person is home.
-        
+
         Returns True if ANY tracker shows home.
         Returns False if ALL trackers show away.
         Returns None if all trackers are unavailable.
         """
         if not device_tracker_ids:
             return None
-        
+
         has_valid_state = False
-        
+
         for tracker_id in device_tracker_ids:
             result = self.is_person_home(hass, tracker_id)
             if result is True:
                 return True
             if result is False:
                 has_valid_state = True
-        
+
         # If we had at least one valid "not_home", return False
         if has_valid_state:
             return False
-        
+
         # All trackers unavailable
         return None
 
@@ -115,25 +115,22 @@ class DeviceTrackerHelper:
         return DEVICE_TRACKER_AWAY_CONFIDENCE
 
     def check_person_device_trackers(
-        self, 
-        hass: HomeAssistant, 
-        person_name: str, 
-        person_devices: dict[str, list[str]]
+        self, hass: HomeAssistant, person_name: str, person_devices: dict[str, list[str]]
     ) -> tuple[bool | None, list[str]]:
         """Check all device trackers for a person.
-        
+
         Returns:
             (is_home, list_of_tracker_ids_checked)
         """
         # Get device trackers from person_devices config
         devices = person_devices.get(person_name, [])
-        
+
         # Filter to only device_tracker entities
         trackers = [d for d in devices if d.startswith("device_tracker.")]
-        
+
         if not trackers:
             return None, []
-        
+
         is_home = self.is_person_home_any(hass, trackers)
         return is_home, trackers
 
@@ -230,14 +227,21 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for person in self.persons:
                 person_name = person.get("name", "unknown")
                 guess = await self._process_entity(
-                    person_name, "person", context, active_indicators,
+                    person_name,
+                    "person",
+                    context,
+                    active_indicators,
                 )
                 results["persons"][person_name] = guess
 
             for pet in self.pets:
                 pet_name = pet.get("name", "unknown")
                 guess = await self._process_entity(
-                    pet_name, "pet", context, active_indicators, is_pet=True,
+                    pet_name,
+                    "pet",
+                    context,
+                    active_indicators,
+                    is_pet=True,
                 )
                 results["pets"][pet_name] = guess
 
@@ -292,9 +296,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         context_for_llm = {
             **context,
             "habit_hint": habit_context,
-            "active_indicators": [
-                f"{i['hint_type']}: {i['entity_id']} in {i['room']}" for i in entity_indicators
-            ],
+            "active_indicators": [f"{i['hint_type']}: {i['entity_id']} in {i['room']}" for i in entity_indicators],
         }
 
         # Query LLM
@@ -321,7 +323,10 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if guess.room != final_room:
             _LOGGER.debug(
                 "Confidence combiner changed %s from %s to %s (reason: %s)",
-                name, guess.room, final_room, explanation,
+                name,
+                guess.room,
+                final_room,
+                explanation,
             )
         guess.room = final_room
         guess.confidence = final_confidence
@@ -491,7 +496,11 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
             # Categorize by hint_type first, then by domain as fallback
             self._categorize_entity(
-                context, entity_id, state, hint_type, time_since_change,
+                context,
+                entity_id,
+                state,
+                hint_type,
+                time_since_change,
             )
 
         return context
@@ -538,9 +547,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "last_changed": time_since_change,
                 "brightness": state.attributes.get("brightness"),
             }
-        elif hint_type == "motion" or (
-            entity_id.startswith("binary_sensor.") and "motion" in entity_id.lower()
-        ):
+        elif hint_type == "motion" or (entity_id.startswith("binary_sensor.") and "motion" in entity_id.lower()):
             context["motion"][entity_id] = {
                 "state": state.state,
                 "last_changed": time_since_change,
@@ -572,8 +579,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "last_changed": time_since_change,
             }
         elif hint_type == "climate" or (
-            entity_id.startswith("sensor.")
-            and any(x in entity_id.lower() for x in ["temperature", "humidity"])
+            entity_id.startswith("sensor.") and any(x in entity_id.lower() for x in ["temperature", "humidity"])
         ):
             context["climate"][entity_id] = {
                 "state": state.state,

@@ -19,19 +19,21 @@ Thank you for your interest in contributing to WhoLLM!
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies
-pip install -r requirements_dev.txt
+# Install dependencies (uv resolves a compatible homeassistant faster than pip)
+pip install uv
+uv pip install -r requirements_test.txt
 
 # Install pre-commit hooks
+pip install pre-commit
 pre-commit install
 ```
 
 ## Code Style
 
 - We use [ruff](https://github.com/astral-sh/ruff) for linting and formatting
-- Run `ruff check .` to lint
-- Run `ruff format .` to format
-- All code must pass CI checks before merging
+- Run `ruff check custom_components/` to lint
+- Run `ruff format custom_components/` to format
+- CI pins ruff (see `.github/workflows/test.yml`) and fails on lint or format errors
 
 ## Testing
 

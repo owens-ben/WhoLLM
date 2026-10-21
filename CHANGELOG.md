@@ -10,13 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Options toggle for arrival/departure events (`notifications_enabled`)
 - Activity Log blueprint: posts room changes with confidence and indicators to any notify action (Slack, Discord, mobile)
-- Test suite with pytest (52 tests covering habits, providers, coordinator)
+- Test suite with pytest (341 tests)
 - CI workflow for running tests on Python 3.11 and 3.12
 - pyproject.toml for modern Python project configuration
 - Ruff linting configuration
 - Comprehensive README with badges, troubleshooting, and examples
 
 ### Changed
+- CI now fails on ruff lint/format errors (ruff pinned to 0.16.9); integration code is lint-clean
+- Test dependencies moved to `requirements_test.txt` (plain `homeassistant` instead of the pytest plugin, which the tests don't use)
 - Removed emojis from indicator strings in provider code
 - Storage paths (event log, habits, feedback, ML models) now follow the HA config directory instead of a hardcoded `/config`
 - ML models now load from `<config>/whollm/models/` so HACS updates don't remove them (the old location still works)

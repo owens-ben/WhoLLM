@@ -104,15 +104,15 @@ async def async_handle_refresh(hass: HomeAssistant, call: ServiceCall) -> None:
 
 async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> None:
     """Handle the correct_room service call.
-    
+
     Manually corrects a person's room and learns from the correction.
     """
     entity_id = call.data.get("entity_id")
     room = call.data.get("room")
     confidence = call.data.get("confidence", 1.0)
-    
+
     _LOGGER.debug("Correct room service: %s -> %s (confidence: %s)", entity_id, room, confidence)
-    
+
     coordinator = _get_coordinator(hass)
     if coordinator is None:
         _LOGGER.warning("No WhoLLM coordinator found for correct_room")
@@ -134,7 +134,7 @@ async def async_handle_correct_room(hass: HomeAssistant, call: ServiceCall) -> N
         new_attrs["confidence"] = confidence
         new_attrs["source"] = "manual_correction"
         new_attrs["indicators"] = ["User corrected"]
-        
+
         hass.states.async_set(entity_id, room, new_attrs)
         _LOGGER.info("Corrected %s room to %s", entity_name, room)
     else:
@@ -197,22 +197,22 @@ async def async_handle_get_patterns(hass: HomeAssistant, call: ServiceCall) -> d
 
 async def async_setup_services(hass: HomeAssistant) -> None:
     """Set up WhoLLM services."""
-    
+
     async def refresh_handler(call: ServiceCall) -> None:
         await async_handle_refresh(hass, call)
-    
+
     async def correct_room_handler(call: ServiceCall) -> None:
         await async_handle_correct_room(hass, call)
-    
+
     async def get_history_handler(call: ServiceCall) -> dict:
         return await async_handle_get_history(hass, call)
-    
+
     async def clear_history_handler(call: ServiceCall) -> None:
         await async_handle_clear_history(hass, call)
-    
+
     async def get_patterns_handler(call: ServiceCall) -> dict:
         return await async_handle_get_patterns(hass, call)
-    
+
     # Register services
     hass.services.async_register(
         DOMAIN,
@@ -220,14 +220,14 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         refresh_handler,
         schema=REFRESH_SCHEMA,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_CORRECT_ROOM,
         correct_room_handler,
         schema=CORRECT_ROOM_SCHEMA,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_HISTORY,
@@ -235,14 +235,14 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         schema=GET_HISTORY_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_CLEAR_HISTORY,
         clear_history_handler,
         schema=CLEAR_HISTORY_SCHEMA,
     )
-    
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_GET_PATTERNS,
@@ -250,7 +250,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         schema=GET_PATTERNS_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
-    
+
     _LOGGER.info("WhoLLM services registered")
 
 
@@ -261,5 +261,5 @@ async def async_unload_services(hass: HomeAssistant) -> None:
     hass.services.async_remove(DOMAIN, SERVICE_GET_HISTORY)
     hass.services.async_remove(DOMAIN, SERVICE_CLEAR_HISTORY)
     hass.services.async_remove(DOMAIN, SERVICE_GET_PATTERNS)
-    
+
     _LOGGER.info("WhoLLM services unloaded")
