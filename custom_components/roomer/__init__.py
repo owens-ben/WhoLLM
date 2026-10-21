@@ -12,8 +12,8 @@ import logging
 from typing import TYPE_CHECKING
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
+from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
@@ -144,6 +144,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Reload when options change so they take effect without a restart
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
+    # Home Assistant does not unload entries on shutdown, so save state on stop too
+    async def _async_save_on_stop(event: Event) -> None:
+        await asyncio.to_thread(coordinator.save_state)
+
+    entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_save_on_stop))
 
     return True
 

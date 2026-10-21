@@ -375,6 +375,24 @@ class TestHabitPersistence:
         assert len(history["transitions"]) == 1
 
     @pytest.mark.asyncio
+    async def test_saves_state_on_homeassistant_stop(self):
+        from homeassistant.const import EVENT_HOMEASSISTANT_STOP
+
+        hass = _make_hass()
+        entry = _make_entry()
+        await _setup_entry(hass, entry)
+
+        hass.bus.async_listen_once.assert_called_once()
+        event_type, listener = hass.bus.async_listen_once.call_args.args
+        assert event_type == EVENT_HOMEASSISTANT_STOP
+        unload_callbacks = [c.args[0] for c in entry.async_on_unload.call_args_list]
+        assert hass.bus.async_listen_once.return_value in unload_callbacks
+
+        coordinator = hass.data[DOMAIN][entry.entry_id]
+        await listener(MagicMock())
+        coordinator.save_state.assert_called_once()
+
+    @pytest.mark.asyncio
     async def test_unload_saves_state(self):
         from custom_components.roomer import async_unload_entry
 
