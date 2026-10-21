@@ -1,6 +1,6 @@
 # Roomer Dashboard
 
-A beautiful, modern dashboard for visualizing LLM-powered room presence detection.
+A modern dashboard for seeing who is in which room, as reported by the Roomer integration.
 
 ![Dashboard Preview](preview.png)
 
@@ -28,21 +28,21 @@ Access at: `http://YOUR_HOST:3380`
 
 ### Option 2: Home Assistant Dashboard
 
-Import `llm-presence-dashboard.yaml` into Home Assistant:
+Import `roomer-dashboard.yaml` into Home Assistant:
 
-1. Copy `llm-presence-dashboard.yaml` to your HA config directory
+1. Copy `roomer-dashboard.yaml` to your HA config directory
 2. Add to `configuration.yaml`:
 
 ```yaml
 lovelace:
   mode: yaml
   dashboards:
-    llm-presence:
+    roomer-presence:
       mode: yaml
       title: Roomer
-      icon: mdi:brain
+      icon: mdi:home-account
       show_in_sidebar: true
-      filename: llm-presence-dashboard.yaml
+      filename: roomer-dashboard.yaml
 ```
 
 3. Restart Home Assistant
@@ -110,7 +110,7 @@ Modify CSS variables in the `:root` section:
 | File | Description |
 |------|-------------|
 | `index.html` | Standalone web dashboard |
-| `llm-presence-dashboard.yaml` | Home Assistant Lovelace dashboard |
+| `roomer-dashboard.yaml` | Home Assistant Lovelace dashboard |
 | `docker-compose.yml` | Docker deployment |
 | `nginx.conf` | Nginx configuration |
 
@@ -143,7 +143,7 @@ The Docker container includes Homepage labels for automatic discovery:
 
 ## License
 
-MIT License - Part of the [Roomer](https://github.com/owens-ben/roomer) project.
+MIT License - Part of the [Roomer](https://github.com/owens-ben/Roomer) project.
 
 
 

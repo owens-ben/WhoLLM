@@ -115,7 +115,7 @@ After configuration, check that entities are created:
 
 You can verify in:
 - **Settings** → **Devices & Services** → **Roomer**
-- **Developer Tools** → **States** (search for `roomer`)
+- **Developer Tools** → **States** (search for `_room` or a person's name — entity IDs are based on configured names, not the domain)
 
 ## Troubleshooting
 

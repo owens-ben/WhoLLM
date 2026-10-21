@@ -14,7 +14,7 @@
 #          roomer-presence:
 #            mode: yaml
 #            title: Roomer
-#            icon: mdi:brain
+#            icon: mdi:home-account
 #            show_in_sidebar: true
 #            filename: roomer-dashboard.yaml
 #   3. Restart Home Assistant

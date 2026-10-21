@@ -1,9 +1,9 @@
 version: "3.8"
 
 services:
-  llm-presence-dashboard:
+  roomer-dashboard:
     image: nginx:alpine
-    container_name: llm-presence-dashboard
+    container_name: roomer-dashboard
     restart: unless-stopped
     ports:
       - "${DASHBOARD_PORT:-3380}:80"
@@ -21,7 +21,7 @@ services:
     # Uncomment and customize labels for your dashboard (Homepage, Traefik, etc.)
     # labels:
     #   - "homepage.group=AI"
-    #   - "homepage.name=LLM Presence Dashboard"
+    #   - "homepage.name=Roomer Dashboard"
     #   - "homepage.icon=brain"
     #   - "homepage.href=http://YOUR_HOST:3380"
     #   - "homepage.description=LLM-powered room presence visualization"

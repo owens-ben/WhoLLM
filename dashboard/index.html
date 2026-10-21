@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM Room Presence</title>
+    <title>Roomer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -621,7 +621,7 @@
             <div class="logo">
                 <div class="logo-icon">🧠</div>
                 <div>
-                    <h1>LLM Room Presence</h1>
+                    <h1>Roomer</h1>
                     <p class="subtitle">Intelligent presence detection powered by local AI</p>
                 </div>
             </div>
@@ -768,7 +768,7 @@
 
         <footer>
             <p>
-                LLM Room Presence &bull;
+                Roomer &bull;
                 <a href="https://github.com/owens-ben/Roomer" target="_blank">GitHub</a> &bull;
                 Powered by Ollama
             </p>
@@ -1177,10 +1177,10 @@
                     <div class="card">
                         <div class="loading">
                             <div class="loading-spinner"></div>
-                            <span>Waiting for LLM Presence data...</span>
+                            <span>Waiting for Roomer data...</span>
                         </div>
                         <p style="margin-top: 1rem; color: var(--text-muted); text-align: center;">
-                            Make sure the LLM Room Presence integration is configured in Home Assistant.
+                            Make sure the Roomer integration is configured in Home Assistant.
                         </p>
                     </div>
                 `;
@@ -1253,7 +1253,7 @@
 
             el.llmResponse.textContent = responses.length > 0
                 ? responses.join('\n\n')
-                : 'Waiting for LLM Presence data...\n\nMake sure the integration is configured in Home Assistant and Ollama is running.';
+                : 'Waiting for Roomer data...\n\nMake sure the integration is configured in Home Assistant and Ollama is running.';
         }
 
         function addTimelineEvent(event) {
@@ -1339,7 +1339,7 @@
             if (!token) return;
 
             try {
-                const response = await fetch('/api/services/llm_presence/identify_person', {
+                const response = await fetch('/api/services/roomer/identify_person', {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer ' + token,
