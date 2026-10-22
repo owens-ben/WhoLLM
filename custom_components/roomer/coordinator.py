@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from collections.abc import Collection
 from datetime import timedelta
 from typing import Any
 
@@ -47,6 +48,7 @@ from .const import (
     ROOM_UNKNOWN,
     VALID_ROOMS,
 )
+from .device_presence import DeviceRoomLocator, seen_since_away
 from .event_logger import EventLogger
 from .habits import ConfidenceCombiner, HabitPredictor
 from .history import HistoryTracker
@@ -62,54 +64,54 @@ class DeviceTrackerHelper:
 
     def is_person_home(self, hass: HomeAssistant, device_tracker_id: str) -> bool | None:
         """Check if a single device tracker indicates person is home.
-        
+
         Returns:
             True if home, False if away, None if unavailable/unknown
         """
         state = hass.states.get(device_tracker_id)
         if not state:
             return None
-        
+
         state_value = state.state.lower()
-        
+
         if state_value in (DEVICE_TRACKER_UNAVAILABLE, "unknown"):
             return None
-        
+
         # "home" or zone names indicate presence
         if state_value == DEVICE_TRACKER_HOME:
             return True
-        
+
         # "not_home" indicates away
         if state_value == DEVICE_TRACKER_NOT_HOME:
             return False
-        
+
         # Any other zone name (e.g., "work", "school") means not at home
         # but we return True only for "home"
         return False
 
     def is_person_home_any(self, hass: HomeAssistant, device_tracker_ids: list[str]) -> bool | None:
         """Check if any device tracker indicates person is home.
-        
+
         Returns True if ANY tracker shows home.
         Returns False if ALL trackers show away.
         Returns None if all trackers are unavailable.
         """
         if not device_tracker_ids:
             return None
-        
+
         has_valid_state = False
-        
+
         for tracker_id in device_tracker_ids:
             result = self.is_person_home(hass, tracker_id)
             if result is True:
                 return True
             if result is False:
                 has_valid_state = True
-        
+
         # If we had at least one valid "not_home", return False
         if has_valid_state:
             return False
-        
+
         # All trackers unavailable
         return None
 
@@ -118,25 +120,29 @@ class DeviceTrackerHelper:
         return DEVICE_TRACKER_AWAY_CONFIDENCE
 
     def check_person_device_trackers(
-        self, 
-        hass: HomeAssistant, 
-        person_name: str, 
-        person_devices: dict[str, list[str]]
+        self,
+        hass: HomeAssistant,
+        person_name: str,
+        person_devices: dict[str, list[str]],
+        exclude: Collection[str] = (),
     ) -> tuple[bool | None, list[str]]:
         """Check all device trackers for a person.
-        
+
+        Trackers in ``exclude`` are skipped, e.g. room-level trackers whose
+        state is a room name rather than home/not_home.
+
         Returns:
             (is_home, list_of_tracker_ids_checked)
         """
         # Get device trackers from person_devices config
         devices = person_devices.get(person_name, [])
-        
+
         # Filter to only device_tracker entities
-        trackers = [d for d in devices if d.startswith("device_tracker.")]
-        
+        trackers = [d for d in devices if d.startswith("device_tracker.") and d not in exclude]
+
         if not trackers:
             return None, []
-        
+
         is_home = self.is_person_home_any(hass, trackers)
         return is_home, trackers
 
@@ -199,6 +205,9 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Device tracker helper for away detection
         self.device_tracker_helper = DeviceTrackerHelper()
 
+        # Room-level device presence (phones, watches and tags located to a room)
+        self.device_room_locator = DeviceRoomLocator(self.rooms)
+
         # Track previous rooms for transition detection
         self._previous_rooms: dict[str, str] = {}
 
@@ -238,14 +247,21 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for person in self.persons:
                 person_name = person.get("name", "unknown")
                 guess = await self._process_entity(
-                    person_name, "person", context, active_indicators,
+                    person_name,
+                    "person",
+                    context,
+                    active_indicators,
                 )
                 results["persons"][person_name] = guess
 
             for pet in self.pets:
                 pet_name = pet.get("name", "unknown")
                 guess = await self._process_entity(
-                    pet_name, "pet", context, active_indicators, is_pet=True,
+                    pet_name,
+                    "pet",
+                    context,
+                    active_indicators,
+                    is_pet=True,
                 )
                 results["pets"][pet_name] = guess
 
@@ -270,12 +286,15 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> PresenceGuess:
         """Process a single person or pet through the presence detection pipeline."""
 
-        # Device tracker check (persons only)
+        # Devices of this person/pet that report the room they are in
+        device_readings = self.device_room_locator.locate(self.hass, self.person_devices.get(name, []))
+
+        # Device tracker check (persons only). Trackers reporting a room aren't away.
         if not is_pet:
             is_home, trackers_checked = self.device_tracker_helper.check_person_device_trackers(
-                self.hass, name, self.person_devices
+                self.hass, name, self.person_devices, exclude={r.entity_id for r in device_readings}
             )
-            if is_home is False:
+            if is_home is False and not seen_since_away(self.hass, device_readings, trackers_checked):
                 guess = PresenceGuess(
                     room=ROOM_AWAY,
                     confidence=self.device_tracker_helper.get_away_confidence(),
@@ -287,6 +306,21 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await self._log_presence_event(name, entity_type, guess, context)
                 await self._check_room_transition(name, guess.room, guess.confidence)
                 return guess
+
+        # A device of theirs reports its room: that answers it for this person/pet alone
+        if device_readings:
+            guess = self.device_room_locator.guess(device_readings)
+            _LOGGER.debug("%s located in %s by device (%s)", name, guess.room, guess.raw_response)
+            if self.learning_enabled and guess.confidence >= 0.7:
+                self.habit_predictor.learn_from_event(
+                    entity_name=name,
+                    room=guess.room,
+                    confidence=guess.confidence,
+                )
+                self._habits_dirty = True
+            await self._log_presence_event(name, entity_type, guess, context)
+            await self._check_room_transition(name, guess.room, guess.confidence)
+            return guess
 
         # Get habit hint (learned patterns)
         habit_hint = self.habit_predictor.get_habit_hint(name, entity_type)
@@ -302,9 +336,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         context_for_llm = {
             **context,
             "habit_hint": habit_context,
-            "active_indicators": [
-                f"{i['hint_type']}: {i['entity_id']} in {i['room']}" for i in entity_indicators
-            ],
+            "active_indicators": [f"{i['hint_type']}: {i['entity_id']} in {i['room']}" for i in entity_indicators],
         }
 
         # Query LLM
@@ -331,7 +363,10 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if guess.room != final_room:
             _LOGGER.debug(
                 "Confidence combiner changed %s from %s to %s (reason: %s)",
-                name, guess.room, final_room, explanation,
+                name,
+                guess.room,
+                final_room,
+                explanation,
             )
         guess.room = final_room
         guess.confidence = final_confidence
@@ -502,7 +537,11 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
             # Categorize by hint_type first, then by domain as fallback
             self._categorize_entity(
-                context, entity_id, state, hint_type, time_since_change,
+                context,
+                entity_id,
+                state,
+                hint_type,
+                time_since_change,
             )
 
         return context
@@ -549,9 +588,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "last_changed": time_since_change,
                 "brightness": state.attributes.get("brightness"),
             }
-        elif hint_type == "motion" or (
-            entity_id.startswith("binary_sensor.") and "motion" in entity_id.lower()
-        ):
+        elif hint_type == "motion" or (entity_id.startswith("binary_sensor.") and "motion" in entity_id.lower()):
             context["motion"][entity_id] = {
                 "state": state.state,
                 "last_changed": time_since_change,
@@ -583,8 +620,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "last_changed": time_since_change,
             }
         elif hint_type == "climate" or (
-            entity_id.startswith("sensor.")
-            and any(x in entity_id.lower() for x in ["temperature", "humidity"])
+            entity_id.startswith("sensor.") and any(x in entity_id.lower() for x in ["temperature", "humidity"])
         ):
             context["climate"][entity_id] = {
                 "state": state.state,

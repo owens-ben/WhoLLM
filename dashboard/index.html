@@ -4,37 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roomer</title>
+    <link rel="icon" type="image/svg+xml" href='data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88"%3E %3Crect width="88" height="88" rx="22" fill="%233E5C82"/%3E %3Cpath d="M12 38 L44 13 L76 38" fill="none" stroke="%23FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/%3E %3Crect x="20" y="41" width="22" height="16" rx="4" fill="%23E8B23A"/%3E %3Crect x="46" y="41" width="22" height="16" rx="4" fill="%23FFFFFF" opacity="0.25"/%3E %3Crect x="20" y="60" width="22" height="16" rx="4" fill="%23FFFFFF" opacity="0.25"/%3E %3Crect x="46" y="60" width="22" height="16" rx="4" fill="%23FFFFFF"/%3E %3Ccircle cx="31" cy="49" r="4" fill="%233E5C82"/%3E %3Ccircle cx="57" cy="68" r="4" fill="%233E5C82"/%3E %3C/svg%3E'>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --bg-card: #1a1a25;
-            --bg-card-hover: #222230;
-            --accent-primary: #6366f1;
-            --accent-secondary: #8b5cf6;
-            --accent-tertiary: #a855f7;
-            --accent-success: #10b981;
-            --accent-warning: #f59e0b;
-            --accent-danger: #ef4444;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border-color: #2d2d3a;
-            --glow-primary: rgba(99, 102, 241, 0.3);
-            --glow-success: rgba(16, 185, 129, 0.3);
+            color-scheme: light;
+            --bg: #FBF6EC;
+            --surface: #FFFFFF;
+            --ink: #2A2419;
+            --body: #4A4033;
+            --muted: #6B6150;
+            --line: #E7DCC5;
+            --line-strong: #D9CCB1;
+            --primary: #3E5C82;
+            --primary-ink: #31496A;
+            --on-primary: #FFFFFF;
+            --tint1: #DCE4EE;
+            --secondary: #5B6E4A;
+            --secondary-ink: #47573A;
+            --tint2: #E4EADB;
+            --highlight: #E8B23A;
+            --highlight-ink: #6F5213;
+            --tint3: #F7E4B5;
+            /* Semantic error colour (not part of the palette, contrast-checked) */
+            --danger-ink: #9A3324;
+            --danger-tint: #F6E1DA;
+            /* "Guessing" chip ink: muted-on-line is 4.47:1 in light, so use body ink there */
+            --guess-ink: #4A4033;
 
-            /* Room colors */
-            --room-office: #3b82f6;
-            --room-living: #10b981;
-            --room-bedroom: #8b5cf6;
-            --room-kitchen: #f59e0b;
-            --room-bathroom: #06b6d4;
-            --room-entry: #ec4899;
-            --room-away: #6b7280;
-            --room-unknown: #ef4444;
+            --font-display: 'Bricolage Grotesque', 'DM Sans', system-ui, sans-serif;
+            --font-text: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+            --r-card: 14px;
+            --r-ctl: 10px;
+            --r-chip: 6px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+                --bg: #1A1917;
+                --surface: #23211E;
+                --ink: #F2EEE8;
+                --body: #D3CEC6;
+                --muted: #A39C91;
+                --line: #34312C;
+                --line-strong: #46423B;
+                --primary: #93AECF;
+                --primary-ink: #AFC4DD;
+                --on-primary: #1A1917;
+                --tint1: #21262E;
+                --secondary-ink: #B3C4A1;
+                --tint2: #252A22;
+                --highlight-ink: #E2C27F;
+                --tint3: #2D2A21;
+                --danger-ink: #E8A493;
+                --danger-tint: #33231F;
+                --guess-ink: #A39C91;
+            }
         }
 
         * {
@@ -44,180 +73,126 @@
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: var(--font-text);
+            background: var(--bg);
+            color: var(--body);
             min-height: 100vh;
             overflow-x: hidden;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Animated background */
-        .bg-gradient {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 70%);
-            z-index: -1;
-            animation: pulse 8s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        /* Grid pattern overlay */
-        .grid-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image:
-                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            z-index: -1;
+        h1, h2, h3, .card-title, .room-name, .person-location {
+            font-family: var(--font-display);
+            font-weight: 600;
+            color: var(--ink);
+            letter-spacing: -0.01em;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 2rem 1rem;
         }
 
         /* Header */
         header {
-            text-align: center;
-            margin-bottom: 3rem;
-            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem 2rem;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--line);
         }
 
         .logo {
             display: inline-flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: 0.875rem;
         }
 
-        .logo-icon {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            box-shadow: 0 0 30px var(--glow-primary);
-            animation: float 3s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+        .logo-mark {
+            width: 48px;
+            height: 48px;
+            flex: none;
+            display: block;
         }
 
         h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: 2rem;
+            line-height: 1.1;
         }
 
         .subtitle {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            margin-top: 0.5rem;
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-top: 0.125rem;
         }
 
         /* Status indicator */
         .status-bar {
             display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 1.5rem;
+            gap: 0.5rem;
             flex-wrap: wrap;
         }
 
         .status-item {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            font-family: 'JetBrains Mono', monospace;
+            padding: 0.375rem 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-ctl);
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: var(--body);
+        }
+
+        .status-item .time {
+            font-variant-numeric: tabular-nums;
         }
 
         .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            animation: blink 2s ease-in-out infinite;
+            background: var(--line-strong);
+            flex: none;
         }
 
-        .status-dot.online { background: var(--accent-success); box-shadow: 0 0 10px var(--glow-success); }
-        .status-dot.offline { background: var(--accent-danger); }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        .status-dot.online { background: var(--secondary-ink); }
+        .status-dot.offline { background: var(--danger-ink); }
 
         /* Main grid */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         /* Cards */
         .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-card);
+            padding: 1.25rem;
             position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-tertiary));
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: border-color 0.15s ease;
         }
 
         .card:hover {
-            background: var(--bg-card-hover);
-            border-color: var(--accent-primary);
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .card:hover::before {
-            opacity: 1;
+            border-color: var(--line-strong);
         }
 
         .card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.5rem;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
         }
 
         .card-title {
@@ -225,219 +200,305 @@
             align-items: center;
             gap: 0.75rem;
             font-size: 1.1rem;
-            font-weight: 600;
+            min-width: 0;
         }
 
-        .card-icon {
+        .card-kind {
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        /* Avatars */
+        .avatar {
             width: 40px;
             height: 40px;
-            border-radius: 12px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
+            flex: none;
+            font-family: var(--font-text);
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--ink);
+        }
+
+        .avatar.tint-1 { background: var(--tint1); color: var(--primary-ink); }
+        .avatar.tint-2 { background: var(--tint2); color: var(--secondary-ink); }
+        .avatar.tint-3 { background: var(--tint3); color: var(--highlight-ink); }
+
+        .avatar.picture {
+            object-fit: cover;
+            outline: 3px solid var(--primary);
+            outline-offset: 0;
+            border: 2px solid var(--surface);
         }
 
         /* Person card */
-        .person-card .card-icon { background: rgba(99, 102, 241, 0.2); }
-        .pet-card .card-icon { background: rgba(245, 158, 11, 0.2); }
-
         .person-location {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
+            font-size: 1.75rem;
+            line-height: 1.15;
+            color: var(--primary-ink);
+            margin-bottom: 0.75rem;
             text-transform: capitalize;
         }
 
+        .person-card.away,
+        .pet-card.away {
+            border: 1px dashed var(--line-strong);
+        }
+
+        .away .person-location {
+            color: var(--muted);
+        }
+
         .confidence-bar {
-            height: 6px;
-            background: var(--bg-secondary);
-            border-radius: 3px;
+            height: 4px;
+            background: var(--line);
+            border-radius: 2px;
             overflow: hidden;
-            margin: 1rem 0;
+            margin: 0 0 0.75rem;
         }
 
         .confidence-fill {
             height: 100%;
-            border-radius: 3px;
-            transition: width 0.5s ease;
-            background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+            min-width: 2px;
+            border-radius: 2px;
+            transition: width 0.4s ease;
+            background: var(--muted);
         }
+
+        .conf-sure .confidence-fill { background: var(--secondary-ink); }
+        .conf-pretty .confidence-fill { background: var(--highlight); }
 
         .confidence-text {
             display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
         }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: var(--r-chip);
+            font-size: 0.8rem;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .chip-sure { background: var(--tint2); color: var(--secondary-ink); }
+        .chip-pretty { background: var(--tint3); color: var(--highlight-ink); }
+        .chip-guess { background: var(--line); color: var(--guess-ink); }
 
         .indicators {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
+            gap: 0.375rem;
+            margin-top: 0.875rem;
+            padding-top: 0.875rem;
+            border-top: 1px solid var(--line);
         }
 
         .indicator {
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 0.8rem;
-            background: var(--bg-secondary);
-            border-radius: 20px;
+            padding: 0.2rem 0.55rem;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-chip);
             font-size: 0.8rem;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
+            color: var(--body);
         }
 
         .indicator.active {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: var(--accent-success);
-            color: var(--accent-success);
+            background: var(--tint1);
+            border-color: var(--tint1);
+            color: var(--primary-ink);
         }
 
         /* Room grid */
         .rooms-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
         }
 
         .room-tile {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.25rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .room-tile:hover {
-            transform: scale(1.05);
-        }
-
-        .room-tile.occupied {
-            border-color: var(--accent-success);
-            box-shadow: 0 0 20px var(--glow-success);
-        }
-
-        .room-tile .room-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
+            transition: border-color 0.15s ease, background 0.15s ease;
         }
 
         .room-tile .room-name {
-            font-weight: 500;
-            margin-bottom: 0.25rem;
+            font-size: 1rem;
+            text-transform: capitalize;
+            margin-bottom: 0.125rem;
         }
 
         .room-tile .room-status {
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: var(--muted);
+        }
+
+        .room-tile.occupied {
+            background: var(--tint1);
+            border-color: var(--primary);
+        }
+
+        .room-tile.occupied .room-name {
+            color: var(--primary-ink);
         }
 
         .room-tile.occupied .room-status {
-            color: var(--accent-success);
+            color: var(--body);
+            font-weight: 500;
         }
 
-        /* Specific room colors */
-        .room-tile[data-room="office"].occupied { border-color: var(--room-office); box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
-        .room-tile[data-room="living_room"].occupied { border-color: var(--room-living); box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
-        .room-tile[data-room="bedroom"].occupied { border-color: var(--room-bedroom); box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
-        .room-tile[data-room="kitchen"].occupied { border-color: var(--room-kitchen); box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
-        .room-tile[data-room="bathroom"].occupied { border-color: var(--room-bathroom); box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
-        .room-tile[data-room="entry"].occupied { border-color: var(--room-entry); box-shadow: 0 0 20px rgba(236, 72, 153, 0.3); }
+        .room-tile[data-room="away"] {
+            border-style: dashed;
+            border-color: var(--line-strong);
+        }
+
+        .room-tile[data-room="away"].occupied {
+            background: var(--surface);
+        }
+
+        .room-tile[data-room="away"].occupied .room-name {
+            color: var(--muted);
+        }
+
+        /* Vision panel */
+        .vision-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        .label {
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 0.375rem;
+        }
+
+        .vision-identified {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.75rem;
+            line-height: 1.15;
+            color: var(--primary-ink);
+            text-transform: capitalize;
+        }
+
+        .vision-meta {
+            color: var(--body);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .vision-time {
+            color: var(--muted);
+            font-size: 0.8rem;
+            margin-top: 0.375rem;
+        }
 
         /* LLM response card */
         .llm-response {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 1rem;
-            color: var(--text-secondary);
-            max-height: 200px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.6;
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: var(--r-ctl);
+            padding: 0.875rem 1rem;
+            color: var(--body);
+            max-height: 220px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-word;
         }
 
+        .vision-description {
+            max-height: 110px;
+            font-family: var(--font-text);
+            font-size: 0.85rem;
+        }
+
         /* Timeline */
         .timeline {
             position: relative;
-            padding-left: 2rem;
+            padding-left: 1.5rem;
         }
 
         .timeline::before {
             content: '';
             position: absolute;
-            left: 8px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: var(--border-color);
+            left: 5px;
+            top: 6px;
+            bottom: 6px;
+            width: 1px;
+            background: var(--line);
         }
+
+        .timeline:has(.timeline-empty)::before { display: none; }
+        .timeline:has(.timeline-empty) { padding-left: 0; }
 
         .timeline-item {
             position: relative;
-            padding-bottom: 1.5rem;
+            padding-bottom: 1rem;
         }
+
+        .timeline-item:last-child { padding-bottom: 0; }
 
         .timeline-item::before {
             content: '';
             position: absolute;
-            left: -1.5rem;
-            top: 4px;
-            width: 12px;
-            height: 12px;
+            left: calc(-1.5rem + 1px);
+            top: 6px;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
-            background: var(--accent-primary);
-            border: 2px solid var(--bg-card);
+            background: var(--surface);
+            border: 2px solid var(--primary);
         }
 
         .timeline-time {
-            font-family: 'JetBrains Mono', monospace;
             font-size: 0.75rem;
-            color: var(--text-muted);
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
         }
 
         .timeline-content {
-            margin-top: 0.25rem;
+            margin-top: 0.125rem;
+            font-size: 0.9rem;
+        }
+
+        .timeline-content strong { color: var(--ink); font-weight: 600; }
+        .timeline-content .room-ref { color: var(--primary-ink); font-weight: 500; }
+
+        .timeline-empty {
+            color: var(--muted);
+            text-align: center;
+            padding: 1rem;
         }
 
         /* Footer */
         footer {
             text-align: center;
-            padding: 2rem;
-            color: var(--text-muted);
+            padding: 1.5rem 1rem;
+            color: var(--muted);
             font-size: 0.85rem;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid var(--line);
             margin-top: 2rem;
         }
 
         footer a {
-            color: var(--accent-primary);
-            text-decoration: none;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-
-            h1 {
-                font-size: 1.75rem;
-            }
-
-            .status-bar {
-                gap: 1rem;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
+            color: var(--primary-ink);
+            text-decoration: underline;
+            text-underline-offset: 2px;
         }
 
         /* Loading state */
@@ -446,14 +507,14 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            color: var(--text-muted);
+            color: var(--muted);
         }
 
         .loading-spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--border-color);
-            border-top-color: var(--accent-primary);
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--line);
+            border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -462,90 +523,116 @@
             to { transform: rotate(360deg); }
         }
 
+        .empty-note {
+            margin-top: 0.75rem;
+            color: var(--muted);
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
         /* Error state */
         .error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid var(--accent-danger);
-            border-radius: 12px;
+            background: var(--danger-tint);
+            border: 1px solid var(--danger-ink);
+            border-radius: var(--r-ctl);
             padding: 1rem;
-            color: var(--accent-danger);
+            color: var(--danger-ink);
             text-align: center;
         }
 
         /* Auth section */
         .auth-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-card);
+            padding: 2rem 1.5rem;
+            margin: 0 auto 2rem;
+            max-width: 640px;
             text-align: center;
         }
 
         .auth-section h2 {
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
         }
 
         .auth-section p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
+            color: var(--body);
+            margin: 0 auto 1.5rem;
+            max-width: 480px;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-family: 'Outfit', sans-serif;
+            padding: 0.65rem 1.25rem;
+            background: var(--primary);
+            border: 1px solid var(--primary);
+            border-radius: var(--r-ctl);
+            color: var(--on-primary);
+            font-family: var(--font-text);
             font-size: 0.95rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background 0.15s ease, border-color 0.15s ease;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px var(--glow-primary);
+            background: var(--primary-ink);
+            border-color: var(--primary-ink);
         }
 
-        .btn:active {
-            transform: translateY(0);
+        .btn:focus-visible,
+        input:focus-visible,
+        summary:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .btn:disabled {
+            cursor: default;
+            opacity: 0.7;
         }
 
         .btn-secondary {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+            background: var(--surface);
+            border: 1px solid var(--line-strong);
+            color: var(--ink);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg);
+            border-color: var(--muted);
+        }
+
+        .btn-small {
+            padding: 0.4rem 0.85rem;
+            font-size: 0.85rem;
         }
 
         .btn-large {
-            padding: 1rem 2.5rem;
-            font-size: 1.1rem;
+            padding: 0.85rem 1.75rem;
+            font-size: 1rem;
         }
 
         .auth-error {
-            color: var(--accent-danger);
             margin-top: 1rem;
+            padding: 0.6rem 0.875rem;
+            background: var(--danger-tint);
+            border-radius: var(--r-ctl);
+            color: var(--danger-ink);
             font-size: 0.9rem;
         }
 
         /* Connected section */
         .connected-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 1.25rem 2rem;
-            margin-bottom: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-card);
+            padding: 0.875rem 1.25rem;
+            margin-bottom: 1.5rem;
         }
 
         .connected-section .inner {
@@ -553,76 +640,132 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         .connected-section .status {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.625rem;
+            color: var(--ink);
+            font-weight: 500;
         }
 
-        /* Manual token fallback */
+        .connected-section .status-dot {
+            width: 10px;
+            height: 10px;
+        }
+
+        #auth-method {
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-weight: 400;
+        }
+
+        /* HA URL + manual token fallback */
+        .form-group {
+            text-align: left;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .url-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.375rem;
+            color: var(--ink);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.65rem 0.875rem;
+            background: var(--surface);
+            border: 1px solid var(--line-strong);
+            border-radius: var(--r-ctl);
+            color: var(--ink);
+            font-family: var(--font-text);
+            font-size: 0.95rem;
+            transition: border-color 0.15s ease;
+        }
+
+        .form-group input::placeholder {
+            color: var(--muted);
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+        }
+
         .manual-toggle {
             margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border-color);
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--line);
         }
 
         .manual-toggle summary {
-            color: var(--text-muted);
+            color: var(--muted);
             cursor: pointer;
             font-size: 0.85rem;
         }
 
+        .manual-toggle summary:hover {
+            color: var(--body);
+        }
+
         .manual-toggle .form-group {
             margin-top: 1rem;
-            text-align: left;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .manual-toggle label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .manual-toggle input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-            transition: border-color 0.2s ease;
-        }
-
-        .manual-toggle input:focus {
-            outline: none;
-            border-color: var(--accent-primary);
         }
 
         .manual-toggle .btn {
-            margin-top: 1rem;
+            margin-top: 0.875rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.25rem 1rem;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            .logo-mark {
+                width: 40px;
+                height: 40px;
+            }
+
+            .dashboard-grid,
+            .vision-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="bg-gradient"></div>
-    <div class="grid-overlay"></div>
-
     <div class="container">
         <header>
             <div class="logo">
-                <div class="logo-icon">🧠</div>
+                <svg class="logo-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" aria-hidden="true" focusable="false">
+                    <rect width="88" height="88" rx="22" fill="#3E5C82"/>
+                    <path d="M14 38 L44 15 L74 38" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <rect x="22" y="40" width="20" height="15" rx="3" fill="#E8B23A"/>
+                    <rect x="46" y="40" width="20" height="15" rx="3" fill="#FFFFFF" opacity="0.18"/>
+                    <rect x="22" y="58" width="20" height="15" rx="3" fill="#FFFFFF" opacity="0.18"/>
+                    <rect x="46" y="58" width="20" height="15" rx="3" fill="#FFFFFF"/>
+                    <circle cx="32" cy="45" r="2.7" fill="#3E5C82"/>
+                    <path d="M27.3 55 a4.7 4.2 0 0 1 9.4 0 Z" fill="#3E5C82"/>
+                    <circle cx="56" cy="63" r="2.7" fill="#3E5C82"/>
+                    <path d="M51.3 73 a4.7 4.2 0 0 1 9.4 0 Z" fill="#3E5C82"/>
+                </svg>
                 <div>
                     <h1>Roomer</h1>
-                    <p class="subtitle">Intelligent presence detection powered by local AI</p>
+                    <p class="subtitle">Know who's in which room.</p>
                 </div>
             </div>
 
@@ -636,8 +779,8 @@
                     <span>Ollama</span>
                 </div>
                 <div class="status-item">
-                    <span>&#x1f550;</span>
-                    <span id="last-update">--:--:--</span>
+                    <span style="color: var(--muted);">Updated</span>
+                    <span id="last-update" class="time">--:--:--</span>
                 </div>
             </div>
         </header>
@@ -646,11 +789,9 @@
         <section class="auth-section" id="auth-section">
             <h2>Sign in to Home Assistant</h2>
             <p>Connect using your Home Assistant account. No tokens to copy — just sign in once and stay connected.</p>
-            <div class="manual-toggle" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 1.5rem;">
-                <div class="form-group" style="text-align: left; max-width: 500px; margin: 0 auto;">
-                    <label for="ha-url">Home Assistant URL</label>
-                    <input type="text" id="ha-url" value="" placeholder="http://192.168.0.233:8123">
-                </div>
+            <div class="form-group url-group">
+                <label for="ha-url">Home Assistant URL</label>
+                <input type="text" id="ha-url" value="" placeholder="http://192.168.0.233:8123">
             </div>
             <button type="button" class="btn btn-large" id="signin-btn">
                 Sign in with Home Assistant
@@ -673,9 +814,9 @@
         <section class="connected-section" id="connected-section" style="display: none;">
             <div class="inner">
                 <div class="status">
-                    <span class="status-dot online" style="width: 12px; height: 12px;"></span>
+                    <span class="status-dot online"></span>
                     <span>Connected to Home Assistant</span>
-                    <span id="auth-method" style="color: var(--text-muted); font-size: 0.8rem;"></span>
+                    <span id="auth-method"></span>
                 </div>
                 <button type="button" class="btn btn-secondary" id="disconnect-btn">
                     Sign out
@@ -691,11 +832,10 @@
             </section>
 
             <!-- Room Overview -->
-            <section class="card" style="margin-bottom: 2rem;">
+            <section class="card" style="margin-bottom: 1.5rem;">
                 <div class="card-header">
                     <div class="card-title">
-                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.2);">&#x1f3e0;</div>
-                        <span>Room Overview</span>
+                        <h2 class="card-title">Room overview</h2>
                     </div>
                 </div>
                 <div class="rooms-grid" id="rooms-grid">
@@ -704,32 +844,31 @@
             </section>
 
             <!-- Vision Identification -->
-            <section class="card" style="margin-bottom: 2rem;" id="vision-section">
+            <section class="card" style="margin-bottom: 1.5rem;" id="vision-section">
                 <div class="card-header">
                     <div class="card-title">
-                        <div class="card-icon" style="background: rgba(236, 72, 153, 0.2);">&#x1f4f7;</div>
-                        <span>Vision Identification</span>
+                        <h2 class="card-title">Vision identification</h2>
                     </div>
-                    <button class="btn btn-secondary" id="trigger-vision-btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    <button class="btn btn-secondary btn-small" id="trigger-vision-btn">
                         Identify Now
                     </button>
                 </div>
-                <div id="vision-result" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div id="vision-result" class="vision-grid">
                     <div>
-                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Last Identified</div>
-                        <div id="vision-identified" style="font-size: 1.75rem; font-weight: 600; color: var(--accent-primary);">
+                        <div class="label">Last identified</div>
+                        <div id="vision-identified" class="vision-identified">
                             --
                         </div>
-                        <div id="vision-confidence" style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">
+                        <div id="vision-confidence" class="vision-meta">
                             Confidence: --
                         </div>
-                        <div id="vision-time" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">
+                        <div id="vision-time" class="vision-time">
                             --
                         </div>
                     </div>
                     <div>
-                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Description</div>
-                        <div id="vision-description" class="llm-response" style="max-height: 100px; font-size: 0.8rem;">
+                        <div class="label">Description</div>
+                        <div id="vision-description" class="llm-response vision-description">
                             No vision identification yet. Click "Identify Now" or wait for motion detection.
                         </div>
                     </div>
@@ -742,8 +881,7 @@
                 <section class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <div class="card-icon" style="background: rgba(139, 92, 246, 0.2);">&#x1f916;</div>
-                            <span>LLM Analysis</span>
+                            <h2 class="card-title">LLM analysis</h2>
                         </div>
                     </div>
                     <div class="llm-response" id="llm-response">
@@ -755,8 +893,7 @@
                 <section class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <div class="card-icon" style="background: rgba(6, 182, 212, 0.2);">&#x1f4dc;</div>
-                            <span>Recent Activity</span>
+                            <h2 class="card-title">Recent activity</h2>
                         </div>
                     </div>
                     <div class="timeline" id="timeline">
@@ -1047,7 +1184,6 @@
         function renderRoomsGrid() {
             el.roomsGrid.innerHTML = CONFIG.rooms.map(room => `
                 <div class="room-tile" data-room="${room}" id="room-${room}">
-                    <div class="room-icon">${CONFIG.roomIcons[room] || '\u{1f3e0}'}</div>
                     <div class="room-name">${room.replace('_', ' ')}</div>
                     <div class="room-status">Empty</div>
                 </div>
@@ -1115,6 +1251,15 @@
             );
             if (visionSensor) updateVisionDisplay(visionSensor);
 
+            // Profile pictures from person.* entities (matched by friendly name)
+            const pictures = {};
+            states.forEach(s => {
+                if (s.entity_id.startsWith('person.') && s.attributes?.entity_picture) {
+                    const fn = (s.attributes.friendly_name || s.entity_id.slice(7)).toLowerCase();
+                    pictures[fn] = s.attributes.entity_picture;
+                }
+            });
+
             const roomOccupancy = {};
             CONFIG.rooms.forEach(room => roomOccupancy[room] = []);
 
@@ -1128,13 +1273,14 @@
                 const rawResponse = sensor.attributes.raw_response || '';
                 const entityType = sensor.attributes.entity_type || 'person';
                 const lastChanged = sensor.last_changed;
+                const picture = sensor.attributes.entity_picture || pictures[name.toLowerCase()] || null;
 
-                const data = { name, room, confidence, indicators, rawResponse, entityType, lastChanged };
+                const data = { name, room, confidence, indicators, rawResponse, entityType, lastChanged, picture };
 
                 if (isFirstLoad && room && room !== 'unknown') {
                     const icon = entityType === 'pet' ? '\u{1f43e}' : '\u{1f464}';
                     addTimelineEvent({
-                        message: `${icon} <strong>${name}</strong> detected in <span style="color: var(--room-${room?.replace('_', '-') || 'unknown'})">${room?.replace('_', ' ')}</span>`,
+                        message: `${icon} <strong>${name}</strong> detected in <span class="room-ref">${room?.replace('_', ' ')}</span>`,
                         type: 'initial_state',
                         entity: name,
                         from: null,
@@ -1143,7 +1289,7 @@
                 } else if (state.previousRooms[name] && state.previousRooms[name] !== room) {
                     const icon = entityType === 'pet' ? '\u{1f43e}' : '\u{1f464}';
                     addTimelineEvent({
-                        message: `${icon} <strong>${name}</strong> moved from <span style="color: var(--room-${state.previousRooms[name]?.replace('_', '-') || 'unknown'})">${state.previousRooms[name]?.replace('_', ' ')}</span> &rarr; <span style="color: var(--room-${room?.replace('_', '-') || 'unknown'})">${room?.replace('_', ' ')}</span>`,
+                        message: `${icon} <strong>${name}</strong> moved from <span class="room-ref">${state.previousRooms[name]?.replace('_', ' ')}</span> &rarr; <span class="room-ref">${room?.replace('_', ' ')}</span>`,
                         type: 'room_change',
                         entity: name,
                         from: state.previousRooms[name],
@@ -1179,7 +1325,7 @@
                             <div class="loading-spinner"></div>
                             <span>Waiting for Roomer data...</span>
                         </div>
-                        <p style="margin-top: 1rem; color: var(--text-muted); text-align: center;">
+                        <p class="empty-note">
                             Make sure the Roomer integration is configured in Home Assistant.
                         </p>
                     </div>
@@ -1187,32 +1333,32 @@
                 return;
             }
 
-            el.personsGrid.innerHTML = Object.entries(allEntities).map(([name, data]) => {
+            el.personsGrid.innerHTML = Object.entries(allEntities).map(([name, data], i) => {
                 const isPerson = data.entityType === 'person';
-                const cardClass = isPerson ? 'person-card' : 'pet-card';
-                const icon = isPerson ? '\u{1f464}' : '\u{1f43e}';
+                const isAway = data.room === 'away' || data.room === 'not_home';
+                const cardClass = (isPerson ? 'person-card' : 'pet-card') + (isAway ? ' away' : '');
                 const confidencePercent = Math.round(data.confidence * 100);
+                const tier = confidenceTier(data.confidence);
 
                 return `
                     <div class="card ${cardClass}">
                         <div class="card-header">
                             <div class="card-title">
-                                <div class="card-icon">${icon}</div>
+                                ${renderAvatar(name, data.picture, i)}
                                 <span>${name}</span>
                             </div>
-                            <span style="color: var(--text-muted); font-size: 0.85rem;">
+                            <span class="card-kind">
                                 ${isPerson ? 'Person' : 'Pet'}
                             </span>
                         </div>
-                        <div class="person-location" style="color: var(--room-${data.room?.replace('_', '-') || 'unknown'});">
-                            ${CONFIG.roomIcons[data.room] || '\u2753'} ${data.room?.replace('_', ' ') || 'Unknown'}
+                        <div class="person-location">
+                            ${data.room?.replace('_', ' ') || 'Unknown'}
                         </div>
-                        <div class="confidence-bar">
+                        <div class="confidence-bar ${tier.cls}" aria-hidden="true">
                             <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
                         </div>
                         <div class="confidence-text">
-                            <span>Confidence</span>
-                            <span>${confidencePercent}%</span>
+                            <span class="chip ${tier.chip}">${tier.label} &middot; ${confidencePercent}%</span>
                         </div>
                         ${data.indicators && data.indicators.length > 0 ? `
                             <div class="indicators">
@@ -1224,6 +1370,21 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function confidenceTier(c) {
+            if (c >= 0.8) return { label: 'Sure', chip: 'chip-sure', cls: 'conf-sure' };
+            if (c >= 0.5) return { label: 'Pretty sure', chip: 'chip-pretty', cls: 'conf-pretty' };
+            return { label: 'Guessing', chip: 'chip-guess', cls: 'conf-guess' };
+        }
+
+        function renderAvatar(name, picture, index) {
+            if (picture) {
+                const src = String(picture).replace(/"/g, '&quot;');
+                return `<img class="avatar picture" src="${src}" alt="">`;
+            }
+            const initials = name.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+            return `<div class="avatar tint-${(index % 3) + 1}" aria-hidden="true">${initials}</div>`;
         }
 
         function updateRoomTiles(roomOccupancy) {
@@ -1272,7 +1433,7 @@
         function renderTimeline() {
             if (state.timeline.length === 0) {
                 el.timeline.innerHTML = `
-                    <div style="color: var(--text-muted); text-align: center; padding: 1rem;">
+                    <div class="timeline-empty">
                         <p>No room changes detected yet.</p>
                         <p style="font-size: 0.8rem; margin-top: 0.5rem;">Events will appear here when someone moves between rooms.</p>
                     </div>
@@ -1306,16 +1467,8 @@
             }
 
             const identEl = document.getElementById('vision-identified');
-            const personColors = ['var(--room-office)', 'var(--room-bedroom)', 'var(--room-kitchen)', 'var(--room-living)'];
-            const personIndex = Object.keys(state.persons).indexOf(identified.toLowerCase());
-            const petIndex = Object.keys(state.pets).indexOf(identified.toLowerCase());
-            if (personIndex >= 0) {
-                identEl.style.color = personColors[personIndex % personColors.length];
-            } else if (petIndex >= 0) {
-                identEl.style.color = personColors[(petIndex + Object.keys(state.persons).length) % personColors.length];
-            } else {
-                identEl.style.color = 'var(--accent-primary)';
-            }
+            const unidentified = identified === 'none' || identified === 'unknown';
+            identEl.style.color = unidentified ? 'var(--muted)' : 'var(--primary-ink)';
 
             if (identified !== 'none' && identified !== 'unknown' && attrs.timestamp) {
                 const newTime = new Date(attrs.timestamp).getTime();

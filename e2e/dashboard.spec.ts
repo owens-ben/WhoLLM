@@ -23,6 +23,13 @@ test.describe('Dashboard loads', () => {
 
 test.describe('Auth section', () => {
   test.beforeEach(async ({ page }) => {
+    // Sign-in navigates to the HA instance's /auth/authorize. Stub it so the
+    // tests never depend on reaching a real host (unreachable addresses make
+    // the click hang until the test times out).
+    await page.route(/\/auth\/authorize/, route =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: '<title>authorize stub</title>' }),
+    );
+
     // Clear all stored auth before each test
     await page.goto('/');
     await page.evaluate(() => {

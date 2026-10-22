@@ -1,0 +1,477 @@
+/* Roomer brand for MkDocs Material.
+ * Headings: Bricolage Grotesque 600. Body: DM Sans (theme.font). Code: JetBrains Mono.
+ * Crafted shapes: 10-14px radii, 6px for chips/inline code, 1px hairlines, no shadows.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&display=swap");
+
+/* ---------- Tokens ---------- */
+:root,
+[data-md-color-scheme="default"] {
+  --roomer-bg: #FBF6EC;
+  --roomer-surface: #FFFFFF;
+  --roomer-ink: #2A2419;
+  --roomer-body: #4A4033;
+  --roomer-muted: #6B6150;
+  --roomer-line: #E7DCC5;
+  --roomer-line-strong: #D9CCB1;
+  --roomer-primary: #3E5C82;
+  --roomer-primary-ink: #31496A;
+  --roomer-on-primary: #FFFFFF;
+  --roomer-tint1: #DCE4EE;
+  --roomer-secondary: #5B6E4A;
+  --roomer-secondary-ink: #47573A;
+  --roomer-tint2: #E4EADB;
+  --roomer-highlight: #E8B23A;
+  --roomer-highlight-ink: #6F5213;
+  --roomer-tint3: #F7E4B5;
+  --roomer-code-bg: #F5EEE0;
+}
+
+[data-md-color-scheme="slate"] {
+  --roomer-bg: #1A1917;
+  --roomer-surface: #23211E;
+  --roomer-ink: #F2EEE8;
+  --roomer-body: #D3CEC6;
+  --roomer-muted: #A39C91;
+  --roomer-line: #34312C;
+  --roomer-line-strong: #46423B;
+  --roomer-primary: #93AECF;
+  --roomer-primary-ink: #AFC4DD;
+  --roomer-on-primary: #1A1917;
+  --roomer-tint1: #21262E;
+  --roomer-secondary: #9DB088;
+  --roomer-secondary-ink: #B3C4A1;
+  --roomer-tint2: #252A22;
+  --roomer-highlight: #D8B060;
+  --roomer-highlight-ink: #E2C27F;
+  --roomer-tint3: #2D2A21;
+  --roomer-code-bg: #23211E;
+  --md-hue: 40;
+}
+
+/* ---------- Map tokens onto Material variables ---------- */
+[data-md-color-scheme="default"],
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: var(--roomer-primary);
+  --md-primary-fg-color--light: var(--roomer-primary-ink);
+  --md-primary-fg-color--dark: var(--roomer-primary-ink);
+  --md-primary-bg-color: var(--roomer-on-primary);
+  --md-primary-bg-color--light: var(--roomer-on-primary);
+
+  --md-accent-fg-color: var(--roomer-primary-ink);
+  --md-accent-fg-color--transparent: color-mix(in srgb, var(--roomer-primary) 12%, transparent);
+  --md-accent-bg-color: var(--roomer-on-primary);
+  --md-accent-bg-color--light: var(--roomer-on-primary);
+
+  --md-default-bg-color: var(--roomer-bg);
+  --md-default-bg-color--light: var(--roomer-surface);
+  --md-default-bg-color--lighter: var(--roomer-surface);
+  --md-default-bg-color--lightest: var(--roomer-surface);
+  --md-default-fg-color: var(--roomer-ink);
+  --md-default-fg-color--light: var(--roomer-muted);
+  --md-default-fg-color--lighter: var(--roomer-line-strong);
+  --md-default-fg-color--lightest: var(--roomer-line);
+
+  --md-typeset-color: var(--roomer-body);
+  --md-typeset-a-color: var(--roomer-primary);
+  --md-typeset-mark-color: var(--roomer-tint3);
+  --md-typeset-table-color: var(--roomer-line);
+  --md-typeset-table-color--light: color-mix(in srgb, var(--roomer-tint1) 45%, transparent);
+
+  --md-code-bg-color: var(--roomer-code-bg);
+  --md-code-fg-color: var(--roomer-ink);
+  --md-code-hl-color: color-mix(in srgb, var(--roomer-highlight) 30%, transparent);
+  --md-code-hl-color--light: color-mix(in srgb, var(--roomer-highlight) 15%, transparent);
+
+  --md-admonition-fg-color: var(--roomer-body);
+  --md-admonition-bg-color: var(--roomer-surface);
+
+  --md-footer-fg-color: var(--roomer-ink);
+  --md-footer-fg-color--light: var(--roomer-muted);
+  --md-footer-fg-color--lighter: var(--roomer-muted);
+  --md-footer-bg-color: var(--roomer-surface);
+  --md-footer-bg-color--dark: var(--roomer-bg);
+
+  --md-shadow-z1: none;
+  --md-shadow-z2: none;
+  --md-shadow-z3: none;
+}
+
+body {
+  background-color: var(--roomer-bg);
+}
+
+/* ---------- Headings ---------- */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-header__topic,
+.md-footer__title .md-ellipsis {
+  font-family: "Bricolage Grotesque", "DM Sans", system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+  color: var(--roomer-ink);
+}
+
+.md-typeset h1 {
+  font-size: 2.2em;
+  line-height: 1.15;
+}
+
+.md-typeset strong {
+  color: var(--roomer-ink);
+}
+
+/* ---------- Header & tabs: bg-colored, ink text, hairline, Denim accents ---------- */
+.md-header,
+.md-tabs {
+  /* Material draws header text/icons with --md-primary-bg-color */
+  --md-primary-bg-color: var(--roomer-ink);
+  --md-primary-bg-color--light: var(--roomer-muted);
+  background-color: var(--roomer-bg);
+  color: var(--roomer-ink);
+}
+
+.md-header {
+  border-bottom: 1px solid var(--roomer-line);
+  box-shadow: none;
+}
+
+.md-header--shadow {
+  box-shadow: none;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 1.6rem;
+  width: auto;
+}
+
+.md-tabs {
+  border-bottom: 1px solid var(--roomer-line);
+}
+
+.md-tabs__link {
+  opacity: 1;
+  color: var(--roomer-muted);
+  font-weight: 500;
+}
+
+.md-tabs__link:hover,
+.md-tabs__item--active .md-tabs__link {
+  color: var(--roomer-primary);
+}
+
+.md-tabs__item--active .md-tabs__link {
+  font-weight: 700;
+}
+
+/* Search field in the header */
+@media screen and (min-width: 60em) {
+  .md-search__form {
+    background-color: var(--roomer-surface);
+    border: 1px solid var(--roomer-line);
+    border-radius: 10px;
+  }
+
+  .md-search__form:hover {
+    background-color: var(--roomer-surface);
+    border-color: var(--roomer-line-strong);
+  }
+
+  .md-search__input {
+    color: var(--roomer-ink);
+  }
+
+  .md-search__input::placeholder,
+  .md-search__icon {
+    color: var(--roomer-muted);
+  }
+}
+
+.md-search__output {
+  border-radius: 0 0 10px 10px;
+}
+
+/* Source/repo link */
+.md-source {
+  color: var(--roomer-ink);
+}
+
+/* ---------- Navigation ---------- */
+.md-nav__link--active,
+.md-nav__item .md-nav__link--active {
+  color: var(--roomer-primary);
+  font-weight: 700;
+}
+
+.md-nav__link:hover,
+.md-nav__link:focus {
+  color: var(--roomer-primary-ink);
+}
+
+/* ---------- Links ---------- */
+.md-typeset a:hover,
+.md-typeset a:focus {
+  color: var(--roomer-primary-ink);
+}
+
+/* ---------- Code ---------- */
+.md-typeset code {
+  border-radius: 6px;
+}
+
+.md-typeset :not(pre) > code {
+  border: 1px solid var(--roomer-line);
+  padding: 0.05em 0.35em;
+}
+
+.md-typeset pre > code {
+  border: 1px solid var(--roomer-line);
+  border-radius: 12px;
+}
+
+.md-typeset .highlight,
+.md-typeset .highlighttable {
+  border-radius: 12px;
+}
+
+.md-typeset kbd {
+  border-radius: 6px;
+  box-shadow: none;
+  border: 1px solid var(--roomer-line-strong);
+  background-color: var(--roomer-surface);
+  color: var(--roomer-ink);
+}
+
+/* ---------- Admonitions ---------- */
+.md-typeset .admonition,
+.md-typeset details {
+  border: 1px solid var(--roomer-line);
+  border-radius: 12px;
+  box-shadow: none;
+  background-color: var(--roomer-surface);
+  font-size: 0.72rem;
+  overflow: hidden;
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary {
+  background-color: transparent !important;
+  border-left: 0;
+  color: var(--roomer-ink);
+  font-weight: 700;
+}
+
+/* note / info / abstract / question -> tint1 */
+.md-typeset .admonition:is(.note, .info, .abstract, .summary, .tldr, .todo, .question, .help, .faq),
+.md-typeset details:is(.note, .info, .abstract, .summary, .tldr, .todo, .question, .help, .faq) {
+  background-color: var(--roomer-tint1);
+  border-color: color-mix(in srgb, var(--roomer-primary) 30%, var(--roomer-line));
+}
+
+.md-typeset :is(.note, .info, .abstract, .summary, .tldr, .todo, .question, .help, .faq) > :is(.admonition-title, summary)::before {
+  background-color: var(--roomer-primary);
+}
+
+/* tip / success -> tint2 */
+.md-typeset .admonition:is(.tip, .hint, .important, .success, .check, .done),
+.md-typeset details:is(.tip, .hint, .important, .success, .check, .done) {
+  background-color: var(--roomer-tint2);
+  border-color: color-mix(in srgb, var(--roomer-secondary) 30%, var(--roomer-line));
+}
+
+.md-typeset :is(.tip, .hint, .important, .success, .check, .done) > :is(.admonition-title, summary)::before {
+  background-color: var(--roomer-secondary);
+}
+
+/* warning / example -> tint3 */
+.md-typeset .admonition:is(.warning, .caution, .attention, .example),
+.md-typeset details:is(.warning, .caution, .attention, .example) {
+  background-color: var(--roomer-tint3);
+  border-color: color-mix(in srgb, var(--roomer-highlight) 40%, var(--roomer-line));
+}
+
+.md-typeset :is(.warning, .caution, .attention, .example) > :is(.admonition-title, summary)::before {
+  background-color: var(--roomer-highlight-ink);
+}
+
+/* danger / failure / bug keep Material's red icon, crafted shape only */
+
+.md-typeset details > summary::after {
+  color: var(--roomer-muted);
+}
+
+/* ---------- Buttons ---------- */
+.md-typeset .md-button {
+  border: 1px solid var(--roomer-primary);
+  border-radius: 10px;
+  color: var(--roomer-primary);
+  font-weight: 700;
+  padding: 0.55em 1.4em;
+  box-shadow: none;
+}
+
+.md-typeset .md-button:hover,
+.md-typeset .md-button:focus {
+  background-color: var(--roomer-tint1);
+  border-color: var(--roomer-primary-ink);
+  color: var(--roomer-primary-ink);
+}
+
+.md-typeset .md-button--primary {
+  background-color: var(--roomer-primary);
+  border-color: var(--roomer-primary);
+  color: var(--roomer-on-primary);
+}
+
+.md-typeset .md-button--primary:hover,
+.md-typeset .md-button--primary:focus {
+  background-color: var(--roomer-primary-ink);
+  border-color: var(--roomer-primary-ink);
+  color: var(--roomer-on-primary);
+}
+
+/* ---------- Tables ---------- */
+.md-typeset__scrollwrap {
+  margin: 1em 0;
+}
+
+.md-typeset__table {
+  padding: 0;
+}
+
+.md-typeset table:not([class]) {
+  border: 1px solid var(--roomer-line);
+  border-radius: 12px;
+  box-shadow: none;
+  overflow: hidden;
+  background-color: var(--roomer-surface);
+  font-size: 0.72rem;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--roomer-bg);
+  color: var(--roomer-ink);
+  font-weight: 700;
+}
+
+.md-typeset table:not([class]) td {
+  border-top: 1px solid var(--roomer-line);
+}
+
+/* ---------- Cards grid (home page) ---------- */
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  background-color: var(--roomer-surface);
+  border: 1px solid var(--roomer-line);
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.md-typeset .grid.cards > ul > li:hover,
+.md-typeset .grid > .card:hover {
+  border-color: var(--roomer-line-strong);
+  box-shadow: none;
+}
+
+.md-typeset .grid.cards > ul > li > hr,
+.md-typeset .grid.cards > ol > li > hr {
+  border-bottom-color: var(--roomer-line);
+}
+
+.md-typeset .grid.cards .lg {
+  color: var(--roomer-primary);
+}
+
+/* ---------- Home hero ---------- */
+.md-typeset h1.roomer-hero {
+  font-size: 2.8em;
+  margin-bottom: 0.3em;
+}
+
+.md-typeset .roomer-lead {
+  font-size: 1.2em;
+  line-height: 1.5;
+  color: var(--roomer-body);
+  margin-top: 0;
+}
+
+.md-typeset .roomer-lead strong {
+  font-weight: 500;
+}
+
+.md-typeset .roomer-lead em {
+  font-style: normal;
+  color: var(--roomer-primary);
+  font-weight: 700;
+}
+
+/* ---------- Misc ---------- */
+.md-typeset hr {
+  border-bottom: 1px solid var(--roomer-line);
+}
+
+.md-typeset mark {
+  border-radius: 6px;
+  color: var(--roomer-ink);
+}
+
+.md-typeset blockquote {
+  border-left: 3px solid var(--roomer-line-strong);
+  color: var(--roomer-muted);
+}
+
+.md-typeset .tabbed-labels > label {
+  color: var(--roomer-muted);
+}
+
+.md-typeset .tabbed-set > input:checked + label,
+.md-typeset .tabbed-labels > label:hover {
+  color: var(--roomer-primary);
+}
+
+.md-typeset .tabbed-labels::before {
+  background-color: var(--roomer-primary);
+}
+
+.md-top {
+  border: 1px solid var(--roomer-line);
+  background-color: var(--roomer-surface);
+  color: var(--roomer-ink);
+  box-shadow: none;
+}
+
+.md-top:hover {
+  background-color: var(--roomer-primary);
+  color: var(--roomer-on-primary);
+}
+
+/* Footer */
+.md-footer {
+  border-top: 1px solid var(--roomer-line);
+}
+
+.md-footer-meta {
+  border-top: 1px solid var(--roomer-line);
+}
+
+.md-footer__link:hover,
+.md-footer-meta__inner a:hover {
+  color: var(--roomer-primary);
+}
+
+/* Home page logo above the hero title */
+.md-typeset .roomer-hero-logo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 0 0 0.6rem;
+}

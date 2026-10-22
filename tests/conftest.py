@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock
 
-from custom_components.roomer.habits import HabitPredictor, ConfidenceCombiner
-from custom_components.roomer.providers.base import PresenceGuess
+import pytest
+
 from custom_components.roomer.const import (
     CONF_MODEL,
     CONF_PERSON_DEVICES,
@@ -27,6 +26,8 @@ from custom_components.roomer.const import (
     ENTITY_HINT_MEDIA,
     ENTITY_HINT_MOTION,
 )
+from custom_components.roomer.habits import ConfidenceCombiner, HabitPredictor
+from custom_components.roomer.providers.base import PresenceGuess
 
 
 @pytest.fixture

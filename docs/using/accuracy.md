@@ -26,13 +26,14 @@ Most smart-home sensors tell you that **someone** is in a room, not **who**:
 - **One person home:** every signal belongs to that person, so motion, lights and media are all useful.
 - **"Is Alice home at all?"** If her phone's device tracker says she's out, her room becomes `away` with a fixed confidence of 0.95, and the AI is skipped for her.
 - **"Alice is at her desk":** her PC being on is a strong, personal signal.
+- **"Alice is in the kitchen and Bob is in the office":** a phone, watch or tag that reports its room, assigned to each person, places each of them separately, whoever else is home.
 - **"Someone is watching TV in the living room":** for the household as a whole.
 
 ### What it can't do (yet)
 
 - **Tell two people apart from anonymous sensors alone.** Two people at home with only motion sensors will usually show up in the same room.
 - **Split a household between rooms without per-person devices.** If Alice is in the office and Bob in the kitchen, and the only evidence is motion in both rooms, Roomer doesn't know who is where. Each person goes to whichever room has the stronger evidence overall.
-- **Track pets reliably.** Pets get all the anonymous signals (minus PCs) and no device-tracker check.
+- **Track pets reliably.** Pets get all the anonymous signals (minus PCs) and no home/away check. A Bluetooth tag on the collar, assigned to the pet, fixes that.
 - **Use camera identification for rooms.** The [`roomer.identify_person`](services-events.md) service can recognise a person from a snapshot, but in the current version that result isn't used to set anyone's room. Camera "person detected" binary sensors **are** used, but they are anonymous, like motion.
 - **React instantly.** Roomer re-evaluates on a timer (every 10 seconds by default), and the AI call itself takes time.
 
@@ -101,7 +102,7 @@ So a confident, correct answer usually sits between 0.7 and 0.95, and values aro
     - Habits are learned only from decisions with confidence of 0.7 or more, in two-hour time-of-day slots. They are saved to `/config/roomer_learned_habits.json` and kept across restarts.
     - The code is in `custom_components/roomer/habits.py` (`ConfidenceCombiner`), and `tests/test_confidence_scoring.py` has worked examples. See [Architecture](../contributing/architecture.md).
 
-You can change the weights under **Settings → Devices & services → Roomer → Configure → Confidence Weights**. Each is a percentage, so 85% means 0.85. Roomer reloads itself when you save, so the change takes effect straight away. See the warning about saving options in [Troubleshooting](troubleshooting.md).
+You can change the weights under **Settings → Devices & services → Roomer → Configure → Confidence Weights**. Each is a percentage, so 85% means 0.85. Roomer reloads itself when you save, so the change takes effect straight away.
 
 ## Tips to improve accuracy
 
@@ -109,17 +110,7 @@ You can change the weights under **Settings → Devices & services → Roomer �
 This matters most. Ideas, roughly from best to good:
 
 - **Their own PC or laptop.** Map its power or activity entity to the right room, *and* assign it to the person under **Person Device Ownership**. The ownership boost only applies when the device is also mapped to a room. Because it's mapped to a room, the PC also counts as ordinary evidence for everyone else. The owner simply gets it twice, so Bob can still drift toward Alice's office if nothing else points elsewhere for him. Giving Bob his own personal signal fixes that.
-- **Room-level phone tracking.** Bluetooth room-presence tools (for example Bermuda or ESPresense) can report which room a phone is in. Roomer looks for entities that switch to `on` or `home`, so create one binary sensor per room per person, map it to its room, and assign it to the person:
-
-    ```yaml
-    # configuration.yaml: "Alice's phone is in the office"
-    template:
-      - binary_sensor:
-          - name: "Alice phone office"
-            state: "{{ is_state('sensor.alice_phone_area', 'Office') }}"
-    ```
-
-    Replace `sensor.alice_phone_area` with the entity your BLE tool creates, and `Office` with the area name it reports.
+- **Room-level phone tracking.** Bluetooth room-presence tools (for example Bermuda, ESPresense or room-assistant) report which room a phone, watch or tag is in. Assign that entity to its owner under **Person Device Ownership**, and Roomer puts them in the reported room directly, at 0.9 confidence, without asking the AI. The entity doesn't need to be mapped to a room. This is the best thing you can do in a home with more than one person. Details, including what happens when a person's devices disagree, are in [Map your rooms](../getting-started/map-rooms.md#devices-that-report-a-room).
 
 - **A phone device tracker** (the Companion app) for home/away. Assign it under Person Device Ownership so `away` works.
 

@@ -12,8 +12,9 @@ from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTR_CONFIDENCE, ATTR_INDICATORS, ATTR_RAW_RESPONSE, DOMAIN
+from .const import ATTR_CONFIDENCE, ATTR_INDICATORS, ATTR_RAW_RESPONSE, DOMAIN, ROOM_AWAY, ROOM_UNKNOWN
 from .coordinator import LLMPresenceCoordinator
+from .providers.base import PresenceGuess
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +48,11 @@ async def async_setup_entry(
                 entity_type="pet",
             )
         )
+
+    # Create an occupants sensor for each room (who is in it right now)
+    for room in coordinator.rooms:
+        if room not in (ROOM_AWAY, ROOM_UNKNOWN):
+            entities.append(RoomOccupantsSensor(coordinator=coordinator, room=room))
 
     # Create vision identification sensor
     entities.append(LLMVisionSensor(hass, coordinator))
@@ -104,6 +110,7 @@ class LLMPresenceSensor(CoordinatorEntity[LLMPresenceCoordinator], SensorEntity)
                 ATTR_CONFIDENCE: entity_data.confidence,
                 ATTR_RAW_RESPONSE: entity_data.raw_response,
                 ATTR_INDICATORS: entity_data.indicators,
+                "source": entity_data.source,
                 "entity_type": self._entity_type,
             }
         return {}
@@ -112,6 +119,55 @@ class LLMPresenceSensor(CoordinatorEntity[LLMPresenceCoordinator], SensorEntity)
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         self.async_write_ha_state()
+
+
+class RoomOccupantsSensor(CoordinatorEntity[LLMPresenceCoordinator], SensorEntity):
+    """Sensor showing who is in a room.
+
+    The state is the number of people in the room, like a zone's person count,
+    so a pet alone doesn't make a room count as occupied. Names of the people
+    and pets are in the attributes.
+    """
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:account-group"
+
+    def __init__(self, coordinator: LLMPresenceCoordinator, room: str) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._room = room
+
+        room_slug = room.lower().replace(" ", "_")
+        self._attr_unique_id = f"{DOMAIN}_room_{room_slug}_occupants"
+        self._attr_name = f"{room.replace('_', ' ').title()} Occupants"
+
+    def _in_room(self, data_key: str) -> dict[str, PresenceGuess]:
+        """Return the persons or pets currently placed in this room."""
+        entities = (self.coordinator.data or {}).get(data_key, {})
+        return {name: guess for name, guess in entities.items() if guess.room == self._room}
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the number of people in the room."""
+        if not self.coordinator.data:
+            return None
+        return len(self._in_room("persons"))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return who is in the room, with confidence and source for each."""
+        if not self.coordinator.data:
+            return {}
+
+        people = self._in_room("persons")
+        pets = self._in_room("pets")
+        everyone = {**people, **pets}
+        return {
+            "people": list(people),
+            "pets": list(pets),
+            ATTR_CONFIDENCE: {name: guess.confidence for name, guess in everyone.items()},
+            "sources": {name: guess.source for name, guess in everyone.items()},
+        }
 
 
 class LLMVisionSensor(SensorEntity):

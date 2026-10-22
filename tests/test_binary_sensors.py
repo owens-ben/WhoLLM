@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+
 from custom_components.roomer.const import ATTR_CONFIDENCE, DOMAIN
-from custom_components.roomer.providers.base import PresenceGuess
 
 
 class TestLLMPresenceRoomBinarySensor:
@@ -308,8 +308,9 @@ class TestBinarySensorDeviceClass:
 
     def test_device_class_is_occupancy(self, mock_coordinator):
         """Test that sensors have OCCUPANCY device class."""
-        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
         from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+
+        from custom_components.roomer.binary_sensor import LLMPresenceRoomBinarySensor
 
         sensor = LLMPresenceRoomBinarySensor(
             coordinator=mock_coordinator,

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" role="img" aria-label="Roomer">
+  <rect width="88" height="88" rx="22" fill="#3E5C82"/>
+  <path d="M14 38 L44 15 L74 38" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="22" y="40" width="20" height="15" rx="3" fill="#E8B23A"/>
+  <rect x="46" y="40" width="20" height="15" rx="3" fill="#FFFFFF" opacity="0.18"/>
+  <rect x="22" y="58" width="20" height="15" rx="3" fill="#FFFFFF" opacity="0.18"/>
+  <rect x="46" y="58" width="20" height="15" rx="3" fill="#FFFFFF"/>
+  <circle cx="32" cy="45" r="2.7" fill="#3E5C82"/>
+  <path d="M27.3 55 a4.7 4.2 0 0 1 9.4 0 Z" fill="#3E5C82"/>
+  <circle cx="56" cy="63" r="2.7" fill="#3E5C82"/>
+  <path d="M51.3 73 a4.7 4.2 0 0 1 9.4 0 Z" fill="#3E5C82"/>
+</svg>

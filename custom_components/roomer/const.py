@@ -98,6 +98,10 @@ DEVICE_TRACKER_UNAVAILABLE = "unavailable"
 # Confidence for device tracker based away detection
 DEVICE_TRACKER_AWAY_CONFIDENCE = 0.95
 
+# Confidence for room-level device presence (Bermuda, ESPresense, room-assistant, etc.)
+DEVICE_ROOM_CONFIDENCE = 0.90  # All of the person's located devices report the same room
+DEVICE_ROOM_SPLIT_CONFIDENCE = 0.70  # Their devices report different rooms
+
 # Attributes
 ATTR_CONFIDENCE = "confidence"
 ATTR_LAST_SEEN = "last_seen"

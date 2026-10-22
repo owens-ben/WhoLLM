@@ -52,10 +52,12 @@ async def _setup_entry(hass, entry):
 
     hass.services.async_register = capture_register
 
-    with patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class, \
-            patch("custom_components.roomer.EventLogger") as mock_logger_class, \
-            patch("custom_components.roomer.VisionIdentifier"), \
-            patch("custom_components.roomer.CameraTrackingController"):
+    with (
+        patch("custom_components.roomer.LLMPresenceCoordinator") as mock_coord_class,
+        patch("custom_components.roomer.EventLogger") as mock_logger_class,
+        patch("custom_components.roomer.VisionIdentifier"),
+        patch("custom_components.roomer.CameraTrackingController"),
+    ):
         mock_coordinator = MagicMock()
         mock_coordinator.async_config_entry_first_refresh = AsyncMock()
         mock_coord_class.return_value = mock_coordinator
@@ -238,11 +240,13 @@ class TestCoordinatorOwnsComponents:
 
         hass = MagicMock()
         entry = _make_entry()
-        with patch.object(coordinator_module.DataUpdateCoordinator, "__init__", return_value=None), \
-                patch.object(coordinator_module, "get_provider"), \
-                patch.object(coordinator_module, "HistoryTracker") as mock_tracker, \
-                patch.object(coordinator_module, "HabitPredictor"), \
-                patch.object(coordinator_module, "EventLogger"):
+        with (
+            patch.object(coordinator_module.DataUpdateCoordinator, "__init__", return_value=None),
+            patch.object(coordinator_module, "get_provider"),
+            patch.object(coordinator_module, "HistoryTracker") as mock_tracker,
+            patch.object(coordinator_module, "HabitPredictor"),
+            patch.object(coordinator_module, "EventLogger"),
+        ):
             coordinator = LLMPresenceCoordinator(hass, entry)
 
         assert coordinator.history_tracker is mock_tracker.return_value
@@ -255,11 +259,13 @@ class TestCoordinatorOwnsComponents:
         hass = MagicMock()
         entry = _make_entry()
         entry.options = {CONF_NOTIFICATIONS_ENABLED: False}
-        with patch.object(coordinator_module.DataUpdateCoordinator, "__init__", return_value=None), \
-                patch.object(coordinator_module, "get_provider"), \
-                patch.object(coordinator_module, "HistoryTracker"), \
-                patch.object(coordinator_module, "HabitPredictor"), \
-                patch.object(coordinator_module, "EventLogger"):
+        with (
+            patch.object(coordinator_module.DataUpdateCoordinator, "__init__", return_value=None),
+            patch.object(coordinator_module, "get_provider"),
+            patch.object(coordinator_module, "HistoryTracker"),
+            patch.object(coordinator_module, "HabitPredictor"),
+            patch.object(coordinator_module, "EventLogger"),
+        ):
             coordinator = LLMPresenceCoordinator(hass, entry)
 
         assert coordinator.notification_manager._enabled is False

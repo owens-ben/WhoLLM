@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from custom_components.roomer.providers.base import PresenceGuess, BaseLLMProvider
-from custom_components.roomer.providers.ollama import OllamaProvider
+import pytest
+
 from custom_components.roomer.const import VALID_ROOMS
+from custom_components.roomer.providers.base import PresenceGuess
+from custom_components.roomer.providers.ollama import OllamaProvider
 
 
 class TestPresenceGuess:
@@ -315,4 +316,3 @@ class TestOllamaProvider:
 
         # Pet should be near TV if it's on
         assert guess.room == "living_room"
-

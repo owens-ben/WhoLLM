@@ -15,6 +15,7 @@ To see them all, go to **Settings → Devices & services → Roomer** and open t
 |---|---|---|---|
 | Room sensor | person and pet | `sensor.alice_room` | Which room they are in right now |
 | Room occupancy binary sensor | person (or pet) × room | `binary_sensor.alice_in_office` | `on` when they are in that room |
+| Room occupants sensor | room | `sensor.kitchen_occupants` | How many people are in that room, and who |
 | Vision sensor | integration | `sensor.vision_last_identification` | Result of the last camera identification |
 
 ## Room sensor: `sensor.<name>_room`
@@ -39,13 +40,16 @@ The main entity. Its state is the room Roomer thinks the person or pet is in.
 
     If a person has no device tracker assigned, Roomer will almost never show them as `away`. Pets never get the device-tracker check.
 
+    A device that reports a room (see [Map your rooms](../getting-started/map-rooms.md#devices-that-report-a-room)) and changed more recently than the tracker wins over `away`.
+
 ### Attributes
 
 | Attribute | Type | Example | Meaning |
 |---|---|---|---|
 | `confidence` | number, 0.0 to 1.0 | `0.46` | How strongly the signals point to this room. It is a fraction, **not** a percentage, and not a true probability. See [Accuracy & limits](accuracy.md). |
 | `indicators` | list of text | see below | The signals behind the decision. Up to five `hint_type: entity` entries for active mapped sensors, followed by a one-line summary from the confidence combiner. When there were no signals at all, this contains `No signals available`. |
-| `raw_response` | text | `ROOM: office` | Exactly what the AI model replied. When the person is away by device tracker it reads `Device tracker indicates not home`. When the AI server could not be reached it holds the error message, which may be empty for a timeout. |
+| `raw_response` | text | `ROOM: office` | Exactly what the AI model replied. When the person is away by device tracker it reads `Device tracker indicates not home`. When a device located them it names the device, such as `sensor.alice_phone_area reports Office`. When the AI server could not be reached it holds the error message, which may be empty for a timeout. |
+| `source` | text | `device_room` | Where the room came from: `device_room` (a device of theirs reported it), `device_tracker` (away) or `llm` (worked out from sensors, habits and the AI). |
 | `entity_type` | text | `person` | `person` or `pet`. |
 
 A typical `indicators` value while Alice works at her PC with the desk lamp on:
@@ -88,6 +92,43 @@ There is no `..._in_away` binary sensor, because `away` is not a room you config
 | `confidence` | number, 0.0 to 1.0 | The person's confidence if they are in **this** room; `0.0` otherwise |
 | `current_room` | text | Whatever room the person is in right now (same as the room sensor's state) |
 | `entity_type` | text | `person` or `pet` |
+
+## Room occupants sensors: `sensor.<room>_occupants`
+
+For every room you configured, Roomer creates a sensor that answers "who is in the kitchen right now?" in one entity. There is none for `away` or `unknown`.
+
+- **Name:** `<Room> Occupants`, with the room title-cased ("Living Room Occupants")
+- **Icon:** `mdi:account-group`
+- **Unique ID:** `roomer_room_living_room_occupants`
+
+### States
+
+The state is the number of **people** in the room. Pets are listed in the attributes but not counted, so a cat asleep in the office doesn't make the room count as occupied. It is `unknown` until the first update finishes.
+
+### Attributes
+
+| Attribute | Type | Example | Meaning |
+|---|---|---|---|
+| `people` | list of text | `["Alice", "Bob"]` | The people Roomer currently places in this room |
+| `pets` | list of text | `["Miso"]` | The pets in this room |
+| `confidence` | map of name to number | `{"Alice": 0.9, "Bob": 0.62}` | Each one's confidence in this room, 0.0 to 1.0 |
+| `sources` | map of name to text | `{"Alice": "device_room", "Bob": "llm"}` | Where each one's room came from, as for the `source` attribute above |
+
+```yaml
+# Turn the office lights off five minutes after the last person leaves
+automation:
+  - alias: "Office lights off when nobody's there"
+    trigger:
+      - platform: state
+        entity_id: sensor.office_occupants
+        to: "0"
+        for:
+          minutes: 5
+    action:
+      - service: light.turn_off
+        target:
+          entity_id: light.office
+```
 
 ## Vision sensor: `sensor.vision_last_identification`
 
@@ -147,7 +188,3 @@ Copy these into **Developer Tools → Template** to try them out:
    | selectattr('state', 'eq', 'on')
    | map(attribute='name') | list }}
 ```
-
-## Upgraded from WhoLLM?
-
-If your entities now end in `_2` (for example `sensor.alice_room_2`), the old WhoLLM entities are still holding the original IDs. See [Troubleshooting](troubleshooting.md) and [Migrating from WhoLLM](../migrating.md).

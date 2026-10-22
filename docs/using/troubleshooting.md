@@ -102,6 +102,19 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
 
     **The opposite problem, never `away`:** assign a device tracker to the person. Without one, Roomer can't tell they've left.
 
+??? question "A phone or watch that reports a room isn't being used"
+
+    A person whose device is used shows `source: device_room` on their room sensor, and `indicators` reads `device: alice_phone_area in office`. If you see `source: llm` instead, work through these.
+
+    **What to check**
+
+    1. In **Developer Tools → States**, look at the device's entity. Its state should be a room or area name, such as `Office`. If it says `unknown` or `unavailable`, the problem is in your Bluetooth tool, not Roomer.
+    2. The entity is assigned to the person (or pet) under **Configure → Person Device Ownership**. Mapping it under Room Entity Mapping is not enough.
+    3. The name matches one of your Roomer rooms. Capitals, spaces and dashes don't matter, but `Master Bedroom` does not match a room called `bedroom`. In **Settings → System → Logs**, search for `doesn't match any Roomer room`. The warning names the entity, the value it reported and your rooms.
+    4. It isn't a GPS tracker. A phone's GPS `device_tracker` reports zones, which are never read as rooms.
+
+    **The person stays in their last room after leaving:** some tools keep reporting the last room until a timeout. Set one (for example `away_timeout` on an `mqtt_room` sensor), or assign a home/away `device_tracker` too, since `away` wins when it changed after the room did.
+
 ??? question "Ollama is unreachable or slow (timeouts)"
 
     **What you'll see**
@@ -144,32 +157,13 @@ Roomer writes every decision, with the sensor states it saw, to `/config/roomer_
     3. Make sure those same devices are mapped to the right room under **Room Entity Mapping**.
     4. Add more per-person signals. This is the single biggest improvement for multi-person homes.
 
-??? question "My entities end in `_2` after migrating from WhoLLM"
-
-    For example, `sensor.alice_room_2` instead of `sensor.alice_room`.
-
-    **Cause:** the old WhoLLM entities are still in Home Assistant's entity registry and are holding the original entity IDs, so the new Roomer entities got a `_2` suffix.
-
-    **Fix**
-
-    1. Go to **Settings → Devices & services → Entities** and search for your person's name (or filter by the old `whollm` integration).
-    2. Select the old WhoLLM entities (often shown as unavailable or "not provided") and **Remove** them.
-    3. Open each new `…_2` entity, click the gear icon, and change its **Entity ID** back to the original (for example `sensor.alice_room`).
-    4. Your automations and dashboards that use the original IDs will work again.
-
-    See [Migrating from WhoLLM](../migrating.md) for the full migration steps.
-
 ??? question "My settings changes don't seem to take effect"
 
-    **Likely causes**
+    Roomer reloads itself when you save a **Configure** page, and each page keeps what the other pages saved. If a change still doesn't show up:
 
-    - Roomer reloads itself when you save options. If a change still doesn't show, check the Home Assistant log for Roomer errors during the reload.
-    - In the current version, each **Configure** page (General Settings, Room Entity Mapping, Person Device Ownership, Confidence Weights) saves **only its own settings** and discards what the other pages saved earlier. The forms also start from your original setup values, not from your last saved values.
-
-    **What to do**
-
-    1. Check that the Roomer entry shows as loaded under **Settings → Devices & services → Roomer** after saving.
-    2. If you need to change settings on more than one page, be aware that the last page you save is the one that takes effect. Check each page's values before saving.
+    1. Reopen the page and check that it shows the value you saved.
+    2. Check the logs for errors from `custom_components.roomer` during the reload.
+    3. Rooms, people, pets and the server URL can only be set during setup. To change them, delete the Roomer integration and add it again.
 
 ??? question "The dashboard card says \"Custom element doesn't exist: roomer-card\""
 

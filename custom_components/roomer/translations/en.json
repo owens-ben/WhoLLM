@@ -36,7 +36,14 @@
       "room_entities": {
         "title": "Room Entity Mapping",
         "description": "Assign sensors and devices to each room. This helps Roomer understand which entities indicate activity in which room.\n\nSelect motion sensors, media players, lights, computers, and other devices for each room.",
-        "data": {}
+        "data": {
+          "office": "Office",
+          "living_room": "Living room",
+          "bedroom": "Bedroom",
+          "kitchen": "Kitchen",
+          "bathroom": "Bathroom",
+          "entry": "Entry"
+        }
       }
     },
     "error": {
@@ -71,15 +78,35 @@
       },
       "room_entities": {
         "title": "Room Entity Mapping",
-        "description": "Assign sensors and devices to each room."
+        "description": "Assign sensors and devices to each room. Custom rooms are shown by their room name.",
+        "data": {
+          "office": "Office",
+          "living_room": "Living room",
+          "bedroom": "Bedroom",
+          "kitchen": "Kitchen",
+          "bathroom": "Bathroom",
+          "entry": "Entry"
+        }
       },
       "person_devices": {
         "title": "Person Device Ownership",
-        "description": "Assign devices owned by each person (their phone, PC, etc). If that device is active, it strongly suggests that person is nearby."
+        "description": "Assign devices owned by each person or pet. Each picker is labelled with their name. A phone's home/away tracker tells Roomer when they've left. A sensor that reports which room a phone, watch or tag is in (such as Bermuda's Area sensor) places them in that room. A device they use, like a PC, suggests they're nearby when it's active."
       },
       "confidence_weights": {
         "title": "Confidence Weights",
-        "description": "Adjust how much each signal type contributes to presence detection. Higher percentage = more influence on the final prediction."
+        "description": "Adjust how much each signal type contributes to presence detection. Higher percentage = more influence on the final prediction.",
+        "data": {
+          "weight_camera": "Camera AI detection",
+          "weight_computer": "PC/computer active",
+          "weight_media": "Media playing",
+          "weight_motion": "Motion sensor",
+          "weight_presence": "BLE/Wi-Fi presence",
+          "weight_appliance": "Appliance in use",
+          "weight_light": "Light on",
+          "weight_door": "Door/window sensor",
+          "weight_llm_reasoning": "LLM reasoning",
+          "weight_habit": "Learned patterns"
+        }
       }
     }
   }

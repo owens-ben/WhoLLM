@@ -82,12 +82,15 @@ class BaseLLMProvider(ABC):
         for attempt in range(1 + max_retries):
             try:
                 return await coro_factory()
-            except (aiohttp.ClientError, TimeoutError, asyncio.TimeoutError) as err:
+            except (aiohttp.ClientError, TimeoutError) as err:
                 last_err = err
                 if attempt < max_retries:
                     _LOGGER.debug(
                         "Retry %d/%d after %s: %s",
-                        attempt + 1, max_retries, type(err).__name__, err,
+                        attempt + 1,
+                        max_retries,
+                        type(err).__name__,
+                        err,
                     )
                     await asyncio.sleep(backoff * (attempt + 1))
         raise last_err  # type: ignore[misc]
@@ -188,9 +191,7 @@ class BaseLLMProvider(ABC):
     def _format_time_context(self, context: dict[str, Any]) -> str:
         """Format time context section."""
         time_ctx = context.get("time_context", {})
-        lines = [
-            f"CURRENT TIME: {time_ctx.get('current_time', 'unknown')} ({time_ctx.get('day_of_week', 'unknown')})"
-        ]
+        lines = [f"CURRENT TIME: {time_ctx.get('current_time', 'unknown')} ({time_ctx.get('day_of_week', 'unknown')})"]
         if time_ctx.get("is_night"):
             lines.append("  ** NIGHTTIME (10pm-6am) **")
         elif time_ctx.get("is_morning"):
@@ -406,7 +407,7 @@ class BaseLLMProvider(ABC):
         # Check if any PC is on
         pc_is_on = False
         pc_room = "office"
-        for entity_id, data in context.get("computers", {}).items():
+        for data in context.get("computers", {}).values():
             if data.get("state") in ["on", "home"]:
                 pc_is_on = True
                 pc_room = data.get("room", "office")
@@ -414,7 +415,7 @@ class BaseLLMProvider(ABC):
 
         # Check media state
         media_room = None
-        for entity_id, data in context.get("media", {}).items():
+        for data in context.get("media", {}).values():
             if data.get("state") == "playing":
                 # Use configured room if available, else guess from name
                 media_room = data.get("room") or "living_room"
@@ -452,7 +453,10 @@ class BaseLLMProvider(ABC):
 
         _LOGGER.info(
             "Fallback guess for %s: %s (%.0f%%) - %s",
-            entity_name, room, confidence * 100, error_msg,
+            entity_name,
+            room,
+            confidence * 100,
+            error_msg,
         )
 
         return PresenceGuess(

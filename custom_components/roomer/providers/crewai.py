@@ -51,6 +51,7 @@ class CrewAIProvider(BaseLLMProvider):
         _LOGGER.debug("=== CREWAI QUERY for %s (%s) via /presence/detect ===", entity_name, entity_type)
 
         try:
+
             async def _do_request():
                 session = self._get_session()
                 async with session.post(
@@ -67,7 +68,9 @@ class CrewAIProvider(BaseLLMProvider):
                 ) as resp:
                     if resp.status != 200:
                         raise aiohttp.ClientResponseError(
-                            resp.request_info, resp.history, status=resp.status,
+                            resp.request_info,
+                            resp.history,
+                            status=resp.status,
                         )
                     return await resp.json()
 
@@ -81,7 +84,10 @@ class CrewAIProvider(BaseLLMProvider):
 
             _LOGGER.debug(
                 "CrewAI response for %s: room=%s, confidence=%.0f%%, model=%s",
-                entity_name, room, confidence * 100, model_used,
+                entity_name,
+                room,
+                confidence * 100,
+                model_used,
             )
 
             indicators = self._extract_indicators(context, room, entity_name)

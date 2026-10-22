@@ -4,6 +4,28 @@ Roomer is set up through a short wizard with five screens. In Home Assistant,
 this kind of wizard is called a **config flow**. Have your Ollama address and the
 names of the people in your home ready.
 
+## Before you start
+
+The wizard asks for some of this and **Configure** asks for the rest, so it saves
+time to look it all up first. You'll find your entities in **Settings → Devices
+& services → Entities** (use the search box).
+
+| What | Where to find it | Example |
+|---|---|---|
+| Ollama address | The IP address of the computer running Ollama, with port 11434 | `http://192.168.1.50:11434` |
+| People and pets | Everyone you want tracked. People and pets are entered separately | People: `Alice, Bob`. Pets: `Miso` |
+| Rooms | The rooms you want an answer for | `office, living_room, bedroom, kitchen` |
+| Sensors in each room | Motion sensors, the room's lights, a TV or speaker, a computer, door sensors | `binary_sensor.office_motion` |
+| Each person's phone | The `device_tracker` entity the Home Assistant Companion app creates for their phone. It tells Roomer who is home | `device_tracker.alice_phone` |
+| Each person's own computer, if they have one | A switch or sensor that shows it's on. This is the best clue you can give without extra hardware | `switch.alice_pc` |
+
+You don't need special room-tracking hardware. It helps, and it's covered in
+[Map your rooms](map-rooms.md#devices-that-report-a-room), but without it Roomer
+works from the sensors you already have and what it learns over time. See
+[Accuracy & limits](../using/accuracy.md) for what to expect.
+
+## Start the wizard
+
 To start:
 
 1. Go to **Settings → Devices & services**.
@@ -101,8 +123,7 @@ Choose names carefully, because they become entity IDs. `Alice` becomes
 ## Screen 5: Room Entity Mapping
 
 Now tell Roomer which sensors and devices belong to each room. There is one
-picker per room you chose. The pickers may show technical labels such as
-`entities_office`, where the part after `entities_` is the room.
+picker per room you chose, labelled with the room's name.
 
 You can pick entities from these types: binary sensors, sensors, lights,
 switches, media players, device trackers and cameras.
