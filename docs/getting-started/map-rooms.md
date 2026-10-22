@@ -147,7 +147,13 @@ Roomer can tell when someone has left.
   Assign a second device they carry, such as a watch. When one person's devices
   name different rooms, the one that moved most recently wins.
 - **When there's no room to read,** such as `unknown`, `unavailable` or
-  `not_home`, Roomer carries on with its normal steps for that person.
+  `not_home`, Roomer carries on with its normal steps for that person. An entity
+  that says `not_home` or `away` is never read as a room, even if it still has an
+  `area` attribute from the last time it was seen.
+- **A device tracker that reports a room you haven't set up** (say `garage`, with
+  no `garage` room) counts as "not home", like any other unknown zone. The person
+  shows as `away`, and the log warns about the name. Add the room, or rename the
+  area, to fix it.
 - **Home or away still applies.** If a home/away tracker went `not_home` *after*
   the room device last changed, the person is `away`. If the room device changed
   more recently, the room wins. Bluetooth usually sees someone arrive before

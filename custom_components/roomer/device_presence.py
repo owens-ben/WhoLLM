@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -40,10 +41,14 @@ ROOM_ATTRIBUTES = ("area_id", "area_name", "area", "room")
 # States that mean "no room right now" rather than a room name
 NO_ROOM_STATES = {"", "unknown", "unavailable", "none", "home", "not_home", "away", "on", "off"}
 
+# States that say the device is not here at all. Such an entity is never read as
+# a room, even when it still carries a stale room attribute.
+ABSENT_STATES = {"", "unknown", "unavailable", "none", "not_home", "away"}
+
 
 def room_key(value: Any) -> str:
     """Reduce a room or area name to a comparable key ("Living Room" -> "living_room")."""
-    text = re.sub(r"[\s-]+", "_", str(value).strip().lower())
+    text = re.sub(r"[\s-]+", "_", unicodedata.normalize("NFC", str(value)).strip().lower())
     return re.sub(r"[^\w]", "", text)
 
 
@@ -59,7 +64,9 @@ class DeviceRoomReading:
     entity_id: str
     room: str  # The configured room it matched
     reported: str  # What the device actually reported
-    last_changed: datetime | None
+    # When it started reporting this room: the state's last change, or for a room
+    # read from an attribute (the state stays "home") when the entity last updated
+    as_of: datetime | None
 
 
 class DeviceRoomLocator:
@@ -78,16 +85,25 @@ class DeviceRoomLocator:
 
     def read(self, state: State) -> DeviceRoomReading | None:
         """Return the room a single entity reports, from its state or room attributes."""
-        if _reports_zone(state):
+        if _reports_zone(state) or str(state.state).strip().lower() in ABSENT_STATES:
             return None
-        for value in (state.state, *(state.attributes.get(attr) for attr in ROOM_ATTRIBUTES)):
+        room = self.match_room(state.state)
+        if room:
+            return DeviceRoomReading(
+                entity_id=state.entity_id,
+                room=room,
+                reported=state.state,
+                as_of=_as_datetime(state.last_changed),
+            )
+        for attr in ROOM_ATTRIBUTES:
+            value = state.attributes.get(attr)
             room = self.match_room(value)
             if room:
                 return DeviceRoomReading(
                     entity_id=state.entity_id,
                     room=room,
                     reported=value,
-                    last_changed=_as_datetime(state.last_changed),
+                    as_of=_as_datetime(state.last_updated),
                 )
         self._warn_if_unmatched_room(state)
         return None
@@ -109,7 +125,8 @@ class DeviceRoomLocator:
 
         If the devices disagree (a phone left on the desk while the watch moves
         with its owner), the room most devices report wins, and a tie goes to the
-        device whose room changed most recently.
+        device that started reporting its room most recently. Devices without a
+        timestamp lose ties, and equal ones keep the order they were configured in.
         """
         newest_first = sorted(readings, key=_reading_sort_key, reverse=True)
         votes = Counter(reading.room for reading in readings)
@@ -153,7 +170,7 @@ def _reports_zone(state: State) -> bool:
 
 def _reading_sort_key(reading: DeviceRoomReading) -> float:
     """Sort key putting readings without a timestamp last."""
-    return reading.last_changed.timestamp() if reading.last_changed else float("-inf")
+    return reading.as_of.timestamp() if reading.as_of else float("-inf")
 
 
 def seen_since_away(
@@ -169,7 +186,7 @@ def seen_since_away(
     Whichever changed most recently describes the present, and without
     timestamps to compare, the tracker wins.
     """
-    newest_reading = max((r.last_changed for r in readings if r.last_changed), default=None)
+    newest_reading = max((r.as_of for r in readings if r.as_of), default=None)
     if newest_reading is None:
         return False
 

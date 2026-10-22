@@ -650,7 +650,7 @@ class LLMPresenceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 raw_response=guess.raw_response,
                 indicators=guess.indicators,
                 sensor_context=context,
-                detection_method="llm",
+                detection_method=guess.source,
             )
         except OSError as err:
             _LOGGER.warning("Failed to log presence event: %s", err)

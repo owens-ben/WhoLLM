@@ -306,5 +306,5 @@ class TestSensorSetupEntry:
         assert "Alice" in entity_names
         assert "Bob" in entity_names
         assert "Whiskers" in entity_names
-        occupant_rooms = [e._room for e in added_entities if hasattr(e, "_room")]
+        occupant_rooms = [e._room for e in added_entities if type(e).__name__ == "RoomOccupantsSensor"]
         assert occupant_rooms == ["office", "bedroom", "living_room"]

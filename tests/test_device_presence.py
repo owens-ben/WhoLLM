@@ -27,10 +27,17 @@ ROOMS = ["office", "living_room", "bedroom", "kitchen", "kids-room"]
 NOW = datetime(2026, 10, 21, 12, 0, tzinfo=UTC)
 
 
-def make_state(entity_id, state, attributes=None, minutes_ago=None):
-    """Build a real HA State, optionally with last_changed some minutes ago."""
+def make_state(entity_id, state, attributes=None, minutes_ago=None, updated_minutes_ago=None):
+    """Build a real HA State.
+
+    ``minutes_ago`` is when the state last changed. ``updated_minutes_ago`` is when it
+    was last updated (an attribute change), and defaults to the same time.
+    """
     last_changed = NOW - timedelta(minutes=minutes_ago) if minutes_ago is not None else None
-    return State(entity_id, state, attributes or {}, last_changed=last_changed)
+    if updated_minutes_ago is None:
+        updated_minutes_ago = minutes_ago
+    last_updated = NOW - timedelta(minutes=updated_minutes_ago) if updated_minutes_ago is not None else None
+    return State(entity_id, state, attributes or {}, last_changed=last_changed, last_updated=last_updated)
 
 
 def make_hass(*states):
@@ -69,7 +76,7 @@ class TestDeviceRoomLocator:
         assert reading.room == "living_room"
         assert reading.reported == "Living Room"
         assert reading.entity_id == "sensor.alice_phone_area"
-        assert reading.last_changed == NOW - timedelta(minutes=3)
+        assert reading.as_of == NOW - timedelta(minutes=3)
 
     def test_returns_the_configured_room_spelling(self):
         """A room configured with a dash still matches an area name with a space."""
@@ -87,6 +94,41 @@ class TestDeviceRoomLocator:
         locator = DeviceRoomLocator(ROOMS)
         state = make_state("device_tracker.alice_phone", "home", {attribute: "Office"})
         assert locator.read(state).room == "office"
+
+    @pytest.mark.parametrize("state", ["not_home", "away", "unknown", "unavailable", "none", ""])
+    def test_absent_state_is_not_a_room_even_with_a_room_attribute(self, state):
+        """A tracker that says not_home can still carry the last area it saw. It isn't here."""
+        locator = DeviceRoomLocator(ROOMS)
+        tracker = make_state("device_tracker.alice_ble", state, {"area": "Office", "source_type": "bluetooth_le"})
+        assert locator.read(tracker) is None
+
+    def test_home_state_with_a_room_attribute_is_a_room(self):
+        locator = DeviceRoomLocator(ROOMS)
+        tracker = make_state("device_tracker.alice_ble", "home", {"area": "Office", "source_type": "bluetooth_le"})
+        assert locator.read(tracker).room == "office"
+
+    def test_attribute_room_is_timed_by_the_last_update(self):
+        """The state stays "home" while the area attribute changes, so last_changed is stale."""
+        locator = DeviceRoomLocator(ROOMS)
+        tracker = make_state(
+            "device_tracker.alice_ble", "home", {"area": "Kitchen"}, minutes_ago=300, updated_minutes_ago=1
+        )
+        assert locator.read(tracker).as_of == NOW - timedelta(minutes=1)
+
+    def test_state_room_is_timed_by_the_last_change_not_by_chatty_updates(self):
+        """A phone left on the desk keeps updating its distance but hasn't moved."""
+        locator = DeviceRoomLocator(ROOMS)
+        sensor = make_state(
+            "sensor.alice_phone_area", "Office", {"distance": 2.1}, minutes_ago=40, updated_minutes_ago=0
+        )
+        assert locator.read(sensor).as_of == NOW - timedelta(minutes=40)
+
+    def test_accented_room_names_match_whatever_unicode_form_is_reported(self):
+        import unicodedata
+
+        locator = DeviceRoomLocator(["küche"])
+        assert locator.match_room(unicodedata.normalize("NFC", "Küche")) == "küche"
+        assert locator.match_room(unicodedata.normalize("NFD", "Küche")) == "küche"
 
     @pytest.mark.parametrize("value", ["unknown", "unavailable", "not_home", "home", "away", "on", "off", ""])
     def test_no_room_states(self, value):
@@ -191,6 +233,22 @@ class TestDeviceRoomGuess:
         assert guess.confidence == DEVICE_ROOM_SPLIT_CONFIDENCE
         assert guess.indicators[0] == "device: alice_watch_area in kitchen"
 
+    def test_attribute_update_wins_a_tie_over_an_older_state_change(self):
+        locator, readings = self._readings(
+            make_state("sensor.alice_watch_area", "Kitchen", minutes_ago=30),
+            make_state("device_tracker.alice_ble", "home", {"area": "Office"}, minutes_ago=300, updated_minutes_ago=1),
+        )
+        assert locator.guess(readings).room == "office"
+
+    def test_tie_without_any_timestamp_keeps_the_configured_order(self):
+        locator = DeviceRoomLocator(ROOMS)
+        first = MagicMock(entity_id="sensor.a_area", state="Office", attributes={}, last_changed=None)
+        second = MagicMock(entity_id="sensor.b_area", state="Kitchen", attributes={}, last_changed=None)
+        guess = locator.guess([locator.read(first), locator.read(second)])
+
+        assert guess.room == "office"
+        assert guess.confidence == DEVICE_ROOM_SPLIT_CONFIDENCE
+
     def test_majority_beats_recency(self):
         locator, readings = self._readings(
             make_state("sensor.alice_phone_area", "Office", minutes_ago=40),
@@ -221,6 +279,26 @@ class TestSeenSinceAway:
         readings = [locator.read(make_state("sensor.alice_phone_area", "Office", minutes_ago=90))]
 
         assert seen_since_away(hass, readings, ["device_tracker.alice_wifi"]) is False
+
+    def test_attribute_only_update_counts_as_seen(self):
+        """The BLE tracker's state is still "home"; only its area changed, a minute ago."""
+        hass = make_hass(make_state("device_tracker.alice_wifi", "not_home", minutes_ago=2))
+        locator = DeviceRoomLocator(ROOMS)
+        ble = make_state(
+            "device_tracker.alice_ble", "home", {"area": "Kitchen"}, minutes_ago=300, updated_minutes_ago=1
+        )
+
+        assert seen_since_away(hass, [locator.read(ble)], ["device_tracker.alice_wifi"]) is True
+
+    def test_the_newest_of_several_away_trackers_decides(self):
+        hass = make_hass(
+            make_state("device_tracker.alice_wifi", "not_home", minutes_ago=300),
+            make_state("device_tracker.alice_router", "not_home", minutes_ago=2),
+        )
+        locator = DeviceRoomLocator(ROOMS)
+        readings = [locator.read(make_state("sensor.alice_phone_area", "Office", minutes_ago=60))]
+
+        assert seen_since_away(hass, readings, ["device_tracker.alice_wifi", "device_tracker.alice_router"]) is False
 
     def test_unavailable_trackers_are_ignored(self):
         """A tracker that just went unavailable doesn't count as a recent departure."""
@@ -378,6 +456,63 @@ class TestCoordinatorDevicePresence:
 
         assert guess.room == "living_room"
         assert guess.source == SOURCE_DEVICE_ROOM
+
+    async def test_pet_with_a_not_home_tracker_is_never_away(self, coordinator):
+        """Pets get no away check, so a stale tracker can't override their tag."""
+        coordinator.hass = make_hass(
+            make_state("device_tracker.whiskers_collar", "not_home", minutes_ago=300),
+            make_state("sensor.whiskers_tag_area", "Bedroom", minutes_ago=10),
+        )
+        coordinator.person_devices = {"Whiskers": ["device_tracker.whiskers_collar", "sensor.whiskers_tag_area"]}
+
+        guess = await coordinator._process_entity("Whiskers", "pet", {}, [], is_pet=True)
+
+        assert guess.room == "bedroom"
+        assert guess.source == SOURCE_DEVICE_ROOM
+
+    async def test_stale_not_home_tracker_with_an_area_does_not_place_anyone(self, coordinator):
+        """An explicit not_home is an away tracker, whatever area it last saw."""
+        coordinator.hass = make_hass(
+            make_state("device_tracker.alice_ble", "not_home", {"area": "Office"}, minutes_ago=30)
+        )
+        coordinator.person_devices = {"Alice": ["device_tracker.alice_ble"]}
+
+        guess = await coordinator._process_entity("Alice", "person", {}, [])
+
+        assert guess.room == "away"
+        assert guess.source == "device_tracker"
+
+    async def test_tracker_reporting_a_room_that_is_not_configured_still_means_away(self, coordinator, caplog):
+        """No "garage" room, so the tracker's state is just an unknown zone: not home, plus a warning."""
+        coordinator.hass = make_hass(make_state("device_tracker.bob_watch", "garage", minutes_ago=4))
+        coordinator.person_devices = {"Bob": ["device_tracker.bob_watch"]}
+
+        guess = await coordinator._process_entity("Bob", "person", {}, [])
+
+        assert guess.room == "away"
+        assert any("garage" in r.getMessage() for r in caplog.records)
+
+    async def test_device_location_is_not_learned_when_learning_is_off(self, coordinator):
+        coordinator.learning_enabled = False
+        coordinator.hass = make_hass(make_state("sensor.alice_phone_area", "Office", minutes_ago=5))
+        coordinator.person_devices = {"Alice": ["sensor.alice_phone_area"]}
+
+        await coordinator._process_entity("Alice", "person", {}, [])
+
+        assert not coordinator.habit_predictor.habits.get("Alice")
+        assert coordinator._habits_dirty is False
+
+    async def test_events_are_logged_with_the_source_that_produced_them(self, coordinator):
+        """Device locations are high-quality labels, so they must not be filed under "llm"."""
+        coordinator.hass = make_hass(make_state("sensor.alice_phone_area", "Office", minutes_ago=5))
+        coordinator.person_devices = {"Alice": ["sensor.alice_phone_area"]}
+        await coordinator._process_entity("Alice", "person", {}, [])
+        await coordinator._process_entity("Bob", "person", {}, [])
+
+        methods = [
+            c.kwargs["detection_method"] for c in coordinator.event_logger.async_log_presence_event.await_args_list
+        ]
+        assert methods == ["device_room", "llm"]
 
     async def test_gps_tracker_at_office_zone_is_away(self, coordinator):
         """At a work zone called "Office": away, not in the office room."""
