@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -416,13 +417,17 @@ async def _open_section(hass, entry, section: str) -> dict:
 class TestOptionsFlow:
     """Test the options flow end to end through Home Assistant."""
 
-    async def test_options_flow_does_not_take_config_entry_arg(self):
-        """The options flow relies on HA's config_entry property (2024.11+ pattern)."""
+    async def test_options_flow_only_sets_config_entry_on_old_ha(self):
+        """On HA 2024.11+ the flow must not set config_entry (deprecated); older HA needs it."""
         from custom_components.roomer.config_flow import LLMPresenceConfigFlow, LLMPresenceOptionsFlow
 
-        flow = LLMPresenceConfigFlow.async_get_options_flow(MagicMock())
+        entry = MagicMock()
+        flow = LLMPresenceConfigFlow.async_get_options_flow(entry)
         assert isinstance(flow, LLMPresenceOptionsFlow)
-        assert "config_entry" not in LLMPresenceOptionsFlow.__dict__
+        if hasattr(config_entries.OptionsFlow, "config_entry"):
+            assert "config_entry" not in vars(flow)
+        else:
+            assert flow.config_entry is entry
 
     async def test_sections_saved_in_sequence_are_all_kept(self, hass, options_entry):
         """Saving one section must not wipe what other sections saved."""

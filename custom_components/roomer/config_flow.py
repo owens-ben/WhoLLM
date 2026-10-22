@@ -334,16 +334,22 @@ class LLMPresenceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
-        return LLMPresenceOptionsFlow()
+        return LLMPresenceOptionsFlow(config_entry)
 
 
 class LLMPresenceOptionsFlow(config_entries.OptionsFlow):
     """Handle options flow for Roomer.
 
     Each section only edits its own keys, so results are merged into the
-    existing options instead of replacing them. Home Assistant provides
-    ``self.config_entry``.
+    existing options instead of replacing them.
     """
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        # HA 2024.11+ provides self.config_entry (and deprecates setting it);
+        # older releases, still supported per hacs.json, need it stored here.
+        if not hasattr(config_entries.OptionsFlow, "config_entry"):
+            self.config_entry = config_entry
 
     def _get(self, key: str, default: Any = None) -> Any:
         """Get a value from options first, then data, then default."""
