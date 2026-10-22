@@ -99,8 +99,8 @@ Those are all the options; the card's colours, fonts and layout are fixed.
 - **Footer** says when the most recently updated sensor last changed, for example "Updated 12s ago".
 - An entity that doesn't exist shows as `Entity not found: <entity_id>`.
 
-!!! note "Confidence is usually lower than you expect"
-    Roomer's `confidence` values often sit between 30% and 60% even when the room is right, so "Guessing" or "Pretty sure" is normal. [Accuracy & limits](accuracy.md) explains why.
+!!! note "What the words usually mean"
+    A motion sensor and the AI agreeing on a room gives about 75%, so **Pretty sure**. **Sure** needs a strong signal such as a TV playing or the person's own PC, or several signals agreeing. **Guessing** means the evidence is thin or split between rooms. [Accuracy & limits](accuracy.md) explains how the number is worked out.
 
 ## The full Roomer dashboard (YAML)
 
